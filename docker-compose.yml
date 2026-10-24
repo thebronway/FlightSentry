@@ -1,0 +1,42 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flightdocket_web
+    command: npm run start
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+      - PORT=4000
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flightdocket_worker
+    command: npm run worker
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+    depends_on:
+      - web
+
+  apprise:
+    image: caronc/apprise:latest
+    container_name: flightdocket_apprise
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APPRISE_STATEFUL_MODE=simple
+    volumes:
+      - ./config:/config
