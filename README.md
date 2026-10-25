@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.2.0-yellow.svg)
+![Version](https://img.shields.io/badge/version-v0.2.5-yellow.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker built with Next.js, Node.js, SQLite, and Docker.

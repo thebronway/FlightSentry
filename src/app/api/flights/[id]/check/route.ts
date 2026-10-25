@@ -5,6 +5,8 @@ import { executeSearchStrategy } from '@/services/datasource';
 import { evaluatePrice } from '@/services/evaluator';
 import { checkAndResetQuota, canMakeApiCall } from '@/services/quota';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = parseInt(params.id, 10);

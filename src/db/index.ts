@@ -6,8 +6,10 @@ const dbPath = process.env.NODE_ENV === 'production'
   ? '/app/data/flightsentry.db' 
   : path.join(process.cwd(), 'data', 'flightsentry.db');
 
-const db = new Database(dbPath, { fileMustExist: false });
+const db = new Database(dbPath, { fileMustExist: false, timeout: 10000 });
 
+// Configure a 10-second busy timeout so concurrent processes wait for locks
+db.pragma('busy_timeout = 10000');
 // Enable Write-Ahead Logging for better concurrent performance (web + worker)
 db.pragma('journal_mode = WAL');
 // Enforce foreign keys

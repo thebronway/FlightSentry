@@ -3,6 +3,8 @@ import { flightDb } from '@/db/flights';
 import { historyDb } from '@/db/history';
 import { flightStatusSchema } from '@/utils/validation';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const id = parseInt(params.id, 10);

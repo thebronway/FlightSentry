@@ -22,8 +22,8 @@ export default function Dashboard() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 dark:bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-slate-200">Dashboard</h1>
+        <button onClick={() => setIsModalOpen(true)} className="bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm px-4 py-2 rounded-md hover:bg-slate-700 hover:border-slate-400 flex items-center gap-2 transition-colors">
           <Plus className="w-4 h-4" /> Add Flight
         </button>
       </div>

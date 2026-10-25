@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { flightDb } from '@/db/flights';
 import { flightSchema } from '@/utils/validation';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const flights = flightDb.getAll();

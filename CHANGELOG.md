@@ -1,9 +1,14 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-10-25*  
-*Current Version: v0.2.0*
+*Current Version: v0.2.5*
 
 ## Changelog
+
+### Release v0.2.5
+- Enforced dark mode and removed the theme toggle button from navigation.   
+- Replaced gray and indigo colors with a custom gunmetal and slate palette.   
+- Restyled buttons, cards, and quota bars, and widened the settings page.
 
 ### Release v0.2.0
 - Added logo to the application header.

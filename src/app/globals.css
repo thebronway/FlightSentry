@@ -3,9 +3,5 @@
 @tailwind utilities;
 
 body {
-  @apply bg-gray-50 text-slate-500 transition-colors duration-200;
-}
-
-.dark body {
-  @apply bg-gray-950 text-slate-400;
+  @apply bg-gunmetal-canvas text-gunmetal-muted;
 }
