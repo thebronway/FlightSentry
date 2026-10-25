@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flightdocket_web
+    container_name: flightsentry_web
     command: npm run start
     ports:
       - "4000:4000"
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flightdocket_worker
+    container_name: flightsentry_worker
     command: npm run worker
     volumes:
       - ./data:/app/data
@@ -29,14 +29,3 @@ services:
       - TZ=UTC
     depends_on:
       - web
-
-  apprise:
-    image: caronc/apprise:latest
-    container_name: flightdocket_apprise
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - APPRISE_STATEFUL_MODE=simple
-    volumes:
-      - ./config:/config

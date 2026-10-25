@@ -26,8 +26,10 @@ yarn-error.log*
 .env*.local
 .env
 
-# FlightDocket Volumes
+# Volumes
 data/*
 !data/.gitkeep
 config/*
 !config/.gitkeep
+
+.prompt

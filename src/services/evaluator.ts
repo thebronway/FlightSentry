@@ -34,6 +34,6 @@ export const evaluatePrice = async (
   // AND must meet at least one threshold ($ drop, % drop, or hits target price)
   if (isLowerThanPrevious && isLowerThanBaseline && (hitsDollarThreshold || hitsPercentThreshold || hitsTargetPrice)) {
     console.log(`Alert triggered for Flight ID: ${flight.id} at ${newPrice}`);
-    await sendPriceDropAlert(settings.appriseUrl, flight, newPrice);
+    await sendPriceDropAlert(settings, flight, newPrice);
   }
 };

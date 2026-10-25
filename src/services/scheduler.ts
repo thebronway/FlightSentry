@@ -16,51 +16,54 @@ export const expireOldFlights = (timezone: string): void => {
   }
 };
 
-export const runScheduledChecks = async (): Promise<void> => {
+import { executeSearchStrategy } from './datasource';
+import { calculateNextCheck } from '../utils/queue';
+
+export const processNextFlight = async (): Promise<boolean> => {
   let settings = settingsDb.get();
   settings = checkAndResetQuota(settings);
-
+  
   if (!canMakeApiCall(settings)) {
-    console.log("Check aborted: Global pause active or monthly quota exceeded.");
-    return;
+    console.log("Queue paused: Global pause active or monthly quota exceeded.");
+    return false;
   }
 
-  // Auto-expire flights before running checks
+  if (settings.circuitBreakerUntil && new Date(settings.circuitBreakerUntil) > new Date()) {
+    console.log(`Queue paused: Circuit breaker active until ${settings.circuitBreakerUntil}`);
+    return false;
+  }
+
   expireOldFlights(settings.timezone);
 
-  const activeFlights = flightDb.getAll().filter(f => f.status === 'Active');
+  const flight = flightDb.getNextDueFlight();
+  if (!flight) return false; // No jobs due
 
-  for (const flight of activeFlights) {
-    // Re-check quota inside the loop to ensure we don't breach it mid-run
-    settings = settingsDb.get(); 
-    if (!canMakeApiCall(settings)) {
-      console.warn("Monthly quota reached during batch run. Halting remaining checks.");
-      break;
-    }
+  console.log(`Processing Flight ${flight.id}...`);
+  
+  const result = await executeSearchStrategy(flight, settings);
 
-    console.log(`Checking price for Flight ${flight.id}: ${flight.origin}->${flight.destination}`);
-    
-    const result = await checkFlightPrice(
-      settings.serpApiKey,
-      flight.origin,
-      flight.destination,
-      flight.departureDate,
-      flight.airline,
-      flight.flightNumber
-    );
-
-    // Increment quota usage for actual API hits
-    settingsDb.incrementApiUsage();
-
-    if (result.status === 'Success' && result.price !== null) {
-      await evaluatePrice(flight, result.price, settings);
-    } else {
-      // Log errors or sold out status without triggering evaluation rules
-      console.log(`Flight ${flight.id} returned status: ${result.status}`);
-      historyDb.insert(flight.id, flight.currentPrice, result.status);
-    }
-
-    // Polite delay between API calls to prevent rate limits
-    await new Promise(res => setTimeout(res, 2000));
+  if (result.status === 'RateLimited') {
+    // Trigger Circuit Breaker: 4 to 8 hours random pause
+    const pauseHours = Math.random() * (8 - 4) + 4;
+    const pauseUntil = new Date(Date.now() + pauseHours * 3600000).toISOString();
+    settingsDb.update({ circuitBreakerUntil: pauseUntil });
+    console.error(`Circuit breaker triggered! Pausing all scraping until ${pauseUntil}`);
+    return false;
   }
+
+  if (result.status !== 'Error' && result.sourceUsed) {
+    settingsDb.incrementApiUsage(result.sourceUsed);
+  }
+
+  if (result.status === 'Success' && result.price !== null) {
+    await evaluatePrice(flight, result.price, settings);
+  } else {
+    historyDb.insert(flight.id, flight.currentPrice, result.status);
+  }
+
+  // Calculate and save the next check time
+  const nextCheck = calculateNextCheck(flight, settings);
+  flightDb.updateNextCheckAt(flight.id, nextCheck);
+  
+  return true; // Successfully processed a job
 };

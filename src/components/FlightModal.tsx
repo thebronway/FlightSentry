@@ -10,9 +10,9 @@ interface Props {
 
 export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
   const [formData, setFormData] = useState({
-    origin: '', destination: '', departureDate: '', airline: '',
-    flightNumber: '', pnr: '', fareTier: 'Standard', baselinePrice: '',
-    targetPrice: '', notes: ''
+    searchMode: 'Route', origin: '', destination: '', departureDate: '', airline: '',
+    flightNumber: '', includedAirlines: '', excludedAirlines: '', pnr: '', fareTier: 'Standard', 
+    baselinePrice: '', targetPrice: '', notes: '', overrideFarOut: '', overrideStandard: '', overrideFinalStretch: '', disableNotifications: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,15 +24,28 @@ export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
     setLoading(true);
     setError(null);
 
+    const scheduleOverride = (formData.overrideFarOut || formData.overrideStandard || formData.overrideFinalStretch)
+      ? JSON.stringify({
+          farOut: formData.overrideFarOut ? parseInt(formData.overrideFarOut, 10) : undefined,
+          standard: formData.overrideStandard ? parseInt(formData.overrideStandard, 10) : undefined,
+          finalStretch: formData.overrideFinalStretch ? parseInt(formData.overrideFinalStretch, 10) : undefined
+        })
+      : null;
+
     const payload = {
-      ...formData,
-      origin: formData.origin.toUpperCase(),
-      destination: formData.destination.toUpperCase(),
-      baselinePrice: parseFloat(formData.baselinePrice),
-      targetPrice: formData.targetPrice ? parseFloat(formData.targetPrice) : null,
-      pnr: formData.pnr || null,
-      notes: formData.notes || null
-    };
+        ...formData,
+        origin: formData.searchMode === 'Route' ? formData.origin.toUpperCase() : null,
+        destination: formData.searchMode === 'Route' ? formData.destination.toUpperCase() : null,
+        flightNumber: formData.searchMode === 'FlightNumber' ? formData.flightNumber : null,
+        includedAirlines: formData.includedAirlines || null,
+        excludedAirlines: formData.excludedAirlines || null,
+        baselinePrice: parseFloat(formData.baselinePrice),
+        targetPrice: formData.targetPrice ? parseFloat(formData.targetPrice) : null,
+        pnr: formData.pnr || null,
+        notes: formData.notes || null,
+        disableNotifications: formData.disableNotifications ? 1 : 0,
+        scheduleOverride
+      };
 
     try {
       const res = await fetch('/api/flights', {
@@ -66,27 +79,52 @@ export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded text-sm">{error}</div>}
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Origin (IATA)</label>
-              <input required maxLength={3} placeholder="JFK" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} className="w-full bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-md shadow-sm border p-2 uppercase placeholder-gray-400 dark:placeholder-gray-600" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Destination (IATA)</label>
-              <input required maxLength={3} placeholder="LHR" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-md shadow-sm border p-2 uppercase placeholder-gray-400 dark:placeholder-gray-600" />
-            </div>
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="radio" name="searchMode" checked={formData.searchMode === 'Route'} onChange={() => setFormData({...formData, searchMode: 'Route'})} />
+              To & From Destination
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="radio" name="searchMode" checked={formData.searchMode === 'FlightNumber'} onChange={() => setFormData({...formData, searchMode: 'FlightNumber'})} />
+              Specific Flight Number
+            </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Airline</label>
-              <input required placeholder="Delta" value={formData.airline} onChange={e => setFormData({...formData, airline: e.target.value})} className="w-full bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-md shadow-sm border p-2 placeholder-gray-400 dark:placeholder-gray-600" />
+          {formData.searchMode === 'Route' ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Origin (IATA)</label>
+                  <input required={formData.searchMode === 'Route'} maxLength={3} placeholder="JFK" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Destination (IATA)</label>
+                  <input required={formData.searchMode === 'Route'} maxLength={3} placeholder="LHR" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Airline Inclusions (Comma separated)</label>
+                  <input placeholder="DL, AA" value={formData.includedAirlines} onChange={e => setFormData({...formData, includedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Airline Exclusions (Comma separated)</label>
+                  <input placeholder="NK, F9" value={formData.excludedAirlines} onChange={e => setFormData({...formData, excludedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Carrier Code</label>
+                <input required={formData.searchMode === 'FlightNumber'} placeholder="DL" value={formData.airline} onChange={e => setFormData({...formData, airline: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Flight Number (Numbers Only)</label>
+                <input required={formData.searchMode === 'FlightNumber'} pattern="\d+" placeholder="1234" value={formData.flightNumber} onChange={e => setFormData({...formData, flightNumber: e.target.value})} className="w-full border rounded-md p-2 bg-white dark:bg-gray-950" />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Flight Number</label>
-              <input required placeholder="DL 1" value={formData.flightNumber} onChange={e => setFormData({...formData, flightNumber: e.target.value})} className="w-full bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-md shadow-sm border p-2 placeholder-gray-400 dark:placeholder-gray-600" />
-            </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -120,6 +158,31 @@ export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea rows={2} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 rounded-md shadow-sm border p-2"></textarea>
+          </div>
+            
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-200">
+              <input type="checkbox" checked={formData.disableNotifications} onChange={e => setFormData({...formData, disableNotifications: e.target.checked})} className="w-4 h-4 text-indigo-600 rounded" />
+              Mute Notifications for this specific flight
+            </label>
+          </div>
+
+          <div className="pt-2">
+            <h3 className="text-sm font-bold border-b pb-1 mb-2">Schedule Overrides (Leave blank to use global defaults)</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs font-medium mb-1">Far Out (hrs)</label>
+                <input type="number" placeholder="48" value={formData.overrideFarOut} onChange={e => setFormData({...formData, overrideFarOut: e.target.value})} className="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-950" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Standard (hrs)</label>
+                <input type="number" placeholder="24" value={formData.overrideStandard} onChange={e => setFormData({...formData, overrideStandard: e.target.value})} className="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-950" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Final Stretch (hrs)</label>
+                <input type="number" placeholder="12" value={formData.overrideFinalStretch} onChange={e => setFormData({...formData, overrideFinalStretch: e.target.value})} className="w-full border rounded-md p-2 text-sm bg-white dark:bg-gray-950" />
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">

@@ -9,15 +9,29 @@ export const flightDb = {
   getById: (id: number): Flight | undefined => {
     return db.prepare('SELECT * FROM flights WHERE id = ?').get(id) as Flight | undefined;
   },
+  getNextDueFlight: (): Flight | undefined => {
+    const now = new Date().toISOString();
+    return db.prepare(`
+      SELECT * FROM flights 
+      WHERE status = 'Active' AND nextCheckAt <= @now 
+      ORDER BY nextCheckAt ASC LIMIT 1
+    `).get({ now }) as Flight | undefined;
+  },
+  updateNextCheckAt: (id: number, nextCheckAt: string): void => {
+    db.prepare('UPDATE flights SET nextCheckAt = @nextCheckAt, updatedAt = @now WHERE id = @id')
+      .run({ id, nextCheckAt, now: new Date().toISOString() });
+  },
 
   create: (flight: Omit<Flight, 'id' | 'createdAt' | 'updatedAt' | 'currentPrice'>): number => {
     const stmt = db.prepare(`
       INSERT INTO flights (
-        origin, destination, departureDate, airline, flightNumber, pnr, 
-        fareTier, baselinePrice, targetPrice, currentPrice, notes, status, createdAt, updatedAt
+        searchMode, origin, destination, departureDate, airline, flightNumber, 
+        includedAirlines, excludedAirlines, pnr, fareTier, baselinePrice, 
+        targetPrice, currentPrice, notes, scheduleOverride, disableNotifications, nextCheckAt, status, createdAt, updatedAt
       ) VALUES (
-        @origin, @destination, @departureDate, @airline, @flightNumber, @pnr, 
-        @fareTier, @baselinePrice, @targetPrice, @baselinePrice, @notes, @status, @now, @now
+        @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
+        @includedAirlines, @excludedAirlines, @pnr, @fareTier, @baselinePrice, 
+        @targetPrice, @baselinePrice, @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
       )
     `);
     

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flightDb } from '@/db/flights';
 import { settingsDb } from '@/db/settings';
-import { checkFlightPrice } from '@/services/serpapi';
+import { executeSearchStrategy } from '@/services/datasource';
 import { evaluatePrice } from '@/services/evaluator';
 import { checkAndResetQuota, canMakeApiCall } from '@/services/quota';
 
@@ -19,16 +19,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Monthly API quota exceeded or Global Pause is active.' }, { status: 429 });
     }
 
-    const result = await checkFlightPrice(
-      settings.serpApiKey,
-      flight.origin,
-      flight.destination,
-      flight.departureDate,
-      flight.airline,
-      flight.flightNumber
-    );
+    if (settings.circuitBreakerUntil && new Date(settings.circuitBreakerUntil) > new Date()) {
+      return NextResponse.json({ error: `Circuit breaker active until ${settings.circuitBreakerUntil}` }, { status: 429 });
+    }
 
-    settingsDb.incrementApiUsage();
+    const result = await executeSearchStrategy(flight, settings);
+
+    if (result.status === 'RateLimited') {
+      const pauseHours = Math.random() * (8 - 4) + 4;
+      const pauseUntil = new Date(Date.now() + pauseHours * 3600000).toISOString();
+      settingsDb.update({ circuitBreakerUntil: pauseUntil });
+      return NextResponse.json({ error: 'Rate limit hit. Circuit breaker triggered.' }, { status: 429 });
+    }
+
+    if (result.status !== 'Error' && result.sourceUsed) {
+      settingsDb.incrementApiUsage(result.sourceUsed);
+    }
 
     if (result.status === 'Success' && result.price !== null) {
       await evaluatePrice(flight, result.price, settings);

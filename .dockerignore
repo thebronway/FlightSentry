@@ -8,3 +8,5 @@ data/*
 !data/.gitkeep
 config/*
 !config/.gitkeep
+
+.prompt

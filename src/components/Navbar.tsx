@@ -18,7 +18,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
           <Plane className="w-6 h-6" />
-          <span className="font-bold text-xl tracking-tight">FlightDocket</span>
+          <span className="font-bold text-xl tracking-tight">FlightSentry</span>
         </Link>
         <div className="flex items-center space-x-4">
           <Link 

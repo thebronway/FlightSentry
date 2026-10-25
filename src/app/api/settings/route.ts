@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { settingsDb } from '@/db/settings';
 import { settingsSchema } from '@/utils/validation';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const settings = settingsDb.get();
@@ -21,6 +23,7 @@ export async function PUT(req: NextRequest) {
     
     return NextResponse.json(updatedSettings);
   } catch (error: any) {
-    return NextResponse.json({ error: error.errors || 'Invalid input' }, { status: 400 });
+    console.error("Settings API Error:", error);
+    return NextResponse.json({ error: error.errors || error.message || 'Invalid input' }, { status: 400 });
   }
 }

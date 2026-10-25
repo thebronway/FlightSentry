@@ -2,32 +2,35 @@ import cron from 'node-cron';
 import { settingsDb } from '../db/settings';
 import { initDb } from '../db/init';
 import { getCurrentLocalHour } from '../utils/date';
-import { runScheduledChecks, expireOldFlights } from './scheduler';
+import { processNextFlight, expireOldFlights } from './scheduler';
 
 // 1. Ensure DB exists before background worker starts querying it
 initDb();
-console.log("🚀 FlightDocket Background Worker initialized.");
+console.log("FlightSentry Background Worker initialized.");
 
-// 2. Main Polling Schedule (Runs at the top of every hour)
-cron.schedule('0 * * * *', async () => {
-  try {
-    const settings = settingsDb.get();
-    
-    // Ignore if globally paused
-    if (settings.globalPause === 1) return;
-
-    // Parse the user's configured check hours (e.g., "[8, 14, 20]")
-    const scheduledHours: number[] = JSON.parse(settings.checkHours);
-    const localHour = getCurrentLocalHour(settings.timezone);
-
-    if (scheduledHours.includes(localHour)) {
-      console.log(`🕒 Triggering scheduled checks for hour: ${localHour}`);
-      await runScheduledChecks();
+// 2. Main Queue Loop (Strict Single Queue)
+const startWorkerLoop = async () => {
+  while (true) {
+    try {
+      const processedJob = await processNextFlight();
+      
+      if (processedJob) {
+        // Delay Between Flights: Wait a random 1.5 to 3 minutes
+        const delayMs = Math.floor(Math.random() * (180000 - 90000 + 1) + 90000);
+        console.log(`Job complete. Sleeping for ${Math.round(delayMs / 1000)} seconds...`);
+        await new Promise(res => setTimeout(res, delayMs));
+      } else {
+        // If no jobs are due or circuit breaker active, poll gently every 60 seconds
+        await new Promise(res => setTimeout(res, 60000));
+      }
+    } catch (error) {
+      console.error("Worker loop encountered an error:", error);
+      await new Promise(res => setTimeout(res, 60000)); // Fallback sleep on crash
     }
-  } catch (error) {
-    console.error("Worker error during hourly check:", error);
   }
-});
+};
+
+startWorkerLoop();
 
 // 3. Expiration Cleanup Schedule (Runs daily at midnight UTC)
 cron.schedule('0 0 * * *', () => {

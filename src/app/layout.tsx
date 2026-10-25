@@ -4,7 +4,7 @@ import ThemeProvider from '@/components/ThemeProvider';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'FlightDocket MVP',
+  title: 'FlightSentry',
   description: 'Self-hosted flight price tracker',
 };
 

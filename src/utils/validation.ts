@@ -1,16 +1,21 @@
 import { z } from 'zod';
 
 export const flightSchema = z.object({
-  origin: z.string().length(3).toUpperCase(),
-  destination: z.string().length(3).toUpperCase(),
+  searchMode: z.enum(['Route', 'FlightNumber']),
+  origin: z.string().length(3).toUpperCase().optional().nullable(),
+  destination: z.string().length(3).toUpperCase().optional().nullable(),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
-  airline: z.string().min(1),
-  flightNumber: z.string().min(1),
+  airline: z.string().optional().nullable(),
+  flightNumber: z.string().regex(/^\d+$/, "Flight number must be numbers only").optional().nullable(),
+  includedAirlines: z.string().optional().nullable(),
+  excludedAirlines: z.string().optional().nullable(),
   pnr: z.string().max(10).optional().nullable(),
   fareTier: z.enum(['Basic Economy', 'Standard']),
   baselinePrice: z.number().positive(),
   targetPrice: z.number().positive().optional().nullable(),
   notes: z.string().optional().nullable(),
+  scheduleOverride: z.string().optional().nullable(),
+  disableNotifications: z.number().min(0).max(1).optional().default(0),
 });
 
 export const flightStatusSchema = z.object({
@@ -19,18 +24,34 @@ export const flightStatusSchema = z.object({
 
 export const settingsSchema = z.object({
   serpApiKey: z.string().optional().nullable(),
+  searchApiKey: z.string().optional().nullable(),
+  dataSourceStrategy: z.string().optional(),
+  notificationsEnabled: z.number().min(0).max(1).optional(),
   appriseUrl: z.string().url().optional().nullable().or(z.literal('')),
+  smtpHost: z.string().optional().nullable().or(z.literal('')),
+  smtpPort: z.number().optional().nullable(),
+  smtpUser: z.string().optional().nullable().or(z.literal('')),
+  smtpPass: z.string().optional().nullable().or(z.literal('')),
+  smtpFrom: z.string().optional().nullable().or(z.literal('')),
+  smtpTo: z.string().optional().nullable().or(z.literal('')),
   timezone: z.string().min(1),
-  checkHours: z.string().refine((val) => {
-    try {
-      const arr = JSON.parse(val);
-      return Array.isArray(arr) && arr.every(n => typeof n === 'number' && n >= 0 && n <= 23);
-    } catch {
-      return false;
-    }
-  }, "Must be a valid JSON array of hours (0-23)"),
+  circuitBreakerUntil: z.string().optional().nullable(),
+  scheduleFarOut: z.number().positive(),
+  scheduleStandard: z.number().positive(),
+  scheduleFinalStretch: z.number().positive(),
+  operatingHoursStart: z.number().min(0).max(23),
+  operatingHoursEnd: z.number().min(0).max(23),
   minDropDollar: z.number().nonnegative(),
   minDropPercent: z.number().nonnegative(),
-  monthlyQuota: z.number().positive(),
+  fallbackStrategyMode: z.string().min(1).optional(),
+  serpApiEnabled: z.number().min(0).max(1).optional(),
+  searchApiEnabled: z.number().min(0).max(1).optional(),
+  fastFlightsEnabled: z.number().min(0).max(1).optional(),
+  serpApiQuota: z.number().min(0).optional(),
+  searchApiQuota: z.number().min(0).optional(),
+  fastFlightsQuota: z.number().min(0).optional(),
+  serpApiPaused: z.number().min(0).max(1).optional(),
+  searchApiPaused: z.number().min(0).max(1).optional(),
+  fastFlightsPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
 });

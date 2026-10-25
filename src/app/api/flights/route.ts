@@ -17,8 +17,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parsed = flightSchema.parse(body);
     
-    // Default status is 'Active'
-    const newFlightId = flightDb.create({ ...parsed, status: 'Active' });
+    // Default status is 'Active' and schedule immediate first check
+    const nextCheckAt = new Date().toISOString();
+    const newFlightId = flightDb.create({ 
+      ...parsed, 
+      airline: parsed.airline || '', // Fallback to empty string for Route mode to satisfy DB constraint
+      status: 'Active', 
+      nextCheckAt 
+    });
     const newFlight = flightDb.getById(newFlightId);
     
     return NextResponse.json(newFlight, { status: 201 });

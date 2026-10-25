@@ -3,8 +3,8 @@ import path from 'path';
 
 // Uses the Docker volume path in production, local folder in dev
 const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/app/data/flightdocket.db' 
-  : path.join(process.cwd(), 'data', 'flightdocket.db');
+  ? '/app/data/flightsentry.db' 
+  : path.join(process.cwd(), 'data', 'flightsentry.db');
 
 const db = new Database(dbPath, { fileMustExist: false });
 
