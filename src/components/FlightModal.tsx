@@ -34,14 +34,15 @@ export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
 
     const payload = {
         ...formData,
-        origin: formData.searchMode === 'Route' ? formData.origin.toUpperCase() : null,
-        destination: formData.searchMode === 'Route' ? formData.destination.toUpperCase() : null,
-        flightNumber: formData.searchMode === 'FlightNumber' ? formData.flightNumber : null,
-        includedAirlines: formData.includedAirlines || null,
-        excludedAirlines: formData.excludedAirlines || null,
+        origin: formData.origin.trim().toUpperCase(),
+        destination: formData.destination.trim().toUpperCase(),
+        airline: formData.airline ? formData.airline.trim().toUpperCase() : '',
+        flightNumber: formData.searchMode === 'FlightNumber' && formData.flightNumber ? formData.flightNumber.trim() : null,
+        includedAirlines: formData.includedAirlines ? formData.includedAirlines.trim().toUpperCase() : null,
+        excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,
         baselinePrice: parseFloat(formData.baselinePrice),
         targetPrice: formData.targetPrice ? parseFloat(formData.targetPrice) : null,
-        pnr: formData.pnr || null,
+        pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,
         notes: formData.notes || null,
         disableNotifications: formData.disableNotifications ? 1 : 0,
         scheduleOverride
@@ -90,38 +91,38 @@ export default function FlightModal({ isOpen, onClose, onSuccess }: Props) {
             </label>
           </div>
 
+          {/* Origin and Destination are mandatory for both search modes */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Origin Airport (IATA)</label>
+              <input required maxLength={3} placeholder="DCA" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Destination Airport (IATA)</label>
+              <input required maxLength={3} placeholder="LAS" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+            </div>
+          </div>
+
           {formData.searchMode === 'Route' ? (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Origin (IATA)</label>
-                  <input required={formData.searchMode === 'Route'} maxLength={3} placeholder="JFK" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Destination (IATA)</label>
-                  <input required={formData.searchMode === 'Route'} maxLength={3} placeholder="LHR" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Airline Inclusions (Optional)</label>
+                <input placeholder="DL, AA" value={formData.includedAirlines} onChange={e => setFormData({...formData, includedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Airline Inclusions (Comma separated)</label>
-                  <input placeholder="DL, AA" value={formData.includedAirlines} onChange={e => setFormData({...formData, includedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Airline Exclusions (Comma separated)</label>
-                  <input placeholder="NK, F9" value={formData.excludedAirlines} onChange={e => setFormData({...formData, excludedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Airline Exclusions (Optional)</label>
+                <input placeholder="NK, F9" value={formData.excludedAirlines} onChange={e => setFormData({...formData, excludedAirlines: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
               </div>
-            </>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Carrier Code</label>
-                <input required={formData.searchMode === 'FlightNumber'} placeholder="DL" value={formData.airline} onChange={e => setFormData({...formData, airline: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
+                <input required={formData.searchMode === 'FlightNumber'} placeholder="AA" value={formData.airline} onChange={e => setFormData({...formData, airline: e.target.value})} className="w-full border rounded-md p-2 uppercase bg-white dark:bg-gray-950" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Flight Number (Numbers Only)</label>
-                <input required={formData.searchMode === 'FlightNumber'} pattern="\d+" placeholder="1234" value={formData.flightNumber} onChange={e => setFormData({...formData, flightNumber: e.target.value})} className="w-full border rounded-md p-2 bg-white dark:bg-gray-950" />
+                <label className="block text-sm font-medium mb-1">Flight Number</label>
+                <input required={formData.searchMode === 'FlightNumber'} pattern="\d+" placeholder="2859" value={formData.flightNumber} onChange={e => setFormData({...formData, flightNumber: e.target.value})} className="w-full border rounded-md p-2 bg-white dark:bg-gray-950" />
               </div>
             </div>
           )}

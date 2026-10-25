@@ -1,60 +1,104 @@
-export interface SerpApiResult {
-  price: number | null;
-  status: 'Success' | 'SoldOut' | 'Error';
-}
+import { Flight } from '../types';
+import { DataSourceResult } from './datasource';
 
 export const checkFlightPrice = async (
-  apiKey: string | null | undefined,
-  origin: string,
-  destination: string,
-  date: string,
-  airline: string,
-  flightNumber: string
-): Promise<SerpApiResult> => {
+  flight: Flight,
+  apiKey: string
+): Promise<DataSourceResult> => {
   if (!apiKey) {
     console.error("SerpApi key is missing or not configured.");
+    return { price: null, status: 'Error' };
+  }
+
+  if (!flight.origin || !flight.destination) {
+    console.error(`SerpApi validation failed: Origin and Destination are required. (Flight ID: ${flight.id})`);
     return { price: null, status: 'Error' };
   }
 
   try {
     const url = new URL('https://serpapi.com/search.json');
     url.searchParams.append('engine', 'google_flights');
-    url.searchParams.append('departure_id', origin);
-    url.searchParams.append('arrival_id', destination);
-    url.searchParams.append('outbound_date', date);
-    url.searchParams.append('type', '2');
+    url.searchParams.append('departure_id', flight.origin);
+    url.searchParams.append('arrival_id', flight.destination);
+    url.searchParams.append('outbound_date', flight.departureDate);
+    url.searchParams.append('type', '2'); // 2 = One-way in SerpAPI
     url.searchParams.append('currency', 'USD');
     url.searchParams.append('hl', 'en');
     url.searchParams.append('api_key', apiKey);
 
+    if (flight.includedAirlines) {
+      url.searchParams.append('include_airlines', flight.includedAirlines.replace(/\s+/g, ''));
+    }
+    if (flight.excludedAirlines) {
+      url.searchParams.append('exclude_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+    }
+
+    console.log(`[SerpAPI] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
     const response = await fetch(url.toString());
-    
+
+    if (response.status === 429) {
+      console.warn("[SerpAPI] Rate limit (HTTP 429)");
+      return { price: null, status: 'RateLimited' };
+    }
+
     if (!response.ok) {
-      console.error(`SerpApi error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`[SerpAPI] HTTP ${response.status} ${response.statusText}: ${errorText}`);
       return { price: null, status: 'Error' };
     }
 
     const data = await response.json();
-
     const bestFlights = data.best_flights || [];
     const otherFlights = data.other_flights || [];
     const allFlights = [...bestFlights, ...otherFlights];
 
-    const targetFlight = allFlights.find((f: any) => {
-      const flightData = f.flights?.[0];
-      if (!flightData) return false;
+    console.log(`[SerpAPI] Returned ${allFlights.length} itineraries (${bestFlights.length} best, ${otherFlights.length} other)`);
 
-      const apiAirline = flightData.airline?.toLowerCase();
-      const apiFlightNumber = flightData.flight_number?.toString().toLowerCase();
+    if (allFlights.length === 0) {
+      return { price: null, status: 'SoldOut' };
+    }
 
-      return (
-        apiAirline?.includes(airline.toLowerCase()) && 
-        apiFlightNumber === flightNumber.toLowerCase()
-      );
-    });
+    // Specific Flight Number matching
+    if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
+      const targetFlight = allFlights.find((f: any) => {
+        const legs = f.flights || [];
+        return legs.some((leg: any) => {
+          const apiAirline = (leg.airline || '').toLowerCase();
+          const targetAirline = (flight.airline || '').toLowerCase();
+          const matchesAirline = targetAirline ? apiAirline.includes(targetAirline) : true;
 
-    if (targetFlight && targetFlight.price) {
-      return { price: targetFlight.price, status: 'Success' };
+          const apiFlightNumber = (leg.flight_number || '').toString().toLowerCase();
+          const targetNumber = flight.flightNumber!.toLowerCase();
+          const matchesNumber =
+            apiFlightNumber === targetNumber ||
+            apiFlightNumber.endsWith(' ' + targetNumber) ||
+            apiFlightNumber.includes(targetNumber);
+
+          return matchesAirline && matchesNumber;
+        });
+      });
+
+      if (targetFlight && typeof targetFlight.price === 'number') {
+        return { price: targetFlight.price, status: 'Success' };
+      }
+      return { price: null, status: 'SoldOut' };
+    }
+
+    // Route Mode: return the lowest available fare among matching carriers
+    let candidates = allFlights;
+    if (flight.airline) {
+      candidates = candidates.filter((f: any) => {
+        const legs = f.flights || [];
+        return legs.some((leg: any) => (leg.airline || '').toLowerCase().includes(flight.airline!.toLowerCase()));
+      });
+    }
+
+    const validPrices = candidates
+      .map((f: any) => f.price)
+      .filter((p: any) => typeof p === 'number');
+
+    if (validPrices.length > 0) {
+      return { price: Math.min(...validPrices), status: 'Success' };
     }
 
     return { price: null, status: 'SoldOut' };

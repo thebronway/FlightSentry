@@ -17,5 +17,9 @@ COPY . .
 # Build the Next.js app
 RUN npm run build
 
+# Copy static files
+RUN cp -r public .next/standalone/public
+RUN cp -r .next/static .next/standalone/.next/static
+
 # Expose the Next.js port
 EXPOSE 4000

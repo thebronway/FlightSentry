@@ -61,7 +61,7 @@ export default function SettingsForm() {
             <div>
               <label className="block text-sm font-medium mb-1">Fallback Strategy Mode</label>
               <select value={settings.fallbackStrategyMode} onChange={e => setSettings({...settings, fallbackStrategyMode: e.target.value})} className="w-full border p-2 rounded-md bg-white dark:bg-gray-900">
-                <option value="sequential-query">Sequential Query (One API per attempt)</option>
+                <option value="sequential-query">Round-Robin (Rotate evenly across all active Data Soruces)</option>
                 <option value="exhaust-quota">Exhaust Quota (Use API till limit, then fallback)</option>
               </select>
             </div>
