@@ -51,17 +51,18 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
               <th className="py-3 px-4">Departure</th>
               <th className="py-3 px-4">Tier & Cabin</th>
               <th className="py-3 px-4">Current Price</th>
-              <th className="py-3 px-4">Initial Price</th>
+              <th className="py-3 px-4">Benchmark</th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gunmetal-border text-sm">
             {flights.map(flight => {
-              const isDrop = flight.currentPrice < flight.baselinePrice;
-              const delta = flight.baselinePrice - flight.currentPrice;
+              const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
+              const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
+              const isDrop = flight.currentPrice < benchmarkPrice;
+              const delta = benchmarkPrice - flight.currentPrice;
               const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
-
               return (
                 <tr key={flight.id} className="hover:bg-gunmetal-canvas/40 transition-colors">
                   <td className="py-3 px-4">
@@ -107,7 +108,8 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
                   </td>
 
                   <td className="py-3 px-4 text-gunmetal-muted whitespace-nowrap">
-                    {formatCurrency(flight.baselinePrice)}
+                    <span className="text-slate-200 font-medium block">{formatCurrency(benchmarkPrice)}</span>
+                    <span className="text-[10px] text-gunmetal-muted block">{isPurchased ? 'Paid' : 'Initial'}</span>
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">

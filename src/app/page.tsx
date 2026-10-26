@@ -19,10 +19,16 @@ export default function Dashboard() {
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [sortBy, setSortBy] = useState<SortOption>('departure-soonest');
+  const [quotaRefreshTrigger, setQuotaRefreshTrigger] = useState(0);
 
   const fetchFlights = async () => {
     const res = await fetch('/api/flights');
     if (res.ok) setFlights(await res.json());
+  };
+
+  const handleRefreshAll = () => {
+    fetchFlights();
+    setQuotaRefreshTrigger(prev => prev + 1);
   };
 
   useEffect(() => { 
@@ -66,8 +72,7 @@ export default function Dashboard() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">Flight Dashboard</h1>
-          <p className="text-xs text-gunmetal-muted mt-0.5">Monitoring fare drops and cabin class changes</p>
+          <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -124,7 +129,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <QuotaRibbon />
+      <QuotaRibbon refreshTrigger={quotaRefreshTrigger} />
 
       {flights.length === 0 ? (
         <div className="py-16 text-center text-gunmetal-muted border-2 border-dashed border-gunmetal-border rounded-lg bg-gunmetal-card/40">
@@ -135,33 +140,33 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {sortedFlights.map(f => (
             <FlightCard 
-              key={f.id} 
-              flight={f} 
-              onRefresh={fetchFlights} 
-              onShowHistory={() => setHistoryFlight(f)} 
-              onEdit={handleEdit}
+               key={f.id} 
+               flight={f} 
+               onRefresh={handleRefreshAll} 
+               onShowHistory={() => setHistoryFlight(f)} 
+               onEdit={handleEdit} 
             />
           ))}
         </div>
       ) : (
         <FlightCondensedView 
-          flights={sortedFlights}
-          onRefresh={fetchFlights}
-          onShowHistory={f => setHistoryFlight(f)}
-          onEdit={handleEdit}
+          flights={sortedFlights} 
+          onRefresh={handleRefreshAll} 
+          onShowHistory={f => setHistoryFlight(f)} 
+          onEdit={handleEdit} 
         />
       )}
 
       <HistoryModal flight={historyFlight} onClose={() => setHistoryFlight(null)} />
       
       <FlightModal 
-        isOpen={isModalOpen} 
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingFlight(null);
-        }} 
-        onSuccess={fetchFlights} 
-        initialFlight={editingFlight}
+         isOpen={isModalOpen} 
+         onClose={() => {
+           setIsModalOpen(false);
+           setEditingFlight(null);
+         }} 
+         onSuccess={handleRefreshAll} 
+         initialFlight={editingFlight} 
       />
     </div>
   );

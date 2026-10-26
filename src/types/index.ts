@@ -17,8 +17,11 @@ export interface Flight {
   fareTier: FareTier;
   cabinClass: CabinClass;
   baselinePrice: number;
+  purchasePrice?: number | null;
   targetPrice?: number | null;
   currentPrice: number;
+  minDropDollar?: number | null;
+  minDropPercent?: number | null;
   notes?: string | null;
   scheduleOverride?: string | null; // JSON object for custom schedule cadences
   disableNotifications: number; // 0 (false) or 1 (true)

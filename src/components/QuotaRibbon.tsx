@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { Settings as SettingsType } from '@/types';
 import { PauseCircle, PlayCircle, Pause, Play } from 'lucide-react';
 
-export default function QuotaRibbon() {
+interface Props {
+  refreshTrigger?: number;
+}
+
+export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
   const [settings, setSettings] = useState<SettingsType | null>(null);
 
   const fetchSettings = async () => {
@@ -14,7 +18,7 @@ export default function QuotaRibbon() {
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [refreshTrigger]);
 
   const toggleGlobalPause = async () => {
     if (!settings) return;

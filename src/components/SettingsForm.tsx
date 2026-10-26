@@ -1,6 +1,8 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { Settings as SettingsType } from '@/types';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 export default function SettingsForm() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
@@ -57,17 +59,28 @@ export default function SettingsForm() {
             <strong>Fast-Flights Disclaimer:</strong> Must run over a home/residential internet connection. Running this directly on cloud hosts (like AWS or DigitalOcean) will result in immediate IP blocks.
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+          {/* Query Routing Strategy on its own line with descriptive subtext */}
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Fallback Strategy Mode</label>
-              <select value={settings.fallbackStrategyMode} onChange={e => setSettings({...settings, fallbackStrategyMode: e.target.value})} className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500">
-                <option value="sequential-query">Round-Robin (Rotate evenly across all active Data Sources)</option>
-                <option value="exhaust-quota">Exhaust Quota (Use API till limit, then fallback)</option>
+              <label className="block text-sm font-semibold mb-1 text-slate-200">Query Routing Strategy</label>
+              <select 
+                value={settings.fallbackStrategyMode} 
+                onChange={e => setSettings({...settings, fallbackStrategyMode: e.target.value})} 
+                className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+              >
+                <option value="sequential-query">Round-Robin</option>
+                <option value="exhaust-quota">Exhaust Quota</option>
               </select>
+              <p className="text-xs text-gunmetal-muted mt-1.5">
+                {settings.fallbackStrategyMode === 'sequential-query'
+                  ? 'Round-Robin: Evenly alternates flight checks across all active data sources to balance quota consumption.'
+                  : 'Exhaust Quota: Exclusively queries the top-priority active provider until its monthly allowance is exhausted, then falls back to the next provider in order.'}
+              </p>
             </div>
             
+            {/* Provider Priority Order on its own section */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Execution Order Priority</label>
+              <label className="block text-sm font-semibold mb-1 text-slate-200">Provider Priority Order</label>
               <div className="border border-gunmetal-border rounded-md overflow-hidden bg-gunmetal-canvas">
                 {['serpapi', 'searchapi', 'fastflights']
                   .sort((a, b) => {
@@ -91,22 +104,34 @@ export default function SettingsForm() {
                     return (
                       <div key={source} className="flex items-center justify-between p-3 border-b border-gunmetal-border last:border-0 bg-gunmetal-card">
                         <div className="flex items-center gap-3">
-                          <span className={`w-2 h-2 rounded-full ${isEnabled === 1 ? 'bg-green-500' : 'bg-gunmetal-border'}`}></span>
+                          <span className={`w-2.5 h-2.5 rounded-full ${isEnabled === 1 ? 'bg-green-500 shadow-sm shadow-green-500/50' : 'bg-gunmetal-border'}`}></span>
                           <span className="font-medium text-sm text-slate-200">{names[source]}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => move(-1)} disabled={index === 0} className="p-2 text-gunmetal-muted hover:text-slate-200 disabled:opacity-30 transition-colors">
-                            ▲
+                          <button 
+                            type="button" 
+                            onClick={() => move(-1)} 
+                            disabled={index === 0} 
+                            title="Move up in priority"
+                            className="p-1.5 text-gunmetal-muted hover:text-slate-200 disabled:opacity-20 transition-colors rounded hover:bg-gunmetal-canvas"
+                          >
+                            <ChevronUp className="w-4 h-4" />
                           </button>
-                          <button type="button" onClick={() => move(1)} disabled={index === array.length - 1} className="p-2 text-gunmetal-muted hover:text-slate-200 disabled:opacity-30 transition-colors">
-                            ▼
+                          <button 
+                            type="button" 
+                            onClick={() => move(1)} 
+                            disabled={index === array.length - 1} 
+                            title="Move down in priority"
+                            className="p-1.5 text-gunmetal-muted hover:text-slate-200 disabled:opacity-20 transition-colors rounded hover:bg-gunmetal-canvas"
+                          >
+                            <ChevronDown className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                     );
                 })}
               </div>
-              <p className="text-xs text-gunmetal-muted mt-2">Use the arrows to rank fallback order. Green dots indicate the source is currently enabled.</p>
+              <p className="text-xs text-gunmetal-muted mt-1.5">Rank search provider fallback preference. Green indicators reflect providers that are currently enabled below.</p>
             </div>
           </div>
 
@@ -172,6 +197,11 @@ export default function SettingsForm() {
       {/* Scheduling Tab */}
       {activeTab === 'scheduling' && (
         <div className="space-y-6 pt-2">
+          <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
+            <p className="font-semibold text-slate-200 mb-0.5">Global Check Cadence Defaults</p>
+            These cadences establish the global default check frequency for all tracked flights based on departure proximity. All flights inherit these intervals unless customized individually in flight settings.
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-300">Far Out (&gt;90 days)</label>
@@ -212,6 +242,11 @@ export default function SettingsForm() {
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="space-y-6 pt-2">
+          <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
+            <p className="font-semibold text-slate-200 mb-0.5">Global Alert & Notification Defaults</p>
+            Configure global notification channels and baseline price drop thresholds. Tracked flights inherit these dollar and percentage thresholds unless custom overrides are defined on a specific flight.
+          </div>
+
           <div className="flex items-center gap-2 mb-4">
             <input type="checkbox" id="notificationsEnabled" checked={settings.notificationsEnabled === 1} onChange={e => setSettings({...settings, notificationsEnabled: e.target.checked ? 1 : 0})} className="w-5 h-5 accent-slate-500 rounded" />
             <label htmlFor="notificationsEnabled" className="font-bold text-slate-200">Enable Global Notifications</label>

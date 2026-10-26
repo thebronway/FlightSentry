@@ -7,10 +7,15 @@ import { formatCurrency } from '@/utils/format';
 interface Props {
   history: PriceHistory[];
   baselinePrice: number;
+  purchasePrice?: number | null;
 }
 
-export default function PriceChart({ history, baselinePrice }: Props) {
+export default function PriceChart({ history, baselinePrice, purchasePrice }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const isPurchased = purchasePrice !== null && purchasePrice !== undefined && purchasePrice > 0;
+  const benchmarkPrice = isPurchased ? purchasePrice! : baselinePrice;
+  const benchmarkLabel = isPurchased ? 'Paid' : 'Initial';
 
   // Filter valid checks and sort chronologically (oldest to newest)
   const sorted = [...history]
@@ -36,15 +41,13 @@ export default function PriceChart({ history, baselinePrice }: Props) {
   const plotWidth = width - padLeft - padRight;
   const plotHeight = height - padTop - padBottom;
 
-  // Price Y scale calculation (include baselinePrice to keep reference line inside bounds)
+  // Price Y scale calculation (include benchmarkPrice to keep reference line inside bounds)
   const prices = sorted.map(d => d.price);
-  if (baselinePrice > 0) prices.push(baselinePrice);
-
+  if (benchmarkPrice > 0) prices.push(benchmarkPrice);
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
   const priceRange = maxPrice - minPrice;
   const verticalPadding = priceRange === 0 ? (maxPrice * 0.1 || 20) : priceRange * 0.2;
-
   const yMin = Math.max(0, minPrice - verticalPadding);
   const yMax = maxPrice + verticalPadding;
   const yRange = yMax - yMin;
@@ -91,8 +94,8 @@ export default function PriceChart({ history, baselinePrice }: Props) {
     ? `${linePath} L ${xCoords[xCoords.length - 1].toFixed(1)} ${padTop + plotHeight} L ${xCoords[0].toFixed(1)} ${padTop + plotHeight} Z`
     : '';
 
-  // Baseline Reference line Y
-  const baselineY = baselinePrice > 0 ? getY(baselinePrice) : null;
+  // Benchmark Reference line Y (Paid or Initial)
+  const benchmarkY = benchmarkPrice > 0 ? getY(benchmarkPrice) : null;
 
   // Y-axis grid levels (4 ticks)
   const yTicks = [0, 0.33, 0.66, 1].map(ratio => yMin + yRange * ratio);
@@ -101,7 +104,7 @@ export default function PriceChart({ history, baselinePrice }: Props) {
   const activeRecord = hoveredIndex !== null ? sorted[hoveredIndex] : null;
   const activeX = hoveredIndex !== null ? xCoords[hoveredIndex] : null;
   const activeY = activeRecord ? getY(activeRecord.price) : null;
-  const activeDelta = activeRecord ? baselinePrice - activeRecord.price : 0;
+  const activeDelta = activeRecord ? benchmarkPrice - activeRecord.price : 0;
 
   return (
     <div className="relative w-full overflow-hidden bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3">
@@ -146,14 +149,14 @@ export default function PriceChart({ history, baselinePrice }: Props) {
           );
         })}
 
-        {/* Initial Baseline Reference Line */}
-        {baselineY !== null && (
+        {/* Benchmark Reference Line (Paid or Initial) */}
+        {benchmarkY !== null && (
           <g>
             <line
               x1={padLeft}
-              y1={baselineY}
+              y1={benchmarkY}
               x2={padLeft + plotWidth}
-              y2={baselineY}
+              y2={benchmarkY}
               stroke="#94a3b8"
               strokeDasharray="4 4"
               strokeWidth="1.5"
@@ -161,14 +164,14 @@ export default function PriceChart({ history, baselinePrice }: Props) {
             />
             <text
               x={padLeft + plotWidth}
-              y={baselineY - 6}
+              y={benchmarkY - 6}
               textAnchor="end"
               fill="#94a3b8"
               fontSize="10"
               fontWeight="600"
               fontFamily="sans-serif"
             >
-              Initial: {formatCurrency(baselinePrice)}
+              {benchmarkLabel}: {formatCurrency(benchmarkPrice)}
             </text>
           </g>
         )}
@@ -270,7 +273,7 @@ export default function PriceChart({ history, baselinePrice }: Props) {
           <div className="font-bold text-slate-100 flex items-center justify-between gap-3">
             <span>{formatCurrency(activeRecord.price)}</span>
             <span className={`text-[10px] font-semibold ${activeDelta > 0 ? 'text-green-400' : activeDelta < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-              {activeDelta > 0 ? `-${formatCurrency(activeDelta)}` : activeDelta < 0 ? `+${formatCurrency(Math.abs(activeDelta))}` : 'Baseline'}
+              {activeDelta > 0 ? `-${formatCurrency(activeDelta)}` : activeDelta < 0 ? `+${formatCurrency(Math.abs(activeDelta))}` : benchmarkLabel}
             </span>
           </div>
           <div className="text-[10px] text-gunmetal-muted mt-0.5">

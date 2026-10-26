@@ -63,30 +63,34 @@ export const sendPriceDropAlert = async (
 ): Promise<void> => {
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
-  const savingsAmount = flight.baselinePrice - newPrice;
-  const savingsPercent = (savingsAmount / flight.baselinePrice) * 100;
-  
+  const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
+  const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
+  const benchmarkLabel = isPurchased ? 'Purchase Price' : 'Initial Baseline';
+  const alertType = isPurchased ? 'Rebooking Credit Drop Alert' : 'Price Drop Alert';
+
+  const savingsAmount = benchmarkPrice - newPrice;
+  const savingsPercent = benchmarkPrice > 0 ? (savingsAmount / benchmarkPrice) * 100 : 0;
   const googleFlightsUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}%20oneway`;
 
-  const title = `Flight Drop: ${flight.origin} to ${flight.destination} (${formatCurrency(newPrice)})`;
+  const title = `${alertType}: ${flight.origin} to ${flight.destination} (${formatCurrency(newPrice)})`;
   
-  let body = `**Price Drop Alert!**\n\n`;
+  let body = `**${alertType}!**\n\n`;
   body += `**Route:** ${flight.origin} to ${flight.destination}\n`;
   body += `**Flight:** ${flight.airline} ${flight.flightNumber || ''} | **Tier:** ${flight.fareTier}\n`;
   body += `**Date:** ${flight.departureDate}\n`;
   if (flight.pnr) body += `**PNR:** ${flight.pnr}\n`;
   body += `\n`;
-  body += `**Baseline:** ${formatCurrency(flight.baselinePrice)}\n`;
+  body += `**${benchmarkLabel}:** ${formatCurrency(benchmarkPrice)}\n`;
   body += `**New Price:** ${formatCurrency(newPrice)}\n`;
   body += `**Savings:** ${formatCurrency(savingsAmount)} (${formatPercent(savingsPercent)})\n\n`;
   body += `Verify on Google Flights: ${googleFlightsUrl}`;
 
-  let htmlBody = `<h2>Price Drop Alert!</h2>`;
+  let htmlBody = `<h2>${alertType}!</h2>`;
   htmlBody += `<p><strong>Route:</strong> ${flight.origin} to ${flight.destination}<br>`;
   htmlBody += `<strong>Flight:</strong> ${flight.airline} ${flight.flightNumber || ''} | <strong>Tier:</strong> ${flight.fareTier}<br>`;
   htmlBody += `<strong>Date:</strong> ${flight.departureDate}<br>`;
   if (flight.pnr) htmlBody += `<strong>PNR:</strong> ${flight.pnr}</p>`;
-  htmlBody += `<p><strong>Baseline:</strong> ${formatCurrency(flight.baselinePrice)}<br>`;
+  htmlBody += `<p><strong>${benchmarkLabel}:</strong> ${formatCurrency(benchmarkPrice)}<br>`;
   htmlBody += `<strong>New Price:</strong> ${formatCurrency(newPrice)}<br>`;
   htmlBody += `<strong>Savings:</strong> ${formatCurrency(savingsAmount)} (${formatPercent(savingsPercent)})</p>`;
   htmlBody += `<p><a href="${googleFlightsUrl}">Verify on Google Flights</a></p>`;

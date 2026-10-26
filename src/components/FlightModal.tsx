@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Search, PlaneTakeoff, Compass } from 'lucide-react';
-import { FareTier, CabinClass, SearchMode, Flight } from '@/types';
+import { X, PlaneTakeoff, Compass, Lock, Tag, ShoppingBag } from 'lucide-react';
+import { FareTier, CabinClass, SearchMode, Flight, Settings } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -11,8 +11,11 @@ interface Props {
   initialFlight?: Flight | null;
 }
 
+type TrackingGoal = 'watching' | 'booked';
+
 const DEFAULT_STATE = {
   searchMode: 'Route' as SearchMode,
+  trackingGoal: 'watching' as TrackingGoal,
   origin: '',
   destination: '',
   departureDate: '',
@@ -24,20 +27,30 @@ const DEFAULT_STATE = {
   fareTier: 'Standard' as FareTier,
   cabinClass: 'economy' as CabinClass,
   baselinePrice: '',
+  purchasePrice: '',
+  minDropDollar: '',
+  minDropPercent: '',
   notes: '',
   overrideFarOut: '',
   overrideStandard: '',
   overrideFinalStretch: '',
+  pauseTracking: false,
   disableNotifications: false,
 };
 
 export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight }: Props) {
   const [formData, setFormData] = useState(DEFAULT_STATE);
+  const [defaultSettings, setDefaultSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(false);
-  const [lookingUpPrice, setLookingUpPrice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Strict state reset on modal open/close to prevent metric or date carry-over
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => setDefaultSettings(data))
+      .catch(err => console.error('Failed to load global settings in modal:', err));
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       if (initialFlight) {
@@ -54,8 +67,12 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             console.error('Failed to parse scheduleOverride', e);
           }
         }
+
+        const isBooked = (initialFlight.purchasePrice !== null && initialFlight.purchasePrice !== undefined && initialFlight.purchasePrice > 0) || Boolean(initialFlight.pnr);
+
         setFormData({
           searchMode: initialFlight.searchMode || 'Route',
+          trackingGoal: isBooked ? 'booked' : 'watching',
           origin: initialFlight.origin || '',
           destination: initialFlight.destination || '',
           departureDate: initialFlight.departureDate || '',
@@ -67,10 +84,14 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
           fareTier: initialFlight.fareTier || 'Standard',
           cabinClass: initialFlight.cabinClass || 'economy',
           baselinePrice: initialFlight.baselinePrice ? String(initialFlight.baselinePrice) : '',
+          purchasePrice: initialFlight.purchasePrice ? String(initialFlight.purchasePrice) : '',
+          minDropDollar: (initialFlight.minDropDollar !== null && initialFlight.minDropDollar !== undefined) ? String(initialFlight.minDropDollar) : '',
+          minDropPercent: (initialFlight.minDropPercent !== null && initialFlight.minDropPercent !== undefined) ? String(initialFlight.minDropPercent) : '',
           notes: initialFlight.notes || '',
           overrideFarOut: farOut,
           overrideStandard: standard,
           overrideFinalStretch: finalStretch,
+          pauseTracking: initialFlight.status === 'Paused',
           disableNotifications: initialFlight.disableNotifications === 1,
         });
       } else {
@@ -88,43 +109,6 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
     onClose();
   };
 
-  const handleLookupPrice = async () => {
-    if (!formData.origin || !formData.destination || !formData.departureDate) {
-      setError('Origin, Destination, and Departure Date are required to check price.');
-      return;
-    }
-    setLookingUpPrice(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/flights/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          searchMode: formData.searchMode,
-          origin: formData.origin.trim().toUpperCase(),
-          destination: formData.destination.trim().toUpperCase(),
-          departureDate: formData.departureDate,
-          airline: formData.airline ? formData.airline.trim().toUpperCase() : '',
-          flightNumber: formData.flightNumber ? formData.flightNumber.trim() : null,
-          includedAirlines: formData.includedAirlines ? formData.includedAirlines.trim().toUpperCase() : null,
-          excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,
-          fareTier: formData.fareTier,
-          cabinClass: formData.cabinClass,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.price !== null) {
-        setFormData(prev => ({ ...prev, baselinePrice: String(data.price) }));
-      } else {
-        setError(data.error || 'Live price search did not return a valid fare.');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to lookup current price.');
-    } finally {
-      setLookingUpPrice(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -138,6 +122,14 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
         })
       : null;
 
+    const parsedPurchase = formData.purchasePrice ? parseFloat(formData.purchasePrice) : null;
+    let parsedBaseline = formData.baselinePrice ? parseFloat(formData.baselinePrice) : null;
+
+    // If booked and baseline not explicitly typed, sync baseline with purchase price
+    if (!parsedBaseline && parsedPurchase) {
+      parsedBaseline = parsedPurchase;
+    }
+
     const payload = {
       searchMode: formData.searchMode,
       origin: formData.origin.trim().toUpperCase(),
@@ -149,9 +141,13 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
       departureDate: formData.departureDate,
       fareTier: formData.fareTier,
       cabinClass: formData.cabinClass,
-      baselinePrice: formData.baselinePrice ? parseFloat(formData.baselinePrice) : null,
+      baselinePrice: parsedBaseline,
+      purchasePrice: parsedPurchase,
+      minDropDollar: formData.minDropDollar ? parseFloat(formData.minDropDollar) : null,
+      minDropPercent: formData.minDropPercent ? parseFloat(formData.minDropPercent) : null,
       pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,
       notes: formData.notes ? formData.notes.trim() : null,
+      status: formData.pauseTracking ? 'Paused' : 'Active',
       disableNotifications: formData.disableNotifications ? 1 : 0,
       scheduleOverride,
     };
@@ -204,39 +200,138 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             </div>
           )}
 
-          {/* Clickable Card Tiles for Search Mode */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, searchMode: 'Route' })}
-              className={`flex items-center gap-3 p-3.5 rounded-lg border text-left transition-all ${
-                formData.searchMode === 'Route'
-                  ? 'border-slate-400 bg-slate-800/60 text-slate-100 shadow-sm'
-                  : 'border-gunmetal-border bg-gunmetal-canvas/40 text-gunmetal-muted hover:text-slate-300 hover:border-slate-600'
-              }`}
-            >
-              <PlaneTakeoff className="w-5 h-5 flex-shrink-0 text-slate-300" />
-              <div>
-                <p className="text-sm font-semibold text-slate-200">Route (To & From)</p>
-                <p className="text-xs text-gunmetal-muted">Monitor entire route for lowest fare</p>
+          {/* Search Mode Selection (Hidden & Locked when editing existing flight) */}
+          {initialFlight ? (
+            <div className="flex items-center p-3 rounded-lg border border-gunmetal-border bg-gunmetal-canvas/40">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>
+                  Tracking Mode: {formData.searchMode === 'FlightNumber' ? 'Specific Flight Number' : 'Route (Origin to Destination)'}
+                </span>
               </div>
-            </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, searchMode: 'Route' })}
+                className={`flex items-center gap-3 p-3.5 rounded-lg border text-left transition-all ${
+                  formData.searchMode === 'Route'
+                    ? 'border-slate-400 bg-slate-800/60 text-slate-100 shadow-sm'
+                    : 'border-gunmetal-border bg-gunmetal-canvas/40 text-gunmetal-muted hover:text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                <PlaneTakeoff className="w-5 h-5 flex-shrink-0 text-slate-300" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">Route (To & From)</p>
+                  <p className="text-xs text-gunmetal-muted">Monitor route for lowest fare</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, searchMode: 'FlightNumber' })}
+                className={`flex items-center gap-3 p-3.5 rounded-lg border text-left transition-all ${
+                  formData.searchMode === 'FlightNumber'
+                    ? 'border-slate-400 bg-slate-800/60 text-slate-100 shadow-sm'
+                    : 'border-gunmetal-border bg-gunmetal-canvas/40 text-gunmetal-muted hover:text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                <Compass className="w-5 h-5 flex-shrink-0 text-slate-300" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">Specific Flight</p>
+                  <p className="text-xs text-gunmetal-muted">Track by flight number</p>
+                </div>
+              </button>
+            </div>
+          )}
 
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, searchMode: 'FlightNumber' })}
-              className={`flex items-center gap-3 p-3.5 rounded-lg border text-left transition-all ${
-                formData.searchMode === 'FlightNumber'
-                  ? 'border-slate-400 bg-slate-800/60 text-slate-100 shadow-sm'
-                  : 'border-gunmetal-border bg-gunmetal-canvas/40 text-gunmetal-muted hover:text-slate-300 hover:border-slate-600'
-              }`}
-            >
-              <Compass className="w-5 h-5 flex-shrink-0 text-slate-300" />
+          {/* Tracking Goal Differentiation */}
+          <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Tracking Goal
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, trackingGoal: 'watching' })}
+                className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
+                  formData.trackingGoal === 'watching'
+                    ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
+                    : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
+                }`}
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>Planning to Book (Watching)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, trackingGoal: 'booked' })}
+                className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
+                  formData.trackingGoal === 'booked'
+                    ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
+                    : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Already Booked (Drop Alerts)</span>
+              </button>
+            </div>
+
+            {formData.trackingGoal === 'watching' ? (
               <div>
-                <p className="text-sm font-semibold text-slate-200">Specific Flight Number</p>
-                <p className="text-xs text-gunmetal-muted">Track a specific carrier & flight #</p>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Initial Baseline Price ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  placeholder="Leave blank to auto-detect from live fare on save"
+                  value={formData.baselinePrice}
+                  onChange={e => setFormData({ ...formData, baselinePrice: e.target.value })}
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+                />
+                <p className="text-[11px] text-gunmetal-muted mt-1">
+                  Alerts trigger when the live price drops below this initial tracked fare.
+                </p>
               </div>
-            </button>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Purchase Price ($ Paid)
+                  </label>
+                  <input
+                    required={formData.trackingGoal === 'booked'}
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    placeholder="e.g. 349.00"
+                    value={formData.purchasePrice}
+                    onChange={e => setFormData({ ...formData, purchasePrice: e.target.value })}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+                  />
+                  <p className="text-[11px] text-gunmetal-muted mt-1">
+                    Alerts trigger when fares drop below what you paid.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    PNR / Confirmation Code
+                  </label>
+                  <input
+                    maxLength={8}
+                    placeholder="e.g. K9XZ4B"
+                    value={formData.pnr}
+                    onChange={e => setFormData({ ...formData, pnr: e.target.value })}
+                    className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+                  />
+                  <p className="text-[11px] text-gunmetal-muted mt-1">
+                    Airline booking confirmation reference.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Origin and Destination */}
@@ -325,20 +420,22 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             </div>
           )}
 
-          {/* Date, Fare Restriction, Cabin Class */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Departure Date
-              </label>
-              <input
-                required
-                type="date"
-                value={formData.departureDate}
-                onChange={e => setFormData({ ...formData, departureDate: e.target.value })}
-                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
-              />
-            </div>
+          {/* Departure Date on its own row */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              Departure Date
+            </label>
+            <input
+              required
+              type="date"
+              value={formData.departureDate}
+              onChange={e => setFormData({ ...formData, departureDate: e.target.value })}
+              className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
+            />
+          </div>
+
+          {/* Dedicated Row: Fare Restrictions & Cabin Class */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Fare Restrictions
@@ -369,51 +466,49 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             </div>
           </div>
 
-          {/* Initial Price & PNR */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Initial Price ($)
+          {/* Per-Flight Alert Threshold Overrides */}
+          <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Price Drop Alert Thresholds (Optional Overrides)
+            </h3>
+            <p className="text-[11px] text-gunmetal-muted">
+              Leave blank to inherit global defaults from Settings. Specify a custom amount or percentage if you only want alerts above specific thresholds for this flight.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Min $ Drop to Alert
                 </label>
-                <button
-                  type="button"
-                  onClick={handleLookupPrice}
-                  disabled={lookingUpPrice}
-                  className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 disabled:opacity-50 transition-colors font-medium"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  <span>{lookingUpPrice ? 'Searching...' : 'Lookup Price Now'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-gunmetal-muted text-xs">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder={defaultSettings?.minDropDollar != null ? String(defaultSettings.minDropDollar) : '15'}
+                    value={formData.minDropDollar}
+                    onChange={e => setFormData({ ...formData, minDropDollar: e.target.value })}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+                  />
+                </div>
               </div>
-              <input
-                type="number"
-                step="0.01"
-                min="1"
-                placeholder="Auto-detected on save if blank"
-                value={formData.baselinePrice}
-                onChange={e => setFormData({ ...formData, baselinePrice: e.target.value })}
-                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-              />
-              <p className="text-[11px] text-gunmetal-muted mt-1">
-                Leave blank to auto-populate from a fresh search when saved.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                PNR / Booking Code (Optional)
-              </label>
-              <input
-                maxLength={8}
-                placeholder="ABCDEF"
-                value={formData.pnr}
-                onChange={e => setFormData({ ...formData, pnr: e.target.value })}
-                className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-              />
-              <p className="text-[11px] text-gunmetal-muted mt-1">
-                Useful if you already bought this ticket and are watching for refund drops.
-              </p>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Min % Drop to Alert
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gunmetal-muted text-xs">%</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder={defaultSettings?.minDropPercent != null ? String(defaultSettings.minDropPercent) : '5'}
+                    value={formData.minDropPercent}
+                    onChange={e => setFormData({ ...formData, minDropPercent: e.target.value })}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -430,15 +525,32 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-300 cursor-pointer">
+          {/* Tracking & Alert Control Toggles with Explicit Verbiage */}
+          <div className="space-y-2.5 pt-1">
+            <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.pauseTracking}
+                onChange={e => setFormData({ ...formData, pauseTracking: e.target.checked })}
+                className="w-4 h-4 mt-0.5 accent-slate-500 rounded"
+              />
+              <div>
+                <span>Pause price checks</span>
+                <span className="block text-xs text-gunmetal-muted">Stops all automated API polling for this flight.</span>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.disableNotifications}
                 onChange={e => setFormData({ ...formData, disableNotifications: e.target.checked })}
-                className="w-4 h-4 accent-slate-500 rounded"
+                className="w-4 h-4 mt-0.5 accent-slate-500 rounded"
               />
-              Mute alerts for this specific flight
+              <div>
+                <span>Mute notifications</span>
+                <span className="block text-xs text-gunmetal-muted">Continue checking and recording prices in history, but do not dispatch alerts.</span>
+              </div>
             </label>
           </div>
 
@@ -451,30 +563,30 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
                 <label className="block text-xs font-medium text-gunmetal-muted mb-1">Far Out (&gt;90d hrs)</label>
                 <input
                   type="number"
-                  placeholder="48"
+                  placeholder={defaultSettings?.scheduleFarOut != null ? String(defaultSettings.scheduleFarOut) : '48'}
                   value={formData.overrideFarOut}
                   onChange={e => setFormData({ ...formData, overrideFarOut: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-600"
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gunmetal-muted mb-1">Standard (14-90d hrs)</label>
                 <input
                   type="number"
-                  placeholder="24"
+                  placeholder={defaultSettings?.scheduleStandard != null ? String(defaultSettings.scheduleStandard) : '24'}
                   value={formData.overrideStandard}
                   onChange={e => setFormData({ ...formData, overrideStandard: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-600"
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gunmetal-muted mb-1">Final Stretch (&lt;14d hrs)</label>
                 <input
                   type="number"
-                  placeholder="12"
+                  placeholder={defaultSettings?.scheduleFinalStretch != null ? String(defaultSettings.scheduleFinalStretch) : '12'}
                   value={formData.overrideFinalStretch}
                   onChange={e => setFormData({ ...formData, overrideFinalStretch: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-600"
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
                 />
               </div>
             </div>
@@ -500,7 +612,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
               </button>
               <button
                 type="submit"
-                disabled={loading || lookingUpPrice}
+                disabled={loading}
                 className="px-5 py-2 text-sm font-medium bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 rounded-md disabled:opacity-50 shadow-sm transition-colors flex items-center gap-2"
               >
                 {loading ? (

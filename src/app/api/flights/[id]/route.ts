@@ -15,6 +15,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json();
     const parsed = flightSchema.parse(body);
 
+    const updatedStatus = body.status === 'Paused' 
+      ? 'Paused' 
+      : body.status === 'Active' 
+      ? 'Active' 
+      : existing.status;
+
     flightDb.update(id, {
       ...parsed,
       origin: parsed.origin ?? existing.origin,
@@ -25,11 +31,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       excludedAirlines: parsed.excludedAirlines ?? null,
       pnr: parsed.pnr ?? null,
       baselinePrice: parsed.baselinePrice ?? existing.baselinePrice,
+      purchasePrice: parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice,
+      minDropDollar: parsed.minDropDollar !== undefined ? parsed.minDropDollar : existing.minDropDollar,
+      minDropPercent: parsed.minDropPercent !== undefined ? parsed.minDropPercent : existing.minDropPercent,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       scheduleOverride: parsed.scheduleOverride ?? null,
       notes: parsed.notes ?? null,
       disableNotifications: parsed.disableNotifications ?? 0,
+      status: updatedStatus,
     });
 
     const updated = flightDb.getById(id);

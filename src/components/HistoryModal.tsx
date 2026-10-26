@@ -164,10 +164,10 @@ export default function HistoryModal({ flight, onClose }: Props) {
 
             <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-                Initial Baseline
+                {flight.purchasePrice && flight.purchasePrice > 0 ? 'Purchase Price' : 'Initial Baseline'}
               </span>
               <span className="text-xl font-bold text-slate-300 block mt-0.5">
-                {formatCurrency(flight.baselinePrice)}
+                {formatCurrency(flight.purchasePrice && flight.purchasePrice > 0 ? flight.purchasePrice : flight.baselinePrice)}
               </span>
             </div>
 
@@ -200,7 +200,11 @@ export default function HistoryModal({ flight, onClose }: Props) {
                 Hover over data points to inspect checks
               </span>
             </div>
-            <PriceChart history={history} baselinePrice={flight.baselinePrice} />
+            <PriceChart 
+              history={history} 
+              baselinePrice={flight.baselinePrice} 
+              purchasePrice={flight.purchasePrice} 
+            />
           </div>
 
           {/* Chronological History Log with Intraday Multi-Price Handling */}
@@ -265,8 +269,10 @@ export default function HistoryModal({ flight, onClose }: Props) {
                           minute: '2-digit',
                           hour12: true,
                         });
-                        const dropFromBaseline = flight.baselinePrice - record.price;
-
+                        const activeBenchmark = flight.purchasePrice && flight.purchasePrice > 0 
+                          ? flight.purchasePrice 
+                          : flight.baselinePrice;
+                        const dropFromBenchmark = activeBenchmark - record.price;
                         return (
                           <div
                             key={record.id}
@@ -279,14 +285,14 @@ export default function HistoryModal({ flight, onClose }: Props) {
                               <span className="font-bold text-sm text-slate-100">
                                 {formatCurrency(record.price)}
                               </span>
-                              {dropFromBaseline > 0 && (
+                              {dropFromBenchmark > 0 && (
                                 <span className="text-green-400 font-semibold text-[11px]">
-                                  (-{formatCurrency(dropFromBaseline)})
+                                  (-{formatCurrency(dropFromBenchmark)})
                                 </span>
                               )}
-                              {dropFromBaseline < 0 && (
+                              {dropFromBenchmark < 0 && (
                                 <span className="text-red-400 font-semibold text-[11px]">
-                                  (+{formatCurrency(Math.abs(dropFromBaseline))})
+                                  (+{formatCurrency(Math.abs(dropFromBenchmark))})
                                 </span>
                               )}
                             </div>

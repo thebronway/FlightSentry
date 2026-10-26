@@ -27,19 +27,33 @@ export const flightDb = {
       INSERT INTO flights (
         searchMode, origin, destination, departureDate, airline, flightNumber, 
         includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
-        targetPrice, currentPrice, notes, scheduleOverride, disableNotifications, nextCheckAt, status, createdAt, updatedAt
+        purchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
+        notes, scheduleOverride, disableNotifications, nextCheckAt, status, createdAt, updatedAt
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
-        @targetPrice, @currentPrice, @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
+        @purchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
+        @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
       )
     `);
     
     const now = new Date().toISOString();
     const currentPrice = flight.currentPrice !== undefined ? flight.currentPrice : flight.baselinePrice;
+    const purchasePrice = flight.purchasePrice ?? null;
     const targetPrice = flight.targetPrice ?? null;
+    const minDropDollar = flight.minDropDollar ?? null;
+    const minDropPercent = flight.minDropPercent ?? null;
     const cabinClass = flight.cabinClass || 'economy';
-    const result = stmt.run({ ...flight, currentPrice, targetPrice, cabinClass, now });
+    const result = stmt.run({ 
+      ...flight, 
+      currentPrice, 
+      purchasePrice, 
+      targetPrice, 
+      minDropDollar, 
+      minDropPercent, 
+      cabinClass, 
+      now 
+    });
     return result.lastInsertRowid as number;
   },
 
@@ -61,9 +75,13 @@ export const flightDb = {
         fareTier = @fareTier,
         cabinClass = @cabinClass,
         baselinePrice = @baselinePrice,
+        purchasePrice = @purchasePrice,
+        minDropDollar = @minDropDollar,
+        minDropPercent = @minDropPercent,
         notes = @notes,
         scheduleOverride = @scheduleOverride,
         disableNotifications = @disableNotifications,
+        status = @status,
         updatedAt = @updatedAt
       WHERE id = @id
     `);

@@ -1,9 +1,26 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-10-25*  
-*Current Version: v0.3.0*
+*Last updated: 2026-10-26*  
+*Current Version: v0.3.5*
 
 ## Changelog
+
+### Release v0.3.5
+- Added separate tracking goals for flights: "Planning to Book" (prospective fare tracking) and "Already Booked" (purchase price and rebooking credit drop tracking).
+- Added purchase price and booking confirmation (PNR) tracking with specialized rebooking credit alert notifications.
+- Added per-flight alert threshold overrides for dollar and percentage drop alerts.
+- Added  checkboxes in the flight modal for pausing automated price checks and muting notifications.
+- Reorganized flight modal layout placing Fare Restrictions and Cabin Class onto a dedicated row to prevent label clipping.
+- Added locked search mode indicator when editing existing flights to preserve historical tracking integrity.
+- Added dynamic inheritance placeholders in the flight modal pulling current global defaults for cadences and drop thresholds.
+- Updated price history graphs and intraday logs to plot against purchase price benchmarks when present.
+- Added real-time quota ribbon synchronization across manual price checks and flight creations without requiring page reloads.
+- Added responsive mobile navigation hiding text labels on smaller screens to maximize viewport space.
+- Realigned Settings page header outside the container bounding box to match Dashboard layout.
+- Reorganized Query Routing Strategy onto its own full-width row with dedicated explanatory subtext.
+- Renamed execution order priority to Provider Priority Order with chevron up/down controls.
+- Added contextual inheritance banners across Scheduling and Notifications settings tabs.
+- Defaulted all external search APIs to unchecked (disabled) for fresh database initializations.
 
 ### Release v0.3.0
 - Replaced search mode radio buttons with clickable cards in the flight modal.

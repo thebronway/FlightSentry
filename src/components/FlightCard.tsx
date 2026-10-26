@@ -12,8 +12,11 @@ interface Props {
 }
 
 export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }: Props) {
-  const isDrop = flight.currentPrice < flight.baselinePrice;
-  const delta = flight.baselinePrice - flight.currentPrice;
+  const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
+  const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
+  const benchmarkLabel = isPurchased ? 'Paid' : 'Initial';
+  const isDrop = flight.currentPrice < benchmarkPrice;
+  const delta = benchmarkPrice - flight.currentPrice;
 
   // Prominent title formatting: Route or Flight Number in big font
   const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
@@ -105,7 +108,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
             <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Initial: {formatCurrency(flight.baselinePrice)}</p>
+            <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
             {delta !== 0 && (
               <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
                 {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta))}

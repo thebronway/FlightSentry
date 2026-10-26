@@ -6,7 +6,7 @@ import { settingsDb } from '@/db/settings';
 import { executeSearchStrategy } from '@/services/datasource';
 import { checkAndResetQuota } from '@/services/quota';
 import { calculateNextCheck } from '@/utils/queue';
-import { Flight } from '@/types';
+import { Flight, FlightStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,11 +27,17 @@ export async function POST(req: NextRequest) {
     
     let baselinePrice = parsed.baselinePrice;
 
-    // If initial price is not provided, trigger a live search immediately
+    // If purchase price is provided for a booked flight, use it as baseline if no baseline entered
+    if ((!baselinePrice || baselinePrice <= 0) && parsed.purchasePrice && parsed.purchasePrice > 0) {
+      baselinePrice = parsed.purchasePrice;
+    }
+
+    const initialStatus: FlightStatus = body.status === 'Paused' ? 'Paused' : 'Active';
+
+    // If initial price is still not provided, trigger a live search immediately
     if (!baselinePrice || baselinePrice <= 0) {
       let settings = settingsDb.get();
       settings = checkAndResetQuota(settings);
-
       const probeFlight = {
         id: 0,
         searchMode: parsed.searchMode,
@@ -45,14 +51,17 @@ export async function POST(req: NextRequest) {
         fareTier: parsed.fareTier,
         cabinClass: parsed.cabinClass,
         baselinePrice: 0,
+        purchasePrice: parsed.purchasePrice ?? null,
+        targetPrice: parsed.targetPrice ?? null,
         currentPrice: 0,
-        status: 'Active' as const,
+        minDropDollar: parsed.minDropDollar ?? null,
+        minDropPercent: parsed.minDropPercent ?? null,
+        status: initialStatus,
         nextCheckAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         disableNotifications: parsed.disableNotifications ?? 0
       };
-
       const searchResult = await executeSearchStrategy(probeFlight as Flight, settings);
       if (searchResult.status === 'Success' && searchResult.price !== null) {
         baselinePrice = searchResult.price;
@@ -71,9 +80,11 @@ export async function POST(req: NextRequest) {
       ...parsed,
       id: 0,
       baselinePrice,
+      purchasePrice: parsed.purchasePrice ?? null,
+      targetPrice: parsed.targetPrice ?? null,
       currentPrice: baselinePrice,
       airline: parsed.airline || '',
-      status: 'Active',
+      status: initialStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       nextCheckAt: new Date().toISOString(),
@@ -86,8 +97,11 @@ export async function POST(req: NextRequest) {
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       baselinePrice,
+      purchasePrice: parsed.purchasePrice ?? null,
+      minDropDollar: parsed.minDropDollar ?? null,
+      minDropPercent: parsed.minDropPercent ?? null,
       currentPrice: baselinePrice,
-      status: 'Active', 
+      status: initialStatus, 
       nextCheckAt 
     });
 
