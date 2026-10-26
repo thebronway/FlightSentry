@@ -31,7 +31,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
     fetchSettings();
   };
 
-  const toggleSourcePause = async (pauseKey: 'serpApiPaused' | 'searchApiPaused' | 'fastFlightsPaused') => {
+  const toggleSourcePause = async (pauseKey: 'serpApiPaused' | 'searchApiPaused' | 'hasdataPaused' | 'fastFlightsPaused') => {
     if (!settings) return;
     const currentState = settings[pauseKey] === 1;
     await fetch('/api/settings', {
@@ -53,6 +53,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'serpApiPaused' as const,
       used: settings.serpApiUsed,
       quota: settings.serpApiQuota,
+      isScraper: false,
     },
     {
       key: 'searchapi',
@@ -62,6 +63,17 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'searchApiPaused' as const,
       used: settings.searchApiUsed,
       quota: settings.searchApiQuota,
+      isScraper: false,
+    },
+    {
+      key: 'hasdata',
+      name: 'HasData',
+      enabled: settings.hasdataEnabled,
+      paused: settings.hasdataPaused,
+      pauseKey: 'hasdataPaused' as const,
+      used: settings.hasdataUsed,
+      quota: settings.hasdataQuota,
+      isScraper: false,
     },
     {
       key: 'fastflights',
@@ -70,7 +82,8 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       paused: settings.fastFlightsPaused,
       pauseKey: 'fastFlightsPaused' as const,
       used: settings.fastFlightsUsed,
-      quota: settings.fastFlightsQuota,
+      quota: 0,
+      isScraper: true,
     },
   ].filter(s => s.enabled === 1);
 

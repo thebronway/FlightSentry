@@ -1,31 +1,12 @@
 # Calendar-App Roadmap
 
 *Last updated: 2026-10-26*  
-*Current Version: v0.3.5*
+*Current Version: v0.4.0*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.4.0
-- **Consolidated Data Sources Architecture:**
-  - Merge the Provider Priority Order ranking list and configuration cards into a single unified stack of reorderable cards.
-  - Implement fixed rank position with visual disabled state (skipping inactive providers at runtime without shifting rankings).
-- **Hardened Multi-Strategy Query Routing:**
-  - Implement SQLite-backed persistent atomic pointer for Round-Robin rotation, eliminating process-split memory resets between worker and web containers.
-  - Add "Balanced Usage" routing strategy to dynamically direct queries to the active provider with the lowest percentage of monthly quota consumed.
-  - Retain "Exhaust Quota" priority failover strategy.
-- **Flight Number Route Detection & User Guidance:**
-  - Add debounced flight route lookup on carrier code and flight number input.
-  - Display user guidance alerts:
-    - Mismatch warning alert when manually typed airport pairs do not match schedule lookup results.
-    - Verification confirmation alert when origin/destination fields are auto-populated into empty inputs.
-  - Maintain required, editable airport codes to support seasonal route changes without hardcoded local route databases.
-- **Native Multi-Channel Notification Dispatcher:**
-  - Add modular, dedicated configuration cards for Discord Webhook, Slack Webhook, Generic Webhook, and SMTP Email.
-  - Add independent enable/disable toggles per channel that preserve stored credentials when toggled off.
-  - Provide individual "Save" and "Save & Test" actions per channel, replacing global notification tests with isolated single-channel validation.
 
   ### Release v0.4.5: Market Price History & Multi-Airline Route Intelligence
 - **Multi-Airline Price Trend Graph (City-Pair Route Searches):**
@@ -63,6 +44,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - **Database & Parser Architecture Extensions:**
   - Update `serpapi.ts` and `searchapi.ts` route search parsers to retain the full itinerary payload rather than discarding non-minimum flights with `Math.min`.
   - Add `airline TEXT`, `flightNumber TEXT`, and `metadata TEXT` (JSON storing all competitor itineraries from that query) to the `price_history` table schema.
+- Add what data source was used on the history table. 
 
 ### Release v0.5.0
 - Breakup monolithic files
@@ -74,3 +56,9 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v0.5.2
 - Mobile fixes
+- Settings Page
+    - API sources need to have the correct highlight like Query Routing Strategy
+    - Query Routing Strategy dropdown arrowneeds more right padding
+    - Up and down arrows should be buttons (like have a visable button border)
+- Flight Modal
+    - Make Wider as its super crowded, give the UI a little more space

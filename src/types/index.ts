@@ -74,6 +74,19 @@ export interface Settings {
   serpApiPaused: number;
   searchApiPaused: number;
   fastFlightsPaused: number;
+  roundRobinIndex: number;
+  hasdataApiKey?: string | null;
+  hasdataEnabled: number;
+  hasdataQuota: number;
+  hasdataUsed: number;
+  hasdataPaused: number;
+  discordEnabled: number;
+  discordWebhookUrl?: string | null;
+  slackEnabled: number;
+  slackWebhookUrl?: string | null;
+  genericWebhookEnabled: number;
+  genericWebhookUrl?: string | null;
+  smtpEnabled: number;
   quotaResetDate: string; // YYYY-MM-DD
   globalPause: number; // 0 (false) or 1 (true)
 }

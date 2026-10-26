@@ -1,9 +1,28 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-10-26*  
-*Current Version: v0.3.5*
+*Current Version: v0.4.0*
 
 ## Changelog
+
+### Release v0.4.0
+- Merged Provider Priority Order ranking list and configuration cards into a single unified stack of reorderable cards.
+- Implemented fixed rank positions with visual disabled states, skipping inactive providers at runtime without shifting rankings.
+- Added HasData external flight search provider with cabin tier, airline filtering, and rate-limit detection.
+- Prioritized active unmetered scraper providers before metered APIs regardless of active routing strategy.
+- Added randomized jitter delays to scraping providers to mitigate anti-bot and CAPTCHA rate limits.
+- Added disclaimer banners for unmetered scrapers regarding residential connection requirements.
+- Implemented SQLite-backed persistent atomic pointer for Round-Robin rotation across worker and web containers.
+- Added "Balanced Usage" routing strategy directing queries to the active provider with the lowest percentage of quota consumed.
+- Retained "Exhaust Quota" priority failover strategy.
+- Added contextual guidance blurb and static strategy descriptions to Data Sources settings.
+- Added debounced flight route lookup on carrier code and flight number input using zero-quota public aviation schedules.
+- Added confirmation alert when origin and destination are auto-populated from schedule lookup.
+- Added mismatch warning alert when manually typed airport pairs differ from schedule lookup results with 1-click adoption.
+- Maintained editable airport code inputs to support seasonal and charter route changes.
+- Added modular notification cards for Discord Webhook, Slack Webhook, Generic Webhook, and SMTP Email.
+- Added independent enable toggles per notification channel that preserve stored credentials when toggled off.
+- Added isolated "Save" and "Save & Test" actions per channel, replacing global notification tests with single-channel validation.
 
 ### Release v0.3.5
 - Added separate tracking goals for flights: "Planning to Book" (prospective fare tracking) and "Already Booked" (purchase price and rebooking credit drop tracking).

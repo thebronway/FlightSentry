@@ -1,5 +1,3 @@
-import { settingsDb } from '../db/settings';
-
 export interface RouteLookupResult {
   success: boolean;
   origin?: string;
@@ -7,27 +5,26 @@ export interface RouteLookupResult {
   airlineName?: string;
   airlineCode?: string;
   flightNumber?: string;
-  source?: 'schedule_api' | 'serpapi' | 'catalog';
+  source?: 'adsbdb' | 'schedule_api' | 'web_search';
   error?: string;
 }
 
-// Common commercial transcontinental and flagship routes catalog for instant zero-latency resolution
-const COMMON_ROUTES_CATALOG: Record<string, { origin: string; destination: string; airlineName: string }> = {
-  'AS6': { origin: 'SEA', destination: 'DCA', airlineName: 'Alaska Airlines' },
-  'AS1': { origin: 'DCA', destination: 'SEA', airlineName: 'Alaska Airlines' },
-  'AS4': { origin: 'SEA', destination: 'DCA', airlineName: 'Alaska Airlines' },
-  'AA1': { origin: 'JFK', destination: 'LAX', airlineName: 'American Airlines' },
-  'AA2': { origin: 'LAX', destination: 'JFK', airlineName: 'American Airlines' },
-  'AA3': { origin: 'JFK', destination: 'LAX', airlineName: 'American Airlines' },
-  'AA4': { origin: 'LAX', destination: 'JFK', airlineName: 'American Airlines' },
-  'UA1': { origin: 'SFO', destination: 'SIN', airlineName: 'United Airlines' },
-  'UA2': { origin: 'SIN', destination: 'SFO', airlineName: 'United Airlines' },
-  'DL1': { origin: 'JFK', destination: 'LHR', airlineName: 'Delta Air Lines' },
-  'DL2': { origin: 'LHR', destination: 'JFK', airlineName: 'Delta Air Lines' },
-  'B61': { origin: 'JFK', destination: 'FLL', airlineName: 'JetBlue' },
-  'B62': { origin: 'FLL', destination: 'JFK', airlineName: 'JetBlue' },
-  'WN1': { origin: 'DAL', destination: 'HOU', airlineName: 'Southwest Airlines' },
-  'WN2': { origin: 'HOU', destination: 'DAL', airlineName: 'Southwest Airlines' },
+// IATA carrier code to ICAO mapping for open aviation database callsign resolution
+const IATA_TO_ICAO: Record<string, string> = {
+  AS: 'ASA',
+  AA: 'AAL',
+  DL: 'DAL',
+  UA: 'UAL',
+  WN: 'SWA',
+  B6: 'JBU',
+  NK: 'NKS',
+  F9: 'FFT',
+  HA: 'HAL',
+  AC: 'ACA',
+  BA: 'BAW',
+  AF: 'AFR',
+  LH: 'DLH',
+  KL: 'KLM',
 };
 
 export const lookupFlightRoute = async (
@@ -37,60 +34,70 @@ export const lookupFlightRoute = async (
   const cleanAirline = airline.trim().toUpperCase();
   const cleanFlightNumber = flightNumber.trim().replace(/\D/g, '');
   const flightKey = `${cleanAirline}${cleanFlightNumber}`;
+  const icaoCode = IATA_TO_ICAO[cleanAirline] || cleanAirline;
+  const icaoKey = `${icaoCode}${cleanFlightNumber}`;
 
-  // 1. Check instant common schedule catalog
-  if (COMMON_ROUTES_CATALOG[flightKey]) {
-    const entry = COMMON_ROUTES_CATALOG[flightKey];
-    return {
-      success: true,
-      origin: entry.origin,
-      destination: entry.destination,
-      airlineName: entry.airlineName,
-      airlineCode: cleanAirline,
-      flightNumber: cleanFlightNumber,
-      source: 'catalog',
-    };
+  console.log(`[FlightLookup] Zero-quota route detection started: Key="${flightKey}", ICAO="${icaoKey}"`);
+
+  // 1. Keyless Open Aviation API (api.adsbdb.com)
+  const candidateKeys = [icaoKey, flightKey];
+  for (const key of candidateKeys) {
+    try {
+      const url = `https://api.adsbdb.com/v0/callsign/${encodeURIComponent(key)}`;
+      console.log(`[FlightLookup] Querying ADS-B: ${url}`);
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'FlightSentry/0.4.0', Accept: 'application/json' },
+        signal: AbortSignal.timeout(3500),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const route = data.response?.flightroute;
+        const originIata = route?.origin?.iata_code?.toUpperCase();
+        const destIata = route?.destination?.iata_code?.toUpperCase();
+
+        if (originIata && destIata && originIata.length === 3 && destIata.length === 3) {
+          console.log(`[FlightLookup] Resolved via ADS-B: ${originIata} -> ${destIata}`);
+          return {
+            success: true,
+            origin: originIata,
+            destination: destIata,
+            airlineName: route?.airline?.name,
+            airlineCode: cleanAirline,
+            flightNumber: cleanFlightNumber,
+            source: 'adsbdb',
+          };
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[FlightLookup] ADS-B lookup error for ${key}:`, err.message);
+    }
   }
 
-  // 2. Query Public Flight Schedule API
+  // 2. Flightradar24 Public Search
   try {
-    const res = await fetch(
-      `https://www.flightradar24.com/v1/search/web/find?query=${encodeURIComponent(flightKey)}&limit=5`,
-      {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          Accept: 'application/json',
-        },
-        signal: AbortSignal.timeout(4000),
-      }
-    );
+    const fr24Url = `https://www.flightradar24.com/v1/search/web/find?query=${encodeURIComponent(flightKey)}&limit=5`;
+    const res = await fetch(fr24Url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(3500),
+    });
 
     if (res.ok) {
       const data = await res.json();
       const results: any[] = data.results || [];
-
       for (const item of results) {
-        // Detailed schedule item
         if (item.detail?.schd_from && item.detail?.schd_to) {
+          const origin = item.detail.schd_from.toUpperCase();
+          const destination = item.detail.schd_to.toUpperCase();
+          console.log(`[FlightLookup] Resolved via Flightradar24: ${origin} -> ${destination}`);
           return {
             success: true,
-            origin: item.detail.schd_from.toUpperCase(),
-            destination: item.detail.schd_to.toUpperCase(),
-            airlineName: item.label?.split('-')?.[1]?.trim(),
-            airlineCode: cleanAirline,
-            flightNumber: cleanFlightNumber,
-            source: 'schedule_api',
-          };
-        }
-
-        // Check if route format is in detail.route or label
-        const routeMatch = (item.detail?.route || item.label || '').match(/\b([A-Z]{3})\s*[-→]\s*([A-Z]{3})\b/i);
-        if (routeMatch) {
-          return {
-            success: true,
-            origin: routeMatch[1].toUpperCase(),
-            destination: routeMatch[2].toUpperCase(),
+            origin,
+            destination,
             airlineName: item.label?.split('-')?.[1]?.trim(),
             airlineCode: cleanAirline,
             flightNumber: cleanFlightNumber,
@@ -100,46 +107,52 @@ export const lookupFlightRoute = async (
       }
     }
   } catch (error: any) {
-    console.warn(`[FlightLookup] Schedule lookup failed for ${flightKey}:`, error.message);
+    console.warn(`[FlightLookup] Flightradar24 lookup error for ${flightKey}:`, error.message);
   }
 
-  // 3. SerpAPI Knowledge Graph Fallback (if configured)
-  const settings = settingsDb.get();
-  if (settings.serpApiKey && settings.serpApiEnabled === 1) {
-    try {
-      const serpUrl = new URL('https://serpapi.com/search.json');
-      serpUrl.searchParams.append('engine', 'google');
-      serpUrl.searchParams.append('q', `Flight ${cleanAirline} ${cleanFlightNumber}`);
-      serpUrl.searchParams.append('api_key', settings.serpApiKey);
+  // 3. Zero-Quota Public Web Search Scraper (DuckDuckGo HTML)
+  try {
+    const ddgQuery = `flight ${cleanAirline} ${cleanFlightNumber} route departure arrival`;
+    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(ddgQuery)}`;
+    console.log(`[FlightLookup] Querying DuckDuckGo HTML: ${ddgUrl}`);
+    const ddgRes = await fetch(ddgUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(4000),
+    });
 
-      const serpRes = await fetch(serpUrl.toString(), { signal: AbortSignal.timeout(5000) });
-      if (serpRes.ok) {
-        const serpData = await serpRes.json();
-        const flightResult = serpData.flights_results?.[0] || serpData.answer_box;
+    if (ddgRes.ok) {
+      const html = await ddgRes.text();
+      const patterns = [
+        /\(([A-Z]{3})\)\s*(?:to|→|-)\s*\(([A-Z]{3})\)/i,
+        /\bfrom\s+([A-Z]{3})\s+to\s+([A-Z]{3})\b/i,
+        /\b([A-Z]{3})\s*(?:to|→|-)\s*([A-Z]{3})\b/i,
+      ];
 
-        const depIata =
-          flightResult?.departure_airport?.id ||
-          flightResult?.snippet?.match(/\bfrom\s+([A-Z]{3})\b/i)?.[1];
-        const arrIata =
-          flightResult?.arrival_airport?.id ||
-          flightResult?.snippet?.match(/\bto\s+([A-Z]{3})\b/i)?.[1];
-
-        if (depIata && arrIata && depIata.length === 3 && arrIata.length === 3) {
+      for (const pattern of patterns) {
+        const match = html.match(pattern);
+        if (match && match[1].toUpperCase() !== match[2].toUpperCase()) {
+          const origin = match[1].toUpperCase();
+          const destination = match[2].toUpperCase();
+          console.log(`[FlightLookup] Resolved via search scraper: ${origin} -> ${destination}`);
           return {
             success: true,
-            origin: depIata.toUpperCase(),
-            destination: arrIata.toUpperCase(),
+            origin,
+            destination,
             airlineCode: cleanAirline,
             flightNumber: cleanFlightNumber,
-            source: 'serpapi',
+            source: 'web_search',
           };
         }
       }
-    } catch (serpErr: any) {
-      console.warn(`[FlightLookup] SerpAPI schedule lookup failed:`, serpErr.message);
     }
+  } catch (ddgErr: any) {
+    console.warn(`[FlightLookup] Search scraper fallback error:`, ddgErr.message);
   }
 
+  console.warn(`[FlightLookup] Route could not be resolved automatically for ${cleanAirline} ${cleanFlightNumber}.`);
   return {
     success: false,
     airlineCode: cleanAirline,

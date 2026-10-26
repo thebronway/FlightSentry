@@ -2,6 +2,135 @@ import { Flight, Settings } from '../types';
 import { formatCurrency, formatPercent } from '../utils/format';
 import nodemailer from 'nodemailer';
 
+export type NotificationChannel = 'discord' | 'slack' | 'generic' | 'smtp';
+
+export interface ChannelDispatchResult {
+  channel: NotificationChannel;
+  success: boolean;
+  error?: string;
+}
+
+// 1. Discord Webhook Dispatcher
+export const sendDiscordWebhook = async (
+  webhookUrl: string,
+  title: string,
+  body: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const payload = {
+      embeds: [
+        {
+          title,
+          description: body,
+          color: 3719416, // Slate / Sky accent
+          footer: { text: 'FlightSentry' },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    };
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok || res.status === 204) {
+      return { success: true };
+    }
+    const errText = await res.text();
+    return { success: false, error: `Discord HTTP ${res.status}: ${errText}` };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Discord request failed' };
+  }
+};
+
+// 2. Slack Webhook Dispatcher
+export const sendSlackWebhook = async (
+  webhookUrl: string,
+  title: string,
+  body: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const payload = {
+      text: `*${title}*\n\n${body}`,
+    };
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return { success: true };
+    }
+    const errText = await res.text();
+    return { success: false, error: `Slack HTTP ${res.status}: ${errText}` };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Slack request failed' };
+  }
+};
+
+// 3. Generic / Apprise Webhook Dispatcher
+export const sendGenericWebhook = async (
+  webhookUrl: string,
+  title: string,
+  body: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const payload = {
+      title,
+      body,
+      message: body,
+      format: 'markdown',
+      type: 'info',
+      timestamp: new Date().toISOString(),
+    };
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok || res.status === 204) {
+      return { success: true };
+    }
+    const errText = await res.text();
+    return { success: false, error: `Generic Webhook HTTP ${res.status}: ${errText}` };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Generic webhook request failed' };
+  }
+};
+
+// 4. SMTP Dispatcher
+export const sendSmtpEmail = async (
+  settings: Partial<Settings>,
+  title: string,
+  body: string,
+  htmlBody?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (!settings.smtpHost || !settings.smtpPort || !settings.smtpTo || !settings.smtpFrom) {
+      return { success: false, error: 'Incomplete SMTP configuration (Host, Port, From, and To are required)' };
+    }
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: settings.smtpPort,
+      secure: settings.smtpPort === 465,
+      auth: (settings.smtpUser && settings.smtpPass)
+        ? { user: settings.smtpUser, pass: settings.smtpPass }
+        : undefined,
+    });
+    await transporter.sendMail({
+      from: settings.smtpFrom,
+      to: settings.smtpTo,
+      subject: title,
+      text: body,
+      html: htmlBody || body.replace(/\n/g, '<br>'),
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'SMTP send failed' };
+  }
+};
+
+// Multi-Channel Dispatcher
 export const sendNotification = async (
   settings: Settings,
   title: string,
@@ -10,50 +139,67 @@ export const sendNotification = async (
 ): Promise<boolean> => {
   if (settings.notificationsEnabled === 0) return false;
 
-  let success = false;
+  const dispatchPromises: Promise<ChannelDispatchResult>[] = [];
 
-  // 1. Webhook / Apprise Dispatch
-  if (settings.appriseUrl) {
-    try {
-      const response = await fetch(settings.appriseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body, format: 'markdown', type: 'info' }),
-      });
-      if (response.ok) success = true;
-      else console.error(`Webhook failed with status: ${response.status}`);
-    } catch (error) {
-      console.error('Webhook notification failed:', error);
+  // Discord
+  if (settings.discordEnabled === 1 && settings.discordWebhookUrl) {
+    dispatchPromises.push(
+      sendDiscordWebhook(settings.discordWebhookUrl, title, body).then(res => ({
+        channel: 'discord' as const,
+        ...res,
+      }))
+    );
+  }
+
+  // Slack
+  if (settings.slackEnabled === 1 && settings.slackWebhookUrl) {
+    dispatchPromises.push(
+      sendSlackWebhook(settings.slackWebhookUrl, title, body).then(res => ({
+        channel: 'slack' as const,
+        ...res,
+      }))
+    );
+  }
+
+  // Generic Webhook
+  const genericUrl = settings.genericWebhookUrl || settings.appriseUrl;
+  if (settings.genericWebhookEnabled === 1 && genericUrl) {
+    dispatchPromises.push(
+      sendGenericWebhook(genericUrl, title, body).then(res => ({
+        channel: 'generic' as const,
+        ...res,
+      }))
+    );
+  }
+
+  // SMTP Email
+  if (settings.smtpEnabled === 1 && settings.smtpHost) {
+    dispatchPromises.push(
+      sendSmtpEmail(settings, title, body, htmlBody).then(res => ({
+        channel: 'smtp' as const,
+        ...res,
+      }))
+    );
+  }
+
+  if (dispatchPromises.length === 0) {
+    console.warn('[NotificationDispatcher] No active notification channels configured.');
+    return false;
+  }
+
+  const results = await Promise.all(dispatchPromises);
+  let anySuccess = false;
+
+  for (const r of results) {
+    if (r.success) {
+      anySuccess = true;
+      console.log(`[NotificationDispatcher] Successfully dispatched via ${r.channel}`);
+    } else {
+      console.error(`[NotificationDispatcher] Channel ${r.channel} failed:`, r.error);
     }
   }
 
-  // 2. SMTP Dispatch
-  if (settings.smtpHost && settings.smtpPort && settings.smtpTo && settings.smtpFrom) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: settings.smtpHost,
-        port: settings.smtpPort,
-        secure: settings.smtpPort === 465,
-        auth: (settings.smtpUser && settings.smtpPass) ? {
-          user: settings.smtpUser,
-          pass: settings.smtpPass,
-        } : undefined,
-      });
-
-      await transporter.sendMail({
-        from: settings.smtpFrom,
-        to: settings.smtpTo,
-        subject: title,
-        text: body,
-        html: htmlBody || body.replace(/\n/g, '<br>'),
-      });
-      success = true;
-    } catch (error) {
-      console.error('SMTP notification failed:', error);
-    }
-  }
-
-  return success;
+  return anySuccess;
 };
 
 export const sendPriceDropAlert = async (
