@@ -22,24 +22,54 @@ export const flightDb = {
       .run({ id, nextCheckAt, now: new Date().toISOString() });
   },
 
-  create: (flight: Omit<Flight, 'id' | 'createdAt' | 'updatedAt' | 'currentPrice'>): number => {
+  create: (flight: Omit<Flight, 'id' | 'createdAt' | 'updatedAt' | 'currentPrice'> & { currentPrice?: number }): number => {
     const stmt = db.prepare(`
       INSERT INTO flights (
         searchMode, origin, destination, departureDate, airline, flightNumber, 
-        includedAirlines, excludedAirlines, pnr, fareTier, baselinePrice, 
+        includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
         targetPrice, currentPrice, notes, scheduleOverride, disableNotifications, nextCheckAt, status, createdAt, updatedAt
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
-        @includedAirlines, @excludedAirlines, @pnr, @fareTier, @baselinePrice, 
-        @targetPrice, @baselinePrice, @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
+        @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
+        @targetPrice, @currentPrice, @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
       )
     `);
     
     const now = new Date().toISOString();
-    const result = stmt.run({ ...flight, now });
+    const currentPrice = flight.currentPrice !== undefined ? flight.currentPrice : flight.baselinePrice;
+    const targetPrice = flight.targetPrice ?? null;
+    const cabinClass = flight.cabinClass || 'economy';
+    const result = stmt.run({ ...flight, currentPrice, targetPrice, cabinClass, now });
     return result.lastInsertRowid as number;
   },
 
+  update: (id: number, data: Partial<Flight>): void => {
+    const current = flightDb.getById(id);
+    if (!current) return;
+    const merged = { ...current, ...data, updatedAt: new Date().toISOString() };
+    const stmt = db.prepare(`
+      UPDATE flights SET
+        searchMode = @searchMode,
+        origin = @origin,
+        destination = @destination,
+        departureDate = @departureDate,
+        airline = @airline,
+        flightNumber = @flightNumber,
+        includedAirlines = @includedAirlines,
+        excludedAirlines = @excludedAirlines,
+        pnr = @pnr,
+        fareTier = @fareTier,
+        cabinClass = @cabinClass,
+        baselinePrice = @baselinePrice,
+        notes = @notes,
+        scheduleOverride = @scheduleOverride,
+        disableNotifications = @disableNotifications,
+        updatedAt = @updatedAt
+      WHERE id = @id
+    `);
+    stmt.run(merged);
+  },
+  
   updatePrice: (id: number, currentPrice: number): void => {
     const stmt = db.prepare(`
       UPDATE flights 

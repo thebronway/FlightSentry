@@ -21,6 +21,14 @@ export const checkSearchApiPrice = async (
     url.searchParams.append('hl', 'en');
     url.searchParams.append('api_key', apiKey);
 
+    const searchApiCabinMap: Record<string, string> = {
+      economy: '1',
+      premium_economy: '2',
+      business: '3',
+      first: '4',
+    };
+    url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || '1');
+
     if (flight.fareTier === 'Standard') {
       url.searchParams.append('exclude_basic_economy', 'true');
     }

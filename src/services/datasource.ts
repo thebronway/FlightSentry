@@ -24,10 +24,12 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     return { price: null, status: 'Error' };
   }
 
+  const isPaused = (val: any) => val === 1 || val === true || val === '1' || val === 'true';
+
   const availableApis = order.filter(api => {
-    if (api === 'serpapi') return isEnabled(settings.serpApiEnabled) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
-    if (api === 'searchapi') return isEnabled(settings.searchApiEnabled) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
-    if (api === 'fastflights') return isEnabled(settings.fastFlightsEnabled) && (settings.fastFlightsQuota === 0 || settings.fastFlightsUsed < settings.fastFlightsQuota);
+    if (api === 'serpapi') return isEnabled(settings.serpApiEnabled) && !isPaused(settings.serpApiPaused) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
+    if (api === 'searchapi') return isEnabled(settings.searchApiEnabled) && !isPaused(settings.searchApiPaused) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
+    if (api === 'fastflights') return isEnabled(settings.fastFlightsEnabled) && !isPaused(settings.fastFlightsPaused) && (settings.fastFlightsQuota === 0 || settings.fastFlightsUsed < settings.fastFlightsQuota);
     return false;
   }) as ('serpapi' | 'searchapi' | 'fastflights')[];
 

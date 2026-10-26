@@ -4,6 +4,14 @@ import { getFlights, createQuery, Passengers } from 'fast-flights-ts';
 
 export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceResult> => {
   try {
+    const fastFlightsSeatMap: Record<string, 'economy' | 'premium-economy' | 'business' | 'first'> = {
+      economy: 'economy',
+      premium_economy: 'premium-economy',
+      business: 'business',
+      first: 'first',
+    };
+    const seat = fastFlightsSeatMap[flight.cabinClass || 'economy'] || 'economy';
+
     const query = createQuery({
       flights: [
         { 
@@ -12,7 +20,7 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
           to_airport: flight.destination || '' 
         }
       ],
-      seat: 'economy',
+      seat,
       trip: 'one-way',
       passengers: new Passengers({ adults: 1 }),
     });

@@ -26,6 +26,14 @@ export const checkFlightPrice = async (
     url.searchParams.append('hl', 'en');
     url.searchParams.append('api_key', apiKey);
 
+    const serpCabinMap: Record<string, string> = {
+      economy: '1',
+      premium_economy: '2',
+      business: '3',
+      first: '4',
+    };
+    url.searchParams.append('travel_class', serpCabinMap[flight.cabinClass || 'economy'] || '1');
+
     if (flight.includedAirlines) {
       url.searchParams.append('include_airlines', flight.includedAirlines.replace(/\s+/g, ''));
     }

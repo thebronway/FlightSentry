@@ -1,9 +1,28 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-10-25*  
-*Current Version: v0.2.5*
+*Current Version: v0.3.0*
 
 ## Changelog
+
+### Release v0.3.0
+- Replaced search mode radio buttons with clickable cards in the flight modal.
+- Equalized input and select dropdown heights across the flight modal.
+- Renamed Baseline Price to Initial Price and added automated price lookup.
+- Added separate controls for Fare Restrictions and Cabin Class.
+- Removed Target Alert Price field.
+- Fixed state reset bug carrying over dates and schedule metrics between modal opens.
+- Displayed airline inclusion and exclusion filters on flight cards and condensed rows.
+- Updated flight card typography to display route or flight number above departure date.
+- Added flight edit button to cards and condensed view.
+- Added toggle between Card View and Condensed Table View.
+- Added dashboard sort options defaulting to soonest departure date.
+- Refactored quota ribbon to auto-fit active sources and added per-source pause buttons.
+- Renamed global automation pause button.
+- Updated manual price checks to reschedule the flight queue immediately.
+- Replaced history flyout drawer with a centered modal.
+- Added SVG price history graph with baseline reference line and hover tooltips.
+- Added intraday price delta and timestamp grouping to price history.
 
 ### Release v0.2.5
 - Enforced dark mode and removed the theme toggle button from navigation.   

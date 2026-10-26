@@ -2,8 +2,43 @@ import { NextRequest, NextResponse } from 'next/server';
 import { flightDb } from '@/db/flights';
 import { historyDb } from '@/db/history';
 import { flightStatusSchema } from '@/utils/validation';
+import { flightSchema } from '@/utils/validation';
 
 export const dynamic = 'force-dynamic';
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const id = parseInt(params.id, 10);
+    const existing = flightDb.getById(id);
+    if (!existing) return NextResponse.json({ error: 'Flight not found' }, { status: 404 });
+
+    const body = await req.json();
+    const parsed = flightSchema.parse(body);
+
+    flightDb.update(id, {
+      ...parsed,
+      origin: parsed.origin ?? existing.origin,
+      destination: parsed.destination ?? existing.destination,
+      airline: parsed.airline ?? '',
+      flightNumber: parsed.flightNumber ?? null,
+      includedAirlines: parsed.includedAirlines ?? null,
+      excludedAirlines: parsed.excludedAirlines ?? null,
+      pnr: parsed.pnr ?? null,
+      baselinePrice: parsed.baselinePrice ?? existing.baselinePrice,
+      cabinClass: parsed.cabinClass,
+      fareTier: parsed.fareTier,
+      scheduleOverride: parsed.scheduleOverride ?? null,
+      notes: parsed.notes ?? null,
+      disableNotifications: parsed.disableNotifications ?? 0,
+    });
+
+    const updated = flightDb.getById(id);
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    console.error('Error updating flight:', error);
+    return NextResponse.json({ error: error.errors || error.message || 'Invalid input' }, { status: 400 });
+  }
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {

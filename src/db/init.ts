@@ -3,6 +3,13 @@ import { schema } from './schema';
 
 export function initDb() {
     db.exec(schema);
+
+    // Schema migration check for existing databases
+    try {
+        db.exec("ALTER TABLE flights ADD COLUMN cabinClass TEXT NOT NULL DEFAULT 'economy'");
+    } catch {
+        // Column already exists
+    }
     
     // Seed the single settings row if it doesn't exist
     const getSettings = db.prepare('SELECT id FROM settings WHERE id = 1');

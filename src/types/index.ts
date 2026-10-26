@@ -1,6 +1,6 @@
 export type FlightStatus = 'Active' | 'Paused' | 'Expired';
 export type FareTier = 'Basic Economy' | 'Standard';
-
+export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 export type SearchMode = 'Route' | 'FlightNumber';
 
 export interface Flight {
@@ -15,6 +15,7 @@ export interface Flight {
   excludedAirlines?: string | null; // JSON array of strings
   pnr?: string | null;
   fareTier: FareTier;
+  cabinClass: CabinClass;
   baselinePrice: number;
   targetPrice?: number | null;
   currentPrice: number;
