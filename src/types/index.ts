@@ -29,6 +29,20 @@ export interface Flight {
   status: FlightStatus;
   createdAt: string;
   updatedAt: string;
+  allTimeLow?: number | null;
+  allTimeHigh?: number | null;
+}
+
+export interface RouteItinerary {
+  airline: string;
+  airlineName?: string;
+  flightNumber?: string;
+  price: number;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: string;
+  stops?: number;
+  isNonstop?: boolean;
 }
 
 export interface PriceHistory {
@@ -37,6 +51,10 @@ export interface PriceHistory {
   price: number;
   status: string; // e.g., 'Success', 'SoldOut', 'Error'
   checkedAt: string; // ISO DateTime
+  airline?: string | null;
+  flightNumber?: string | null;
+  metadata?: string | null; // JSON-encoded RouteItinerary[]
+  sourceUsed?: string | null;
 }
 
 export interface Settings {

@@ -1,18 +1,32 @@
-import { Flight, Settings } from '../types';
+import { Flight, Settings, RouteItinerary } from '../types';
 import { flightDb } from '../db/flights';
 import { historyDb } from '../db/history';
 import { sendPriceDropAlert } from './apprise';
 
+export interface EvaluationDetails {
+  airline?: string | null;
+  flightNumber?: string | null;
+  metadata?: string | null;
+  sourceUsed?: string | null;
+  itineraries?: RouteItinerary[];
+}
+
 export const evaluatePrice = async (
   flight: Flight, 
   newPrice: number, 
-  settings: Settings
+  settings: Settings,
+  details?: EvaluationDetails
 ): Promise<void> => {
   // 1. Update the database with the new current price
   flightDb.updatePrice(flight.id, newPrice);
-  
-  // 2. Add to price history
-  historyDb.insert(flight.id, newPrice, 'Success');
+
+  // 2. Add to price history with full route metadata
+  historyDb.insert(flight.id, newPrice, 'Success', {
+    airline: details?.airline,
+    flightNumber: details?.flightNumber,
+    metadata: details?.metadata,
+    sourceUsed: details?.sourceUsed,
+  });
 
   // 3. Evaluate threshold rules using active benchmark (purchase price takes priority if set)
   const previousPrice = flight.currentPrice;
@@ -49,6 +63,6 @@ export const evaluatePrice = async (
   // AND must meet at least one configured threshold ($ drop, % drop, or hits target price)
   if (isLowerThanPrevious && isLowerThanBenchmark && (hitsDollarThreshold || hitsPercentThreshold || hitsTargetPrice)) {
     console.log(`Alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minDropDollar}, Min%: ${minDropPercent})`);
-    await sendPriceDropAlert(settings, flight, newPrice);
+    await sendPriceDropAlert(settings, flight, newPrice, details);
   }
 };

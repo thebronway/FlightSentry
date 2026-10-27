@@ -34,10 +34,16 @@ export async function POST(req: NextRequest) {
 
     const initialStatus: FlightStatus = body.status === 'Paused' ? 'Paused' : 'Active';
 
+    let initialAirline = parsed.airline || null;
+    let initialFlightNumber = parsed.flightNumber || null;
+    let initialMetadata: string | null = null;
+    let initialSourceUsed: string | null = null;
+
     // If initial price is still not provided, trigger a live search immediately
     if (!baselinePrice || baselinePrice <= 0) {
       let settings = settingsDb.get();
       settings = checkAndResetQuota(settings);
+
       const probeFlight = {
         id: 0,
         searchMode: parsed.searchMode,
@@ -62,9 +68,16 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
         disableNotifications: parsed.disableNotifications ?? 0
       };
+
       const searchResult = await executeSearchStrategy(probeFlight as Flight, settings);
+
       if (searchResult.status === 'Success' && searchResult.price !== null) {
         baselinePrice = searchResult.price;
+        initialAirline = searchResult.leadingAirline || initialAirline;
+        initialFlightNumber = searchResult.leadingFlightNumber || initialFlightNumber;
+        initialMetadata = searchResult.itineraries ? JSON.stringify(searchResult.itineraries) : null;
+        initialSourceUsed = searchResult.sourceUsed || null;
+
         if (searchResult.sourceUsed) {
           settingsDb.incrementApiUsage(searchResult.sourceUsed);
         }
@@ -83,7 +96,7 @@ export async function POST(req: NextRequest) {
       purchasePrice: parsed.purchasePrice ?? null,
       targetPrice: parsed.targetPrice ?? null,
       currentPrice: baselinePrice,
-      airline: parsed.airline || '',
+      airline: parsed.airline || initialAirline || '',
       status: initialStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -93,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     const newFlightId = flightDb.create({ 
       ...parsed, 
-      airline: parsed.airline || '',
+      airline: parsed.airline || initialAirline || '',
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       baselinePrice,
@@ -105,8 +118,13 @@ export async function POST(req: NextRequest) {
       nextCheckAt 
     });
 
-    // Record initial price check in history
-    historyDb.insert(newFlightId, baselinePrice, 'Success');
+    // Record initial price check in history with route metadata
+    historyDb.insert(newFlightId, baselinePrice, 'Success', {
+      airline: initialAirline,
+      flightNumber: initialFlightNumber,
+      metadata: initialMetadata,
+      sourceUsed: initialSourceUsed,
+    });
 
     const newFlight = flightDb.getById(newFlightId);
     return NextResponse.json(newFlight, { status: 201 });

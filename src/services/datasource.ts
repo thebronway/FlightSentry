@@ -1,4 +1,4 @@
-import { Flight, Settings } from '../types';
+import { Flight, Settings, RouteItinerary } from '../types';
 import { settingsDb } from '../db/settings';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
@@ -11,6 +11,9 @@ export interface DataSourceResult {
   price: number | null;
   status: 'Success' | 'SoldOut' | 'Error' | 'RateLimited';
   sourceUsed?: DataSourceProvider;
+  leadingAirline?: string | null;
+  leadingFlightNumber?: string | null;
+  itineraries?: RouteItinerary[];
 }
 
 export const executeSearchStrategy = async (flight: Flight, settings: Settings): Promise<DataSourceResult> => {

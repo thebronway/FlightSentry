@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS price_history (
     flightId INTEGER NOT NULL,
     price REAL NOT NULL,
     status TEXT NOT NULL,
+    airline TEXT,
+    flightNumber TEXT,
+    metadata TEXT,
+    sourceUsed TEXT,
     checkedAt TEXT NOT NULL,
     FOREIGN KEY (flightId) REFERENCES flights(id) ON DELETE CASCADE
 );

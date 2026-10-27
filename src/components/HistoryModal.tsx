@@ -4,6 +4,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { Flight, PriceHistory } from '@/types';
 import { formatCurrency } from '@/utils/format';
 import PriceChart from './PriceChart';
+import RouteCorridorSummary from './RouteCorridorSummary';
+import CarrierBreakdownTable from './CarrierBreakdownTable';
+import { computeRouteCorridor } from '@/utils/routeIntelligence';
 import { X, TrendingDown, TrendingUp, Calendar, Hash, ArrowRight } from 'lucide-react';
 
 interface Props {
@@ -97,15 +100,13 @@ export default function HistoryModal({ flight, onClose }: Props) {
 
   if (!flight) return null;
 
-  const successfulPrices = history
-    .filter(h => h.status === 'Success' && typeof h.price === 'number')
-    .map(h => h.price);
-
-  const allTimeLow = successfulPrices.length > 0 ? Math.min(...successfulPrices) : flight.currentPrice;
   const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
+  const isRouteMode = !isFlightNumMode;
   const primaryTitle = isFlightNumMode
     ? `${flight.airline} ${flight.flightNumber}`
     : `${flight.origin} → ${flight.destination}`;
+
+  const corridorMetrics = computeRouteCorridor(history, flight.currentPrice);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6 transition-all">
@@ -119,7 +120,7 @@ export default function HistoryModal({ flight, onClose }: Props) {
               </h2>
               {isFlightNumMode && (
                 <span className="text-sm font-semibold text-slate-300">
-                  {flight.origin} → {flight.destination}
+                  {flight.origin} → ${flight.destination}
                 </span>
               )}
             </div>
@@ -140,7 +141,6 @@ export default function HistoryModal({ flight, onClose }: Props) {
               )}
             </div>
           </div>
-
           <button
             onClick={onClose}
             className="p-2 text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas rounded-full transition-colors"
@@ -151,44 +151,46 @@ export default function HistoryModal({ flight, onClose }: Props) {
 
         {/* Modal Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Quick Stat Metric Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-                Current Price
-              </span>
-              <span className="text-xl font-black text-slate-100 block mt-0.5">
-                {formatCurrency(flight.currentPrice)}
-              </span>
+          {/* Route Corridor High / Low / Current Summary (Header for Route Searches) */}
+          {isRouteMode ? (
+            <RouteCorridorSummary metrics={corridorMetrics} />
+          ) : (
+            /* Quick Stat Metric Badges for Specific Flight Number Searches */
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
+                  Current Price
+                </span>
+                <span className="text-xl font-black text-slate-100 block mt-0.5">
+                  {formatCurrency(flight.currentPrice)}
+                </span>
+              </div>
+              <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
+                  {flight.purchasePrice && flight.purchasePrice > 0 ? 'Purchase Price' : 'Initial Baseline'}
+                </span>
+                <span className="text-xl font-bold text-slate-300 block mt-0.5">
+                  {formatCurrency(flight.purchasePrice && flight.purchasePrice > 0 ? flight.purchasePrice : flight.baselinePrice)}
+                </span>
+              </div>
+              <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
+                  All-Time Low
+                </span>
+                <span className="text-xl font-bold text-green-400 block mt-0.5">
+                  {formatCurrency(corridorMetrics.allTimeLow)}
+                </span>
+              </div>
+              <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
+                  Total Checks
+                </span>
+                <span className="text-xl font-bold text-sky-400 block mt-0.5">
+                  {history.length}
+                </span>
+              </div>
             </div>
-
-            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-                {flight.purchasePrice && flight.purchasePrice > 0 ? 'Purchase Price' : 'Initial Baseline'}
-              </span>
-              <span className="text-xl font-bold text-slate-300 block mt-0.5">
-                {formatCurrency(flight.purchasePrice && flight.purchasePrice > 0 ? flight.purchasePrice : flight.baselinePrice)}
-              </span>
-            </div>
-
-            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-                All-Time Low
-              </span>
-              <span className="text-xl font-bold text-green-400 block mt-0.5">
-                {formatCurrency(allTimeLow)}
-              </span>
-            </div>
-
-            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-                Total Checks
-              </span>
-              <span className="text-xl font-bold text-sky-400 block mt-0.5">
-                {history.length}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Price Trend Chart Section */}
           <div>
@@ -201,11 +203,17 @@ export default function HistoryModal({ flight, onClose }: Props) {
               </span>
             </div>
             <PriceChart 
-              history={history} 
-              baselinePrice={flight.baselinePrice} 
-              purchasePrice={flight.purchasePrice} 
-            />
+               history={history} 
+               baselinePrice={flight.baselinePrice} 
+               purchasePrice={flight.purchasePrice}
+               searchMode={flight.searchMode}
+             />
           </div>
+
+          {/* Carrier Breakdown Matrix (Below Graph for Route Searches) */}
+          {isRouteMode && (
+            <CarrierBreakdownTable history={history} />
+          )}
 
           {/* Chronological History Log with Intraday Multi-Price Handling */}
           <div>

@@ -3,11 +3,23 @@ import { Flight } from '../types';
 
 export const flightDb = {
   getAll: (): Flight[] => {
-    return db.prepare('SELECT * FROM flights ORDER BY departureDate ASC').all() as Flight[];
+    return db.prepare(`
+      SELECT f.*,
+        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeLow,
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeHigh
+      FROM flights f
+      ORDER BY f.departureDate ASC
+    `).all() as Flight[];
   },
 
   getById: (id: number): Flight | undefined => {
-    return db.prepare('SELECT * FROM flights WHERE id = ?').get(id) as Flight | undefined;
+    return db.prepare(`
+      SELECT f.*,
+        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeLow,
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeHigh
+      FROM flights f
+      WHERE f.id = ?
+    `).get(id) as Flight | undefined;
   },
   getNextDueFlight: (): Flight | undefined => {
     const now = new Date().toISOString();

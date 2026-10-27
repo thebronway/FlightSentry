@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.4.0-yellow.svg)
+![Version](https://img.shields.io/badge/version-v0.4.5-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -21,7 +21,7 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Route & Flight Tracking:** Monitor general city-pair routes or track specific airline carrier codes and flight numbers with route auto-detection and mismatch guidance alerts.
 - **Tracking Goals:** Support for prospective fare monitoring ("Planning to Book") and post-purchase rebooking credit drop tracking ("Already Booked") with booking confirmation (PNR) logging.
 - **Cabin Class & Restrictions:** Support for Economy, Premium Economy, Business, and First Class, with options to filter out or include Basic fares.
-- **Interactive Price Graphs:** View price history as a trend chart, with baseline and purchase price benchmark lines, and intraday price spread tracking.
+- **Interactive Price Graphs:** Multi-airline and single-flight trend charts with carrier filter toggles, tooltips, benchmark lines, and route corridor gauges.
 - **Dashboard Views:** Toggle between full-card and condensed table views, with sorting by departure date, price, or route.
 - **Custom Price Drop Alerts:** Automated alerts via Discord Webhook, Slack Webhook, Generic Webhook, or SMTP Email with independent channel toggles, isolated testing, and custom dollar or percentage drop thresholds.
 - **Smart Scheduling:** Preserves API tokens by dynamically scaling check frequency based on departure date—flights closer to departure are checked more frequently, while distant flights are polled on longer intervals.

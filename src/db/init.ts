@@ -25,6 +25,10 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN genericWebhookEnabled INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN genericWebhookUrl TEXT",
         "ALTER TABLE settings ADD COLUMN smtpEnabled INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE price_history ADD COLUMN airline TEXT",
+        "ALTER TABLE price_history ADD COLUMN flightNumber TEXT",
+        "ALTER TABLE price_history ADD COLUMN metadata TEXT",
+        "ALTER TABLE price_history ADD COLUMN sourceUsed TEXT",
     ];
     for (const migration of migrations) {
         try {

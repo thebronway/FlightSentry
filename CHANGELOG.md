@@ -1,9 +1,21 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-10-26*  
-*Current Version: v0.4.0*
+*Current Version: v0.4.5*
 
 ## Changelog
+
+### Release v0.4.5
+- Added multi-carrier price trend plotting to PriceChart for route searches.
+- Added carrier filter pill bar above chart with individual airline toggles.
+- Added synchronized crosshair scrubber displaying unified price comparisons across operating carriers on hover.
+- Added dedicated brand color palette for DL, AA, UA, B6, WN, AS, and F9 with lightness-bounded HSL fallback.
+- Added Route Corridor summary header displaying Current Route Floor, All-Time Low, All-Time High, and market spread gauge.
+- Added compact Route Corridor spread gauge to dashboard flight cards.
+- Added Carrier Breakdown Matrix table below price chart displaying best flight schedule, current lowest fare, historical range, and check delta.
+- Enriched price drop notifications with winning airline code, flight number, competing fare breakdown, and Google Flights deep-link.
+- Extended price_history table schema and migrations with airline, flightNumber, metadata, and sourceUsed columns.
+- Updated SerpAPI, SearchApi.io, HasData, and Fast-Flights parsers to retain all returned itineraries in check metadata.
 
 ### Release v0.4.0
 - Merged Provider Priority Order ranking list and configuration cards into a single unified stack of reorderable cards.

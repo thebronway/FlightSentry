@@ -1,5 +1,6 @@
-import { Flight } from '../types';
+import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
+import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
 
 export const checkHasDataPrice = async (
   flight: Flight,
@@ -68,6 +69,41 @@ export const checkHasDataPrice = async (
       return { price: null, status: 'SoldOut' };
     }
 
+    // Parse and retain all structured competitor itineraries
+    const parsedItineraries: RouteItinerary[] = allFlights
+      .filter((f: any) => typeof f.price === 'number' && f.price > 0)
+      .map((f: any): RouteItinerary => {
+        const firstLeg = f.flights?.[0] || {};
+        const lastLeg = f.flights?.[f.flights.length - 1] || firstLeg;
+        const rawAirline = firstLeg.airline || firstLeg.airlineName || f.airline || '';
+        const rawFlightNum = (firstLeg.flightNumber || firstLeg.flight_number || f.flightNumber || '').toString();
+        const code = normalizeAirlineCode(rawAirline, rawFlightNum);
+        const flightNum = cleanFlightNumber(rawFlightNum, code);
+        const stops = Math.max(0, (f.flights?.length || 1) - 1);
+
+        const depTime = firstLeg.departure_airport?.time || 
+                        firstLeg.departureAirport?.time || 
+                        firstLeg.departureTime || 
+                        (typeof firstLeg.departure === 'string' ? firstLeg.departure : firstLeg.departure?.time);
+
+        const arrTime = lastLeg.arrival_airport?.time || 
+                        lastLeg.arrivalAirport?.time || 
+                        lastLeg.arrivalTime || 
+                        (typeof lastLeg.arrival === 'string' ? lastLeg.arrival : lastLeg.arrival?.time);
+
+        return {
+          airline: code,
+          airlineName: rawAirline || getAirlineName(code),
+          flightNumber: flightNum || undefined,
+          price: f.price,
+          departureTime: depTime,
+          arrivalTime: arrTime,
+          duration: f.duration ? `${Math.floor(f.duration / 60)}h ${f.duration % 60}m` : (f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined),
+          stops,
+          isNonstop: stops === 0,
+        };
+      });
+
     // Flight number matching
     if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
       const targetFlight = allFlights.find((f: any) => {
@@ -87,28 +123,44 @@ export const checkHasDataPrice = async (
       });
 
       if (targetFlight && typeof targetFlight.price === 'number') {
-        return { price: targetFlight.price, status: 'Success' };
+        const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
+        return {
+          price: targetFlight.price,
+          status: 'Success',
+          leadingAirline: targetCode,
+          leadingFlightNumber: flight.flightNumber,
+          itineraries: parsedItineraries,
+        };
       }
+
       return { price: null, status: 'SoldOut' };
     }
 
-    // Route Mode: return lowest available fare among matching carriers
-    let candidates = allFlights;
+    // Route Mode: filter candidates according to airline inclusion/exclusion criteria
+    let candidates: RouteItinerary[] = parsedItineraries;
     if (flight.airline) {
-      candidates = candidates.filter((f: any) => {
-        const legs = f.flights || [];
-        return legs.some((leg: any) =>
-          (leg.airline || leg.airlineName || '').toLowerCase().includes(flight.airline!.toLowerCase())
-        );
-      });
+      const target = flight.airline.toLowerCase();
+      candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
+    }
+    if (flight.includedAirlines) {
+      const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+      candidates = candidates.filter((it: RouteItinerary) => included.includes(it.airline));
+    }
+    if (flight.excludedAirlines) {
+      const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+      candidates = candidates.filter((it: RouteItinerary) => !excluded.includes(it.airline));
     }
 
-    const validPrices = candidates
-      .map((f: any) => f.price)
-      .filter((p: any) => typeof p === 'number');
-
-    if (validPrices.length > 0) {
-      return { price: Math.min(...validPrices), status: 'Success' };
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => a.price - b.price);
+      const lowest = candidates[0];
+      return {
+        price: lowest.price,
+        status: 'Success',
+        leadingAirline: lowest.airline,
+        leadingFlightNumber: lowest.flightNumber,
+        itineraries: parsedItineraries,
+      };
     }
 
     return { price: null, status: 'SoldOut' };

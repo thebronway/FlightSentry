@@ -3,6 +3,7 @@
 import { Flight } from '@/types';
 import { RefreshCw, Clock, Pause, Play, Trash2, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
+import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
   flight: Flight;
@@ -111,11 +112,28 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
             <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
             {delta !== 0 && (
               <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
-                {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta))}
+                {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
               </div>
             )}
           </div>
         </div>
+
+        {/* Route Market Corridor Gauge on Card */}
+        {!isFlightNumMode && flight.allTimeLow !== null && flight.allTimeLow !== undefined && flight.allTimeHigh !== null && flight.allTimeHigh !== undefined && (
+          <RouteCorridorSummary
+            compact
+            metrics={{
+              currentFloor: flight.currentPrice,
+              allTimeLow: flight.allTimeLow,
+              allTimeHigh: flight.allTimeHigh,
+              spreadPercent: (flight.allTimeHigh - flight.allTimeLow) > 0
+                ? Math.min(100, Math.max(0, Math.round(((flight.currentPrice - flight.allTimeLow) / (flight.allTimeHigh - flight.allTimeLow)) * 100)))
+                : 50,
+              totalChecks: 1,
+              hasSpread: flight.allTimeHigh > flight.allTimeLow,
+            }}
+          />
+        )}
       </div>
 
       <div className="mt-auto grid grid-cols-5 gap-1.5 pt-3 border-t border-gunmetal-border">

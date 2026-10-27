@@ -56,9 +56,20 @@ export const processNextFlight = async (): Promise<boolean> => {
   }
 
   if (result.status === 'Success' && result.price !== null) {
-    await evaluatePrice(flight, result.price, settings);
+    await evaluatePrice(flight, result.price, settings, {
+      airline: result.leadingAirline,
+      flightNumber: result.leadingFlightNumber,
+      metadata: result.itineraries ? JSON.stringify(result.itineraries) : null,
+      sourceUsed: result.sourceUsed,
+      itineraries: result.itineraries,
+    });
   } else {
-    historyDb.insert(flight.id, flight.currentPrice, result.status);
+    historyDb.insert(flight.id, flight.currentPrice, result.status, {
+      airline: result.leadingAirline || flight.airline,
+      flightNumber: result.leadingFlightNumber || flight.flightNumber,
+      metadata: result.itineraries ? JSON.stringify(result.itineraries) : null,
+      sourceUsed: result.sourceUsed,
+    });
   }
 
   // Calculate and save the next check time
