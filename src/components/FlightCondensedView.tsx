@@ -3,6 +3,7 @@
 import { Flight } from '@/types';
 import { RefreshCw, Clock, Pause, Play, Trash2, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
+import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 
 interface Props {
   flights: Flight[];
@@ -12,34 +13,7 @@ interface Props {
 }
 
 export default function FlightCondensedView({ flights, onRefresh, onShowHistory, onEdit }: Props) {
-  const toggleStatus = async (flight: Flight) => {
-    const newStatus = flight.status === 'Active' ? 'Paused' : 'Active';
-    await fetch(`/api/flights/${flight.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    onRefresh();
-  };
-
-  const deleteFlight = async (flightId: number) => {
-    if (!confirm('Are you sure you want to delete this tracked flight?')) return;
-    await fetch(`/api/flights/${flightId}`, { method: 'DELETE' });
-    onRefresh();
-  };
-
-  const checkNow = async (flightId: number) => {
-    const res = await fetch(`/api/flights/${flightId}/check`, { method: 'POST' });
-    if (res.ok) onRefresh();
-    else alert('Check failed. Ensure API quota is not exceeded.');
-  };
-
-  const cabinLabelMap: Record<string, string> = {
-    economy: 'Economy',
-    premium_economy: 'Prem Econ',
-    business: 'Business',
-    first: 'First',
-  };
+  const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
 
   return (
     <div className="bg-gunmetal-card rounded-lg border border-gunmetal-border overflow-hidden shadow-sm">
@@ -89,7 +63,7 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
 
                   <td className="py-3 px-4">
                     <span className="text-xs text-slate-300 block font-medium">
-                      {cabinLabelMap[flight.cabinClass] || 'Economy'}
+                      {CONDENSED_CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
                     </span>
                     <span className="text-[11px] text-gunmetal-muted block">
                       {flight.fareTier}

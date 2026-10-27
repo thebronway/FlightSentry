@@ -1,22 +1,12 @@
 # Calendar-App Roadmap
 
-*Last updated: 2026-10-26*  
-*Current Version: v0.4.5*
+*Last updated: 2026-10-27*  
+*Current Version: v0.5.0*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.5.0: Maintenance
-- Breakup monolithic files
-    - FlightModal.tsx
-    - SettingsForm.tsx
-    - HistoryModal.tsx
-    - PriceChart.tsx
-    - apprise.ts
-    - routeIntelligence.ts
-- Duplicated Controller Logic: FlightCard.tsx & FlightCondensedView.tsx
 
 ### Release v0.5.2: UI Fixes
 - Mobile fixes
@@ -35,3 +25,5 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - When are checks done is less than 14 days out. 
 - Checks are done from when added?
 - Add what data source was used on the history table. 
+
+### Release v0.5.4: Security and Best Practices Audit

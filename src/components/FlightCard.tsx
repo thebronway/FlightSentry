@@ -3,6 +3,7 @@
 import { Flight } from '@/types';
 import { RefreshCw, Clock, Pause, Play, Trash2, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
+import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }: Props) {
+  const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
+
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
   const benchmarkLabel = isPurchased ? 'Paid' : 'Initial';
@@ -40,35 +43,6 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
     secondaryDetail += ` (Excl: ${flight.excludedAirlines})`;
   }
 
-  const cabinLabelMap: Record<string, string> = {
-    economy: 'Economy',
-    premium_economy: 'Prem Econ',
-    business: 'Business',
-    first: 'First Class',
-  };
-
-  const toggleStatus = async () => {
-    const newStatus = flight.status === 'Active' ? 'Paused' : 'Active';
-    await fetch(`/api/flights/${flight.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    onRefresh();
-  };
-
-  const deleteFlight = async () => {
-    if (!confirm('Are you sure you want to delete this tracked flight?')) return;
-    await fetch(`/api/flights/${flight.id}`, { method: 'DELETE' });
-    onRefresh();
-  };
-
-  const checkNow = async () => {
-    const res = await fetch(`/api/flights/${flight.id}/check`, { method: 'POST' });
-    if (res.ok) onRefresh();
-    else alert('Check failed. Ensure API quota is not exceeded.');
-  };
-
   return (
     <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${flight.status === 'Expired' ? 'border-red-900/50 opacity-75' : 'border-gunmetal-border'} p-5 flex flex-col justify-between transition-colors`}>
       <div>
@@ -91,7 +65,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
 
         <div className="flex flex-wrap items-center gap-1.5 my-3">
           <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
-            {cabinLabelMap[flight.cabinClass] || 'Economy'}
+            {CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
           </span>
           <span className="bg-gunmetal-canvas text-gunmetal-muted border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
             {flight.fareTier}
@@ -139,7 +113,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
       <div className="mt-auto grid grid-cols-5 gap-1.5 pt-3 border-t border-gunmetal-border">
         <button
           title="Check Price Now"
-          onClick={checkNow}
+          onClick={() => checkNow(flight.id)}
           disabled={flight.status !== 'Active'}
           className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-md disabled:opacity-40 transition-colors"
         >
@@ -161,7 +135,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
         </button>
         <button
           title={flight.status === 'Active' ? 'Pause Monitoring' : 'Resume Monitoring'}
-          onClick={toggleStatus}
+          onClick={() => toggleStatus(flight)}
           disabled={flight.status === 'Expired'}
           className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-40 transition-colors"
         >
@@ -169,7 +143,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
         </button>
         <button
           title="Delete Flight"
-          onClick={deleteFlight}
+          onClick={() => deleteFlight(flight.id)}
           className="flex justify-center items-center p-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-md transition-colors"
         >
           <Trash2 className="w-4 h-4" />

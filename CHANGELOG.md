@@ -1,9 +1,19 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-10-26*  
-*Current Version: v0.4.5*
+*Last updated: 2026-10-27*  
+*Current Version: v0.5.0*
 
 ## Changelog
+
+### Release v0.5.0
+- Breakup monolithic files
+    - FlightModal.tsx
+    - SettingsForm.tsx
+    - HistoryModal.tsx
+    - PriceChart.tsx
+    - apprise.ts
+    - routeIntelligence.ts
+- Removed duplicated logic in FlightCard.tsx and FlightCondensedView.tsx
 
 ### Release v0.4.5
 - Added multi-carrier price trend plotting to PriceChart for route searches.

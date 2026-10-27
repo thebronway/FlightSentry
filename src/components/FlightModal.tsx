@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { X, PlaneTakeoff, Compass, Lock, Tag, ShoppingBag, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { FareTier, CabinClass, SearchMode, Flight, Settings } from '@/types';
+import { useRouteLookup } from '@/hooks/useRouteLookup';
+import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
+import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
+import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
 
 interface Props {
   isOpen: boolean;
@@ -10,8 +14,6 @@ interface Props {
   onSuccess: () => void;
   initialFlight?: Flight | null;
 }
-
-type TrackingGoal = 'watching' | 'booked';
 
 const DEFAULT_STATE = {
   searchMode: 'Route' as SearchMode,
@@ -44,11 +46,23 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Route auto-detection state
-  const [detectedRoute, setDetectedRoute] = useState<{ origin: string; destination: string; airlineName?: string } | null>(null);
-  const [routeLookupLoading, setRouteLookupLoading] = useState(false);
-  const [routeAlert, setRouteAlert] = useState<'confirmed' | 'mismatch' | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const {
+    detectedRoute,
+    routeLookupLoading,
+    routeAlert,
+    adoptDetectedRoute,
+    resetLookupState,
+  } = useRouteLookup({
+    isOpen,
+    searchMode: formData.searchMode,
+    airline: formData.airline,
+    flightNumber: formData.flightNumber,
+    origin: formData.origin,
+    destination: formData.destination,
+    onAutoPopulate: (origin, destination) => {
+      setFormData(prev => ({ ...prev, origin, destination }));
+    },
+  });
 
   useEffect(() => {
     fetch('/api/settings')
@@ -107,107 +121,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
     }
   }, [isOpen, initialFlight]);
 
-  // Debounced Route Lookup for Flight Number Mode
-  useEffect(() => {
-    if (!isOpen || formData.searchMode !== 'FlightNumber') {
-      setDetectedRoute(null);
-      setRouteAlert(null);
-      return;
-    }
-
-    const airline = formData.airline.trim().toUpperCase();
-    const flightNum = formData.flightNumber.trim();
-
-    if (airline.length < 2 || flightNum.length < 1) {
-      setDetectedRoute(null);
-      setRouteAlert(null);
-      return;
-    }
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    console.log(`[FlightModal] Initiating debounced lookup for Carrier: "${airline}", Flight#: "${flightNum}"`);
-    debounceTimerRef.current = setTimeout(async () => {
-      setRouteLookupLoading(true);
-      try {
-        console.log(`[FlightModal] Dispatching POST to /api/flights/lookup-route with:`, { airline, flightNumber: flightNum });
-        const res = await fetch('/api/flights/lookup-route', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ airline, flightNumber: flightNum }),
-        });
-        console.log(`[FlightModal] HTTP response status: ${res.status}`);
-        const data = await res.json();
-        console.log(`[FlightModal] Response payload:`, data);
-
-        if (data.success && data.origin && data.destination) {
-          const detected = {
-            origin: data.origin.toUpperCase(),
-            destination: data.destination.toUpperCase(),
-            airlineName: data.airlineName,
-          };
-          setDetectedRoute(detected);
-          console.log(`[FlightModal] Route successfully resolved: ${detected.origin} -> ${detected.destination}`);
-
-          // User guidance: Auto-populate if origin and destination are empty
-          if (!formData.origin && !formData.destination) {
-            console.log(`[FlightModal] Origin and destination are empty. Auto-populating with ${detected.origin} -> ${detected.destination}`);
-            setFormData(prev => ({
-              ...prev,
-              origin: detected.origin,
-              destination: detected.destination,
-            }));
-            setRouteAlert('confirmed');
-          } else if (
-            formData.origin.toUpperCase() !== detected.origin ||
-            formData.destination.toUpperCase() !== detected.destination
-          ) {
-            // Mismatch warning alert when manually typed pairs differ from lookup
-            console.log(`[FlightModal] Route mismatch detected. Entered: ${formData.origin}->${formData.destination}, Detected: ${detected.origin}->${detected.destination}`);
-            setRouteAlert('mismatch');
-          } else {
-            setRouteAlert('confirmed');
-          }
-        } else {
-          console.warn(`[FlightModal] Lookup did not return a valid route:`, data.error || 'Unknown reason');
-          setDetectedRoute(null);
-          setRouteAlert(null);
-        }
-      } catch (err) {
-        console.error('[FlightModal] Fetch exception during route lookup:', err);
-      } finally {
-        setRouteLookupLoading(false);
-      }
-    }, 450);
-
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    };
-  }, [formData.airline, formData.flightNumber, formData.searchMode, isOpen]);
-
-  // Sync mismatch alert dynamically if user manually updates origin/destination
-  useEffect(() => {
-    if (formData.searchMode === 'FlightNumber' && detectedRoute) {
-      const currentOrigin = formData.origin.trim().toUpperCase();
-      const currentDest = formData.destination.trim().toUpperCase();
-      if (currentOrigin && currentDest) {
-        if (currentOrigin !== detectedRoute.origin || currentDest !== detectedRoute.destination) {
-          setRouteAlert('mismatch');
-        } else {
-          setRouteAlert('confirmed');
-        }
-      }
-    }
-  }, [formData.origin, formData.destination, detectedRoute, formData.searchMode]);
-
   if (!isOpen) return null;
 
   const handleClose = () => {
     setFormData(DEFAULT_STATE);
-    setDetectedRoute(null);
-    setRouteAlert(null);
+    resetLookupState();
     setError(null);
     onClose();
   };
@@ -349,93 +267,16 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
           )}
 
           {/* Tracking Goal Differentiation */}
-          <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Tracking Goal
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, trackingGoal: 'watching' })}
-                className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
-                  formData.trackingGoal === 'watching'
-                    ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
-                    : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
-                }`}
-              >
-                <Tag className="w-3.5 h-3.5" />
-                <span>Planning to Book (Watching)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, trackingGoal: 'booked' })}
-                className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
-                  formData.trackingGoal === 'booked'
-                    ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
-                    : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
-                }`}
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Already Booked (Drop Alerts)</span>
-              </button>
-            </div>
-
-            {formData.trackingGoal === 'watching' ? (
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Initial Baseline Price ($)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  placeholder="Leave blank to auto-detect from live fare on save"
-                  value={formData.baselinePrice}
-                  onChange={e => setFormData({ ...formData, baselinePrice: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                />
-                <p className="text-[11px] text-gunmetal-muted mt-1">
-                  Alerts trigger when the live price drops below this initial tracked fare.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                    Purchase Price ($ Paid)
-                  </label>
-                  <input
-                    required={formData.trackingGoal === 'booked'}
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    placeholder="e.g. 349.00"
-                    value={formData.purchasePrice}
-                    onChange={e => setFormData({ ...formData, purchasePrice: e.target.value })}
-                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                  />
-                  <p className="text-[11px] text-gunmetal-muted mt-1">
-                    Alerts trigger when fares drop below what you paid.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                    PNR / Confirmation Code
-                  </label>
-                  <input
-                    maxLength={8}
-                    placeholder="e.g. K9XZ4B"
-                    value={formData.pnr}
-                    onChange={e => setFormData({ ...formData, pnr: e.target.value })}
-                    className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                  />
-                  <p className="text-[11px] text-gunmetal-muted mt-1">
-                    Airline booking confirmation reference.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          <TrackingGoalSection
+            trackingGoal={formData.trackingGoal}
+            baselinePrice={formData.baselinePrice}
+            purchasePrice={formData.purchasePrice}
+            pnr={formData.pnr}
+            onGoalChange={goal => setFormData({ ...formData, trackingGoal: goal })}
+            onBaselineChange={val => setFormData({ ...formData, baselinePrice: val })}
+            onPurchaseChange={val => setFormData({ ...formData, purchasePrice: val })}
+            onPnrChange={val => setFormData({ ...formData, pnr: val })}
+          />
 
           {/* Flight Number Inputs (Presented First in FlightNumber Mode to Feed Detection) */}
           {formData.searchMode === 'FlightNumber' && (
@@ -504,14 +345,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        origin: detectedRoute.origin,
-                        destination: detectedRoute.destination,
-                      }));
-                      setRouteAlert('confirmed');
-                    }}
+                    onClick={adoptDetectedRoute}
                     className="flex-shrink-0 px-2.5 py-1.5 text-xs font-semibold bg-amber-900/50 hover:bg-amber-800/60 text-amber-100 border border-amber-700/60 rounded transition-colors whitespace-nowrap self-end sm:self-center"
                   >
                     Use {detectedRoute.origin} → {detectedRoute.destination}
@@ -625,51 +459,18 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             </div>
           </div>
 
-          {/* Per-Flight Alert Threshold Overrides */}
-          <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Price Drop Alert Thresholds (Optional Overrides)
-            </h3>
-            <p className="text-[11px] text-gunmetal-muted">
-              Leave blank to inherit global defaults from Settings. Specify a custom amount or percentage if you only want alerts above specific thresholds for this flight.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Min $ Drop to Alert
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gunmetal-muted text-xs">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder={defaultSettings?.minDropDollar != null ? String(defaultSettings.minDropDollar) : '15'}
-                    value={formData.minDropDollar}
-                    onChange={e => setFormData({ ...formData, minDropDollar: e.target.value })}
-                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Min % Drop to Alert
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gunmetal-muted text-xs">%</span>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder={defaultSettings?.minDropPercent != null ? String(defaultSettings.minDropPercent) : '5'}
-                    value={formData.minDropPercent}
-                    onChange={e => setFormData({ ...formData, minDropPercent: e.target.value })}
-                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Alert Thresholds and Mute/Pause Toggles */}
+          <AlertThresholdsSection
+            minDropDollar={formData.minDropDollar}
+            minDropPercent={formData.minDropPercent}
+            pauseTracking={formData.pauseTracking}
+            disableNotifications={formData.disableNotifications}
+            defaultSettings={defaultSettings}
+            onDollarChange={val => setFormData({ ...formData, minDropDollar: val })}
+            onPercentChange={val => setFormData({ ...formData, minDropPercent: val })}
+            onPauseChange={val => setFormData({ ...formData, pauseTracking: val })}
+            onDisableNotificationsChange={val => setFormData({ ...formData, disableNotifications: val })}
+          />
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -684,72 +485,16 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             />
           </div>
 
-          {/* Tracking & Alert Control Toggles with Explicit Verbiage */}
-          <div className="space-y-2.5 pt-1">
-            <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.pauseTracking}
-                onChange={e => setFormData({ ...formData, pauseTracking: e.target.checked })}
-                className="w-4 h-4 mt-0.5 accent-slate-500 rounded"
-              />
-              <div>
-                <span>Pause price checks</span>
-                <span className="block text-xs text-gunmetal-muted">Stops all automated API polling for this flight.</span>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.disableNotifications}
-                onChange={e => setFormData({ ...formData, disableNotifications: e.target.checked })}
-                className="w-4 h-4 mt-0.5 accent-slate-500 rounded"
-              />
-              <div>
-                <span>Mute notifications</span>
-                <span className="block text-xs text-gunmetal-muted">Continue checking and recording prices in history, but do not dispatch alerts.</span>
-              </div>
-            </label>
-          </div>
-
-          <div className="pt-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-gunmetal-border pb-1.5 mb-2.5">
-              Schedule Cadence Overrides (Leave blank for global settings)
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gunmetal-muted mb-1">Far Out (&gt;90d hrs)</label>
-                <input
-                  type="number"
-                  placeholder={defaultSettings?.scheduleFarOut != null ? String(defaultSettings.scheduleFarOut) : '48'}
-                  value={formData.overrideFarOut}
-                  onChange={e => setFormData({ ...formData, overrideFarOut: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gunmetal-muted mb-1">Standard (14-90d hrs)</label>
-                <input
-                  type="number"
-                  placeholder={defaultSettings?.scheduleStandard != null ? String(defaultSettings.scheduleStandard) : '24'}
-                  value={formData.overrideStandard}
-                  onChange={e => setFormData({ ...formData, overrideStandard: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gunmetal-muted mb-1">Final Stretch (&lt;14d hrs)</label>
-                <input
-                  type="number"
-                  placeholder={defaultSettings?.scheduleFinalStretch != null ? String(defaultSettings.scheduleFinalStretch) : '12'}
-                  value={formData.overrideFinalStretch}
-                  onChange={e => setFormData({ ...formData, overrideFinalStretch: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                />
-              </div>
-            </div>
-          </div>
+          {/* Schedule Cadence Overrides */}
+          <CadenceOverridesSection
+            overrideFarOut={formData.overrideFarOut}
+            overrideStandard={formData.overrideStandard}
+            overrideFinalStretch={formData.overrideFinalStretch}
+            defaultSettings={defaultSettings}
+            onFarOutChange={val => setFormData({ ...formData, overrideFarOut: val })}
+            onStandardChange={val => setFormData({ ...formData, overrideStandard: val })}
+            onFinalStretchChange={val => setFormData({ ...formData, overrideFinalStretch: val })}
+          />
 
           <div className="pt-4 border-t border-gunmetal-border flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-xs text-sky-400 flex items-center gap-1.5 font-medium">
