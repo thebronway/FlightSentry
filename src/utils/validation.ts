@@ -23,7 +23,7 @@ export const flightSchema = z.object({
 });
 
 export const flightStatusSchema = z.object({
-  status: z.enum(['Active', 'Paused', 'Expired']),
+  status: z.enum(['Upcoming', 'Paused', 'Past']),
 });
 
 export const settingsSchema = z.object({

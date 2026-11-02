@@ -7,11 +7,14 @@ import { executeSearchStrategy } from '@/services/datasource';
 import { checkAndResetQuota } from '@/services/quota';
 import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
+import { expireOldFlights } from '@/services/scheduler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const settings = settingsDb.get();
+    expireOldFlights(settings.timezone);
     const flights = flightDb.getAll();
     return NextResponse.json(flights);
   } catch (error) {
@@ -32,7 +35,12 @@ export async function POST(req: NextRequest) {
       baselinePrice = parsed.purchasePrice;
     }
 
-    const initialStatus: FlightStatus = body.status === 'Paused' ? 'Paused' : 'Active';
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (parsed.departureDate < todayStr) {
+      return NextResponse.json({ error: 'Departure date cannot be in the past.' }, { status: 400 });
+    }
+
+    const initialStatus: FlightStatus = body.status === 'Paused' ? 'Paused' : 'Upcoming';
 
     let initialAirline = parsed.airline || null;
     let initialFlightNumber = parsed.flightNumber || null;

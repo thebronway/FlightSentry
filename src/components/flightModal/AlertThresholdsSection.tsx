@@ -28,12 +28,12 @@ export default function AlertThresholdsSection({
   return (
     <div className="space-y-4">
       {/* Per-Flight Alert Threshold Overrides */}
-      <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
+      <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-4 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
           Price Drop Alert Thresholds (Optional Overrides)
         </h3>
         <p className="text-[11px] text-gunmetal-muted">
-          Leave blank to inherit global defaults from Settings[cite: 1]. Specify a custom amount or percentage if you only want alerts above specific thresholds for this flight[cite: 1].
+          Leave blank to inherit global defaults from Settings. Specify a custom amount or percentage if you only want alerts above specific thresholds for this flight.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -84,7 +84,7 @@ export default function AlertThresholdsSection({
           />
           <div>
             <span>Pause price checks</span>
-            <span className="block text-xs text-gunmetal-muted">Stops all automated API polling for this flight[cite: 1].</span>
+            <span className="block text-xs text-gunmetal-muted">Stops all automated API polling for this flight.</span>
           </div>
         </label>
         <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">
@@ -96,7 +96,7 @@ export default function AlertThresholdsSection({
           />
           <div>
             <span>Mute notifications</span>
-            <span className="block text-xs text-gunmetal-muted">Continue checking and recording prices in history, but do not dispatch alerts[cite: 1].</span>
+            <span className="block text-xs text-gunmetal-muted">Continue checking and recording prices in history, but do not dispatch alerts.</span>
           </div>
         </label>
       </div>

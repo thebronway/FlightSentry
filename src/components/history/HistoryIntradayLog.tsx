@@ -3,7 +3,7 @@
 import { Flight, PriceHistory } from '@/types';
 import { DayGroup } from './types';
 import { formatCurrency } from '@/utils/format';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { TrendingDown, TrendingUp, ExternalLink } from 'lucide-react';
 
 interface Props {
   dayGroups: DayGroup[];
@@ -106,15 +106,29 @@ export default function HistoryIntradayLog({
                         )}
                       </div>
 
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-                          record.status === 'Success'
-                            ? 'bg-green-900/30 text-green-400 border-green-800/40'
-                            : 'bg-red-900/30 text-red-400 border-red-800/40'
-                        }`}
-                      >
-                        {record.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {record.status === 'Success' && (
+                          <a
+                            href={`https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}${record.airline ? `%20${encodeURIComponent(record.airline)}` : ''}${record.flightNumber ? `%20${encodeURIComponent(record.flightNumber)}` : ''}%20oneway`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Search this check on Google Flights"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-200 hover:text-white rounded-md shadow-sm transition-colors"
+                          >
+                            <span>Google Flights</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+                          </a>
+                        )}
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
+                            record.status === 'Success'
+                              ? 'bg-green-900/30 text-green-400 border-green-800/40'
+                              : 'bg-red-900/30 text-red-400 border-red-800/40'
+                          }`}
+                        >
+                          {record.status}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}

@@ -7,11 +7,11 @@ import { checkAndResetQuota, canMakeApiCall } from './quota';
 import { isFlightExpired } from '../utils/date';
 
 export const expireOldFlights = (timezone: string): void => {
-  const flights = flightDb.getAll().filter(f => f.status === 'Active');
+  const flights = flightDb.getAll().filter(f => f.status === 'Upcoming');
   for (const flight of flights) {
     if (isFlightExpired(flight.departureDate, timezone)) {
-      console.log(`Flight ${flight.id} expired. Marking as Expired.`);
-      flightDb.updateStatus(flight.id, 'Expired');
+      console.log(`Flight ${flight.id} departed (${flight.departureDate}). Marking as Past.`);
+      flightDb.updateStatus(flight.id, 'Past');
     }
   }
 };

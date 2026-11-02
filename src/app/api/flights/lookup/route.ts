@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       cabinClass: body.cabinClass || 'economy',
       baselinePrice: 0,
       currentPrice: 0,
-      status: 'Active' as const,
+      status: 'Upcoming' as const,
       nextCheckAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

@@ -7,7 +7,7 @@ import FlightCondensedView from '@/components/FlightCondensedView';
 import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
-import { Plus, LayoutGrid, List, ArrowDownUp } from 'lucide-react';
+import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight } from 'lucide-react';
 
 type SortOption = 'departure-soonest' | 'departure-latest' | 'price-low' | 'price-high' | 'route-az';
 type ViewMode = 'cards' | 'condensed';
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [sortBy, setSortBy] = useState<SortOption>('departure-soonest');
   const [quotaRefreshTrigger, setQuotaRefreshTrigger] = useState(0);
+  const [showPastFlights, setShowPastFlights] = useState(false);
 
   const fetchFlights = async () => {
     const res = await fetch('/api/flights');
@@ -131,31 +132,85 @@ export default function Dashboard() {
 
       <QuotaRibbon refreshTrigger={quotaRefreshTrigger} />
 
-      {flights.length === 0 ? (
-        <div className="py-16 text-center text-gunmetal-muted border-2 border-dashed border-gunmetal-border rounded-lg bg-gunmetal-card/40">
-          <p className="text-base font-medium text-slate-300">No flights tracked yet</p>
-          <p className="text-xs text-gunmetal-muted mt-1">Click "Add Flight" above to begin monitoring flight fares.</p>
-        </div>
-      ) : viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {sortedFlights.map(f => (
-            <FlightCard 
-               key={f.id} 
-               flight={f} 
-               onRefresh={handleRefreshAll} 
-               onShowHistory={() => setHistoryFlight(f)} 
-               onEdit={handleEdit} 
-            />
-          ))}
-        </div>
-      ) : (
-        <FlightCondensedView 
-          flights={sortedFlights} 
-          onRefresh={handleRefreshAll} 
-          onShowHistory={f => setHistoryFlight(f)} 
-          onEdit={handleEdit} 
-        />
-      )}
+      {(() => {
+        const activeFlights = sortedFlights.filter(f => f.status !== 'Past');
+        const pastFlights = sortedFlights.filter(f => f.status === 'Past');
+
+        return (
+          <>
+            {activeFlights.length === 0 && pastFlights.length === 0 ? (
+              <div className="py-16 text-center text-gunmetal-muted border-2 border-dashed border-gunmetal-border rounded-lg bg-gunmetal-card/40">
+                <p className="text-base font-medium text-slate-300">No flights tracked yet</p>
+                <p className="text-xs text-gunmetal-muted mt-1">Click "Add Flight" above to begin monitoring flight fares.</p>
+              </div>
+            ) : activeFlights.length === 0 ? (
+              <div className="py-10 text-center text-gunmetal-muted border border-dashed border-gunmetal-border rounded-lg bg-gunmetal-card/40 mb-6">
+                <p className="text-sm font-medium text-slate-300">No upcoming flights currently monitored</p>
+                <p className="text-xs text-gunmetal-muted mt-1">Check past flights below or click "Add Flight" to start tracking.</p>
+              </div>
+            ) : viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {activeFlights.map(f => (
+                  <FlightCard 
+                    key={f.id} 
+                    flight={f} 
+                    onRefresh={handleRefreshAll} 
+                    onShowHistory={() => setHistoryFlight(f)} 
+                    onEdit={handleEdit} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <FlightCondensedView 
+                flights={activeFlights} 
+                onRefresh={handleRefreshAll} 
+                onShowHistory={f => setHistoryFlight(f)} 
+                onEdit={handleEdit} 
+              />
+            )}
+
+            {/* Collapsible Hidden Section for Past Flights */}
+            {pastFlights.length > 0 && (
+              <div className="mt-10 pt-6 border-t border-gunmetal-border/80">
+                <button
+                  type="button"
+                  onClick={() => setShowPastFlights(!showPastFlights)}
+                  className="flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white transition-colors py-2 px-3 rounded-md bg-gunmetal-card border border-gunmetal-border shadow-sm mb-4"
+                >
+                  <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${showPastFlights ? 'rotate-90' : ''}`} />
+                  <span>Past Flights ({pastFlights.length})</span>
+                  <span className="text-xs text-gunmetal-muted font-normal ml-1">
+                    (Checks disabled)
+                  </span>
+                </button>
+
+                {showPastFlights && (
+                  viewMode === 'cards' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {pastFlights.map(f => (
+                        <FlightCard 
+                          key={f.id} 
+                          flight={f} 
+                          onRefresh={handleRefreshAll} 
+                          onShowHistory={() => setHistoryFlight(f)} 
+                          onEdit={handleEdit} 
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <FlightCondensedView 
+                      flights={pastFlights} 
+                      onRefresh={handleRefreshAll} 
+                      onShowHistory={f => setHistoryFlight(f)} 
+                      onEdit={handleEdit} 
+                    />
+                  )
+                )}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       <HistoryModal flight={historyFlight} onClose={() => setHistoryFlight(null)} />
       

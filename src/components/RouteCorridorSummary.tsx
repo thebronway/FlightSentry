@@ -12,6 +12,22 @@ interface Props {
 export default function RouteCorridorSummary({ metrics, compact = false }: Props) {
   const { currentFloor, allTimeLow, allTimeHigh, spreadPercent, hasSpread } = metrics;
 
+  // Resolve human-readable deal label
+  const dealBadge = !hasSpread
+    ? 'Single Check Recorded'
+    : spreadPercent === 0
+    ? 'Route Floor (All-Time Low)'
+    : spreadPercent === 100
+    ? 'Route Ceiling (All-Time High)'
+    : spreadPercent < 35
+    ? `Great Deal (${spreadPercent}% of range)`
+    : spreadPercent <= 65
+    ? `Typical Range (${spreadPercent}% of range)`
+    : `Above Average (${spreadPercent}% of range)`;
+
+  // Normalized clamped position for indicator pin so it never clips edges
+  const pinPositionPercent = hasSpread ? Math.min(97, Math.max(3, spreadPercent)) : 50;
+
   if (compact) {
     return (
       <div className="space-y-1.5 pt-2 border-t border-gunmetal-border/70">
@@ -20,22 +36,32 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
             <Gauge className="w-3 h-3 text-slate-400" /> Market Corridor
           </span>
           <span className="font-bold text-slate-200">
-            {formatCurrency(allTimeLow)} – {formatCurrency(allTimeHigh)}
+            {hasSpread
+              ? `${formatCurrency(allTimeLow)} – ${formatCurrency(allTimeHigh)}`
+              : `${formatCurrency(currentFloor)} (1 Check)`}
           </span>
         </div>
-        {/* Visual Spread Bar */}
-        <div className="relative w-full h-2 bg-gunmetal-canvas rounded-full border border-gunmetal-border overflow-hidden">
+
+        {/* Visual Spread Bar on Card */}
+        <div className="relative w-full h-2 rounded-full border border-gunmetal-border/80 p-0">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-rose-500 transition-all"
-            style={{ width: '100%' }}
+            className={`w-full h-full rounded-full ${
+              hasSpread
+                ? 'bg-gradient-to-r from-emerald-500/80 via-amber-400/70 to-rose-500/80'
+                : 'bg-slate-700/60'
+            }`}
           />
-          {hasSpread && (
-            <div
-              className="absolute top-0 bottom-0 w-1.5 bg-white shadow-sm ring-1 ring-black/40 rounded-full transition-all"
-              style={{ left: `calc(${spreadPercent}% - 3px)` }}
-              title={`Current Floor: ${formatCurrency(currentFloor)} (${spreadPercent}% of corridor)`}
-            />
-          )}
+          {/* Circular White Indicator Pip */}
+          <div
+            className="absolute top-1/2 w-3.5 h-3.5 rounded-full bg-white shadow-md ring-2 ring-gunmetal-card border border-slate-300 flex items-center justify-center transition-all pointer-events-none"
+            style={{
+              left: `${pinPositionPercent}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            title={hasSpread ? `Current: ${formatCurrency(currentFloor)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor)}`}
+          >
+            <div className="w-1 h-1 rounded-full bg-slate-900" />
+          </div>
         </div>
       </div>
     );
@@ -43,10 +69,10 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
 
   return (
     <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-4 space-y-4">
-      {/* 3 Corridor Metrics */}
+      {/* 3 Corridor Stat Cards */}
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-green-400 block flex items-center justify-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-1">
             <ArrowDown className="w-3 h-3" /> All-Time Low
           </span>
           <span className="text-lg font-black text-slate-100 block mt-0.5">
@@ -55,7 +81,7 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
         </div>
 
         <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-slate-600/70 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 block flex items-center justify-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 flex items-center justify-center gap-1">
             <Gauge className="w-3 h-3" /> Current Floor
           </span>
           <span className="text-lg font-black text-white block mt-0.5">
@@ -64,7 +90,7 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
         </div>
 
         <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 block flex items-center justify-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center justify-center gap-1">
             <ArrowUp className="w-3 h-3" /> All-Time High
           </span>
           <span className="text-lg font-black text-slate-100 block mt-0.5">
@@ -74,38 +100,63 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
       </div>
 
       {/* Visual Market Spread Bar */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex justify-between items-center text-xs">
-          <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-            <span>Market Spread Corridor</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-gunmetal-card text-gunmetal-muted border border-gunmetal-border">
-              {spreadPercent}% to ceiling
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-300">Market Spread Corridor</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${
+                !hasSpread
+                  ? 'bg-gunmetal-card text-gunmetal-muted border-gunmetal-border'
+                  : spreadPercent === 0
+                  ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                  : spreadPercent < 35
+                  ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/50'
+                  : spreadPercent <= 65
+                  ? 'bg-amber-950/50 text-amber-300 border-amber-800/50'
+                  : 'bg-rose-950/50 text-rose-300 border-rose-800/50'
+              }`}
+            >
+              {dealBadge}
             </span>
-          </span>
+          </div>
           <span className="text-[11px] text-gunmetal-muted font-medium">
-            {currentFloor === allTimeLow
+            {!hasSpread
+              ? 'Monitoring route to plot market spread'
+              : currentFloor === allTimeLow
               ? 'Lowest recorded fare available today!'
               : `${formatCurrency(currentFloor - allTimeLow)} above route low`}
           </span>
         </div>
 
-        <div className="relative w-full h-3 bg-gunmetal-canvas rounded-full border border-gunmetal-border p-0.5">
+        {/* The Track with Gradient */}
+        <div className="relative w-full h-3 rounded-full border border-slate-700/60 shadow-inner">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 opacity-80"
-            style={{ width: '100%' }}
+            className={`w-full h-full rounded-full ${
+              hasSpread
+                ? 'bg-gradient-to-r from-emerald-500/80 via-amber-400/70 to-rose-500/80'
+                : 'bg-slate-800/80'
+            }`}
           />
-          {/* Position Marker */}
+          {/* Circular White Indicator Pip */}
           <div
-            className="absolute -top-1 w-2.5 h-5 bg-white border border-slate-900 rounded-sm shadow-md transition-all flex items-center justify-center pointer-events-none"
-            style={{ left: `calc(${spreadPercent}% - 5px)` }}
+            className="absolute top-1/2 w-4 h-4 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.8)] ring-2 ring-gunmetal-card border border-slate-300 flex items-center justify-center transition-all pointer-events-none"
+            style={{
+              left: `${pinPositionPercent}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            title={hasSpread ? `Current: ${formatCurrency(currentFloor)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor)}`}
           >
-            <div className="w-0.5 h-2.5 bg-slate-800 rounded-full" />
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
           </div>
         </div>
 
         <div className="flex justify-between text-[10px] text-gunmetal-muted font-mono px-0.5">
-          <span>{formatCurrency(allTimeLow)}</span>
-          <span>{formatCurrency(allTimeHigh)}</span>
+          <span className="text-green-400 font-semibold">{formatCurrency(allTimeLow)} (Low)</span>
+          {hasSpread && (
+            <span className="text-slate-300 font-semibold">Current: {formatCurrency(currentFloor)}</span>
+          )}
+          <span>{formatCurrency(allTimeHigh)} (High)</span>
         </div>
       </div>
     </div>

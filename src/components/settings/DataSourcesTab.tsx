@@ -46,7 +46,7 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
     <div className="space-y-6 pt-2">
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
         <p className="font-semibold text-slate-200 mb-0.5">Data Sources & Query Routing</p>
-        Configure flight search providers, monthly query allowances, and routing strategies. Flight checks dynamically query active sources based on priority order and configured fallback behavior[cite: 1].
+        Configure flight search providers, monthly query allowances, and routing strategies. Flight checks dynamically query active sources based on priority order and configured fallback behavior.
       </div>
 
       {/* Query Routing Strategy Selector */}
@@ -55,7 +55,7 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
         <select
           value={settings.fallbackStrategyMode}
           onChange={e => onChange({ ...settings, fallbackStrategyMode: e.target.value })}
-          className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+          className="w-full border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
         >
           <option value="sequential-query">Round-Robin (Atomic Rotation)</option>
           <option value="balanced-usage">Balanced Usage (% Quota Consumed)</option>
@@ -63,17 +63,17 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
         </select>
         <div className="space-y-1 text-xs text-gunmetal-muted pt-1">
           <p>
-            <strong className="text-slate-300">Round-Robin:</strong> Evenly alternates checks across active data sources to balance quota consumption using an atomic database pointer[cite: 1].
+            <strong className="text-slate-300">Round-Robin:</strong> Evenly alternates checks across active data sources to balance quota consumption using an atomic database pointer.
           </p>
           <p>
-            <strong className="text-slate-300">Balanced Usage:</strong> Dynamically directs queries to the active provider with the lowest percentage of monthly quota consumed[cite: 1].
+            <strong className="text-slate-300">Balanced Usage:</strong> Dynamically directs queries to the active provider with the lowest percentage of monthly quota consumed.
           </p>
           <p>
-            <strong className="text-slate-300">Exhaust Quota:</strong> Exclusively queries the top-priority active provider until its monthly allowance is exhausted, then falls back to the next provider[cite: 1].
+            <strong className="text-slate-300">Exhaust Quota:</strong> Exclusively queries the top-priority active provider until its monthly allowance is exhausted, then falls back to the next provider.
           </p>
         </div>
         <p className="text-[11px] text-amber-400 font-medium pt-1">
-          Priority Rule: Any active unmetered data source will automatically be queried first before any metered datasource, regardless of Query Routing Strategy[cite: 1].
+          Priority Rule: Any active unmetered data source will automatically be queried first before any metered datasource, regardless of Query Routing Strategy.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
         <div>
           <h3 className="text-sm font-bold text-slate-200">Data Source Stack & Priority Order</h3>
           <p className="text-xs text-gunmetal-muted">
-            Use the chevrons on each card to adjust priority rank. Inactive providers remain in their fixed rank position but are skipped at runtime[cite: 1].
+            Use the chevrons on each card to adjust priority rank. Inactive providers remain in their fixed rank position but are skipped at runtime.
           </p>
         </div>
 
@@ -101,11 +101,11 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
               key={key}
               className={`border rounded-lg transition-all ${
                 isEnabled
-                  ? 'bg-gunmetal-card border-gunmetal-border shadow-sm'
-                  : 'bg-gunmetal-canvas/40 border-gunmetal-border/50 opacity-60'
+                  ? 'bg-gunmetal-canvas/60 border-gunmetal-border shadow-sm'
+                  : 'bg-gunmetal-canvas/30 border-gunmetal-border/50 opacity-60'
               }`}
             >
-              <div className="p-4 border-b border-gunmetal-border flex items-center justify-between">
+              <div className="p-4 border-b border-gunmetal-border/70 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="w-7 h-7 rounded-md bg-gunmetal-canvas border border-gunmetal-border flex items-center justify-center text-xs font-mono font-bold text-slate-300">
                     #{index + 1}
@@ -136,13 +136,13 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
                     title="Move up in priority"
-                    className="p-1.5 text-gunmetal-muted hover:text-slate-200 disabled:opacity-20 transition-colors rounded hover:bg-gunmetal-canvas"
+                    className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
                   >
                     <ChevronUp className="w-4 h-4" />
                   </button>
@@ -151,7 +151,7 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
                     onClick={() => move(index, 1)}
                     disabled={index === currentOrder.length - 1}
                     title="Move down in priority"
-                    className="p-1.5 text-gunmetal-muted hover:text-slate-200 disabled:opacity-20 transition-colors rounded hover:bg-gunmetal-canvas"
+                    className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
                   >
                     <ChevronDown className="w-4 h-4" />
                   </button>
@@ -214,10 +214,10 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
                       Unlimited Datasource Notice & Disclaimer
                     </p>
                     <p>
-                      <strong>Priority:</strong> When enabled, this data source bypasses metered quotas and is executed first before any API-key data sources regardless of the configured Query Routing Strategy[cite: 1].
+                      <strong>Priority:</strong> When enabled, this data source bypasses metered quotas and is executed first before any API-key data sources regardless of the configured Query Routing Strategy.
                     </p>
                     <p>
-                      <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query[cite: 1]. Pairing with at least one official API provider is recommended[cite: 1].
+                      <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query. Pairing with at least one official API provider is recommended.
                     </p>
                   </div>
                 )}

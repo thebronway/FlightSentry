@@ -15,10 +15,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json();
     const parsed = flightSchema.parse(body);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (parsed.departureDate < todayStr) {
+      return NextResponse.json({ error: 'Departure date cannot be in the past.' }, { status: 400 });
+    }
+
     const updatedStatus = body.status === 'Paused' 
       ? 'Paused' 
-      : body.status === 'Active' 
-      ? 'Active' 
+      : body.status === 'Upcoming' 
+      ? 'Upcoming' 
+      : body.status === 'Past'
+      ? 'Past'
       : existing.status;
 
     flightDb.update(id, {

@@ -43,8 +43,10 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
     secondaryDetail += ` (Excl: ${flight.excludedAirlines})`;
   }
 
+  const isPast = flight.status === 'Past';
+
   return (
-    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${flight.status === 'Expired' ? 'border-red-900/50 opacity-75' : 'border-gunmetal-border'} p-5 flex flex-col justify-between transition-colors`}>
+    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${isPast ? 'border-slate-800/80 bg-gunmetal-card/60 opacity-70' : 'border-gunmetal-border'} p-5 flex flex-col justify-between transition-colors`}>
       <div>
         <div className="flex justify-between items-start mb-2">
           <div>
@@ -56,8 +58,11 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
             </p>
           </div>
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-            flight.status === 'Active' ? 'bg-green-900/30 text-green-400 border border-green-800/40' :
-            flight.status === 'Paused' ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40' : 'bg-red-900/30 text-red-400 border border-red-800/40'
+            flight.status === 'Upcoming'
+              ? 'bg-green-900/30 text-green-400 border border-green-800/40'
+              : flight.status === 'Paused'
+              ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
+              : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
           }`}>
             {flight.status}
           </span>
@@ -112,10 +117,10 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
 
       <div className="mt-auto grid grid-cols-5 gap-1.5 pt-3 border-t border-gunmetal-border">
         <button
-          title="Check Price Now"
+          title={isPast ? "Checks disabled for past flights" : "Check Price Now"}
           onClick={() => checkNow(flight.id)}
-          disabled={flight.status !== 'Active'}
-          className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-md disabled:opacity-40 transition-colors"
+          disabled={isPast || flight.status === 'Paused'}
+          className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -134,12 +139,12 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
           <Pencil className="w-4 h-4" />
         </button>
         <button
-          title={flight.status === 'Active' ? 'Pause Monitoring' : 'Resume Monitoring'}
+          title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause Monitoring' : 'Resume Monitoring'}
           onClick={() => toggleStatus(flight)}
-          disabled={flight.status === 'Expired'}
-          className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-40 transition-colors"
+          disabled={isPast}
+          className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
         >
-          {flight.status === 'Active' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {flight.status === 'Upcoming' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </button>
         <button
           title="Delete Flight"

@@ -1,9 +1,24 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-10-27*  
-*Current Version: v0.5.0*
+*Last updated: 2026-11-02*  
+*Current Version: v0.5.2*
 
 ## Changelog
+
+### Release v0.5.2
+- Updated DataSourcesTab provider cards to match Query Routing Strategy background styling.
+- Added right padding to Query Routing Strategy dropdown selector.
+- Replaced priority order chevrons with bordered button controls.
+- Expanded FlightModal container width to max-w-4xl and aligned departure date, fare restrictions, and cabin class into a 3-column row.
+- Updated TrackingGoalSection and AlertThresholdsSection containers to match settings card styling.
+- Removed manual Initial Baseline Price input in favor of automated live fare detection on save.
+- Added client-side and server-side validation blocking departure dates in the past.
+- Added Google Flights deep-link buttons to HistoryModal header and individual price check rows.
+- Replaced RouteCorridorSummary rainbow bar with continuous range gradient and circular indicator marker.
+- Replaced Active and Expired flight statuses with Upcoming and Past across database schema, scheduler, validation, and UI.
+- Added collapsible Past Flights section to dashboard to group departed flights.
+- Disabled automated background checks and manual check API triggers for past flights.
+- Removed citation artifacts across settings tabs and flight modal components.
 
 ### Release v0.5.0
 - Breakup monolithic files

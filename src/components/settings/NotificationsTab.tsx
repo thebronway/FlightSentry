@@ -23,7 +23,7 @@ export default function NotificationsTab({
     <div className="space-y-6 pt-2">
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
         <p className="font-semibold text-slate-200 mb-0.5">Global Alert & Notification Defaults</p>
-        Configure notification channels and baseline price drop thresholds. Tracked flights inherit these dollar and percentage thresholds unless custom overrides are defined on a specific flight[cite: 1].
+        Configure notification channels and baseline price drop thresholds. Tracked flights inherit these dollar and percentage thresholds unless custom overrides are defined on a specific flight.
       </div>
 
       {/* Master Enable and Thresholds */}
@@ -70,7 +70,7 @@ export default function NotificationsTab({
       <div className="pt-2">
         <h3 className="text-sm font-bold text-slate-200 mb-1">Notification Channels</h3>
         <p className="text-xs text-gunmetal-muted mb-4">
-          Configure endpoints individually. Toggling a channel off preserves credentials in the database while skipping dispatch[cite: 1].
+          Configure endpoints individually. Toggling a channel off preserves credentials in the database while skipping dispatch.
         </p>
 
         <div className="space-y-4">

@@ -6,27 +6,23 @@ export type TrackingGoal = 'watching' | 'booked';
 
 interface Props {
   trackingGoal: TrackingGoal;
-  baselinePrice: string;
   purchasePrice: string;
   pnr: string;
   onGoalChange: (goal: TrackingGoal) => void;
-  onBaselineChange: (val: string) => void;
   onPurchaseChange: (val: string) => void;
   onPnrChange: (val: string) => void;
 }
 
 export default function TrackingGoalSection({
   trackingGoal,
-  baselinePrice,
   purchasePrice,
   pnr,
   onGoalChange,
-  onBaselineChange,
   onPurchaseChange,
   onPnrChange,
 }: Props) {
   return (
-    <div className="border border-gunmetal-border rounded-lg p-3 bg-gunmetal-canvas/30 space-y-3">
+    <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-4 space-y-3">
       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
         Tracking Goal
       </label>
@@ -34,7 +30,7 @@ export default function TrackingGoalSection({
         <button
           type="button"
           onClick={() => onGoalChange('watching')}
-          className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
+          className={`flex items-center justify-center gap-2 p-2.5 rounded-md text-xs font-semibold transition-colors border ${
             trackingGoal === 'watching'
               ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
               : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
@@ -46,7 +42,7 @@ export default function TrackingGoalSection({
         <button
           type="button"
           onClick={() => onGoalChange('booked')}
-          className={`flex items-center justify-center gap-2 p-2 rounded-md text-xs font-semibold transition-colors border ${
+          className={`flex items-center justify-center gap-2 p-2.5 rounded-md text-xs font-semibold transition-colors border ${
             trackingGoal === 'booked'
               ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
               : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
@@ -58,21 +54,10 @@ export default function TrackingGoalSection({
       </div>
 
       {trackingGoal === 'watching' ? (
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-            Initial Baseline Price ($)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            min="1"
-            placeholder="Leave blank to auto-detect from live fare on save"
-            value={baselinePrice}
-            onChange={e => onBaselineChange(e.target.value)}
-            className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-          />
-          <p className="text-[11px] text-gunmetal-muted mt-1">
-            Alerts trigger when the live price drops below this initial tracked fare[cite: 1].
+        <div className="text-xs text-slate-300 bg-gunmetal-canvas/80 border border-gunmetal-border/80 rounded-md p-3">
+          <p className="font-semibold text-slate-100 mb-1">Automated Initial Fare Detection</p>
+          <p className="text-gunmetal-muted leading-relaxed">
+            FlightSentry automatically queries your active data sources to detect and establish the initial baseline fare upon save. Alerts trigger whenever future checks drop below that initial fare.
           </p>
         </div>
       ) : (
@@ -92,7 +77,7 @@ export default function TrackingGoalSection({
               className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
             />
             <p className="text-[11px] text-gunmetal-muted mt-1">
-              Alerts trigger when fares drop below what you paid[cite: 1].
+              Alerts trigger when fares drop below what you paid.
             </p>
           </div>
           <div>
@@ -104,10 +89,10 @@ export default function TrackingGoalSection({
               placeholder="e.g. K9XZ4B"
               value={pnr}
               onChange={e => onPnrChange(e.target.value)}
-              className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+              className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
             />
             <p className="text-[11px] text-gunmetal-muted mt-1">
-              Airline booking confirmation reference[cite: 1].
+              Airline booking confirmation reference.
             </p>
           </div>
         </div>

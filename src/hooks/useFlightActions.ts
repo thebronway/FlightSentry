@@ -22,7 +22,8 @@ export function useFlightActions(onRefresh: () => void) {
 
   const toggleStatus = useCallback(
     async (flight: Flight) => {
-      const newStatus = flight.status === 'Active' ? 'Paused' : 'Active';
+      if (flight.status === 'Past') return;
+      const newStatus = flight.status === 'Upcoming' ? 'Paused' : 'Upcoming';
       try {
         setLoadingFlightId(flight.id);
         const res = await fetch(`/api/flights/${flight.id}`, {
@@ -72,7 +73,8 @@ export function useFlightActions(onRefresh: () => void) {
         if (res.ok) {
           onRefresh();
         } else {
-          alert('Check failed. Ensure API quota is not exceeded.');
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'Check failed. Ensure API quota is not exceeded.');
         }
       } catch (err) {
         console.error('Failed to trigger manual flight check:', err);

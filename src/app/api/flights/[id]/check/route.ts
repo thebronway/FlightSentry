@@ -17,6 +17,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!flight) return NextResponse.json({ error: 'Flight not found' }, { status: 404 });
 
     let settings = settingsDb.get();
+
+    if (flight.status === 'Past' || new Date(flight.departureDate) < new Date(new Date().toDateString())) {
+      return NextResponse.json({ error: 'Manual checks are disabled for past flights.' }, { status: 400 });
+    }
     settings = checkAndResetQuota(settings);
 
     if (!canMakeApiCall(settings)) {

@@ -88,8 +88,11 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
 
                   <td className="py-3 px-4 whitespace-nowrap">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      flight.status === 'Active' ? 'bg-green-900/30 text-green-400 border border-green-800/40' :
-                      flight.status === 'Paused' ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40' : 'bg-red-900/30 text-red-400 border border-red-800/40'
+                      flight.status === 'Upcoming'
+                        ? 'bg-green-900/30 text-green-400 border border-green-800/40'
+                        : flight.status === 'Paused'
+                        ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
+                        : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
                     }`}>
                       {flight.status}
                     </span>
@@ -98,10 +101,10 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
                   <td className="py-3 px-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        title="Check Price Now"
+                        title={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check Price Now'}
                         onClick={() => checkNow(flight.id)}
-                        disabled={flight.status !== 'Active'}
-                        className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded disabled:opacity-40 transition-colors"
+                        disabled={flight.status !== 'Upcoming'}
+                        className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                       </button>
@@ -120,12 +123,12 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        title={flight.status === 'Active' ? 'Pause' : 'Resume'}
+                        title={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause' : 'Resume'}
                         onClick={() => toggleStatus(flight)}
-                        disabled={flight.status === 'Expired'}
-                        className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-40 transition-colors"
+                        disabled={flight.status === 'Past'}
+                        className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                       >
-                        {flight.status === 'Active' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        {flight.status === 'Upcoming' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       </button>
                       <button
                         title="Delete"

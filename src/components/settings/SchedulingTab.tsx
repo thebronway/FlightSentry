@@ -12,7 +12,7 @@ export default function SchedulingTab({ settings, onChange }: Props) {
     <div className="space-y-6 pt-2">
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
         <p className="font-semibold text-slate-200 mb-0.5">Global Check Cadence Defaults</p>
-        These cadences establish the global default check frequency for all tracked flights based on departure proximity. All flights inherit these intervals unless customized individually in flight settings[cite: 1].
+        These cadences establish the global default check frequency for all tracked flights based on departure proximity. All flights inherit these intervals unless customized individually in flight settings.
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
