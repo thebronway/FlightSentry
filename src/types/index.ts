@@ -75,8 +75,9 @@ export interface Settings {
   scheduleFarOut: number; // Hours between checks (>90 days)
   scheduleStandard: number; // Hours between checks (14-90 days)
   scheduleFinalStretch: number; // Hours between checks (<14 days)
-  operatingHoursStart: number; // e.g., 7 (7 AM)
-  operatingHoursEnd: number; // e.g., 23 (11 PM)
+  checkStartTime?: string | null; // e.g., '06:00' (HH:MM 24h format)
+  operatingHoursStart?: number | null;
+  operatingHoursEnd?: number | null;
   minDropDollar: number;
   minDropPercent: number;
   fallbackStrategyMode: string;
@@ -105,6 +106,9 @@ export interface Settings {
   genericWebhookEnabled: number;
   genericWebhookUrl?: string | null;
   smtpEnabled: number;
+  serpApiResetDate?: string | null; // YYYY-MM-DD
+  searchApiResetDate?: string | null; // YYYY-MM-DD
+  hasdataResetDate?: string | null; // YYYY-MM-DD
   quotaResetDate: string; // YYYY-MM-DD
   globalPause: number; // 0 (false) or 1 (true)
 }

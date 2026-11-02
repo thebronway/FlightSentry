@@ -6,9 +6,24 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 interface Props {
   settings: Settings;
   onChange: (settings: Settings) => void;
+  onSaveProvider: (providerKey: string) => Promise<void>;
+  savingProvider: string | null;
+  providerStatus: Record<string, { type: 'success' | 'error'; message: string } | null>;
+  onSaveStrategy: () => Promise<void>;
+  savingStrategy: boolean;
+  strategyStatus: { type: 'success' | 'error'; message: string } | null;
 }
 
-export default function DataSourcesTab({ settings, onChange }: Props) {
+export default function DataSourcesTab({
+  settings,
+  onChange,
+  onSaveProvider,
+  savingProvider,
+  providerStatus,
+  onSaveStrategy,
+  savingStrategy,
+  strategyStatus,
+}: Props) {
   const allKeys = ['serpapi', 'searchapi', 'hasdata', 'fastflights'];
   const currentOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata,fastflights')
     .split(',')
@@ -75,6 +90,24 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
         <p className="text-[11px] text-amber-400 font-medium pt-1">
           Priority Rule: Any active unmetered data source will automatically be queried first before any metered datasource, regardless of Query Routing Strategy.
         </p>
+
+        <div className="pt-3 border-t border-gunmetal-border flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs">
+            {strategyStatus && (
+              <span className={strategyStatus.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                {strategyStatus.message}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={savingStrategy}
+            onClick={onSaveStrategy}
+            className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
+          >
+            {savingStrategy ? 'Saving...' : 'Save Strategy'}
+          </button>
+        </div>
       </div>
 
       {/* Consolidated Reorderable Stack of Provider Cards */}
@@ -160,8 +193,8 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
 
               <div className="p-4 space-y-3">
                 {isMetered ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-1">
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
                         API Key
                       </label>
@@ -207,6 +240,29 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
                         className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                        Quota Reset Date
+                      </label>
+                      <input
+                        type="date"
+                        disabled={!isEnabled}
+                        value={
+                          (key === 'serpapi'
+                            ? settings.serpApiResetDate
+                            : key === 'searchapi'
+                            ? settings.searchApiResetDate
+                            : settings.hasdataResetDate) || ''
+                        }
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (key === 'serpapi') onChange({ ...settings, serpApiResetDate: val });
+                          if (key === 'searchapi') onChange({ ...settings, searchApiResetDate: val });
+                          if (key === 'hasdata') onChange({ ...settings, hasdataResetDate: val });
+                        }}
+                        className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm [color-scheme:dark]"
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-amber-950/20 border border-amber-900/40 rounded-md p-3.5 space-y-1.5 text-xs text-amber-300">
@@ -217,10 +273,28 @@ export default function DataSourcesTab({ settings, onChange }: Props) {
                       <strong>Priority:</strong> When enabled, this data source bypasses metered quotas and is executed first before any API-key data sources regardless of the configured Query Routing Strategy.
                     </p>
                     <p>
-                      <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query. Pairing with at least one official API provider is recommended.
+                      <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query. Pairing with at least one official API provider is highly recommended, as it will probably fail frequently.
                     </p>
                   </div>
                 )}
+
+                <div className="mt-4 pt-3 border-t border-gunmetal-border/70 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs">
+                    {providerStatus[key] && (
+                      <span className={providerStatus[key]?.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                        {providerStatus[key]?.message}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={savingProvider === key}
+                    onClick={() => onSaveProvider(key)}
+                    className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
+                  >
+                    {savingProvider === key ? 'Saving...' : `Save ${nameMap[key] || 'Provider'}`}
+                  </button>
+                </div>
               </div>
             </div>
           );

@@ -1,4 +1,4 @@
-import { Globe, Github, Box, Coffee } from 'lucide-react';
+import { Globe, Github, Coffee } from 'lucide-react';
 import packageInfo from '../../package.json';
 
 export default function Footer() {
@@ -28,22 +28,13 @@ export default function Footer() {
             <span>brian.conway.im</span>
           </a>
           <a 
-            href="https://github.com/thebronway/FlightSentry" 
+            href="https://github.com/thebronway/FlightSentry/issues" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="hover:text-purple-500 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Github className="w-4 h-4" />
-            <span>GitHub</span>
-          </a>
-          <a 
-            href="https://hub.docker.com/r/thebronway/flightsentry" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="hover:text-blue-500 transition-colors flex items-center gap-1.5 font-medium"
-          >
-            <Box className="w-4 h-4" />
-            <span>Docker Hub</span>
+            <span>Report An Issue</span>
           </a>
           <a 
             href="https://buymeacoffee.com/brianconway" 
@@ -52,7 +43,7 @@ export default function Footer() {
             className="hover:text-yellow-500 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Coffee className="w-4 h-4" />
-            <span>Support the Project</span>
+            <span>Support FlightSentry</span>
           </a>
         </div>
 

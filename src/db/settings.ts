@@ -34,6 +34,9 @@ export const settingsDb = {
         searchApiQuota = @searchApiQuota,
         hasdataQuota = @hasdataQuota,
         fastFlightsQuota = @fastFlightsQuota,
+        serpApiResetDate = @serpApiResetDate,
+        searchApiResetDate = @searchApiResetDate,
+        hasdataResetDate = @hasdataResetDate,
         serpApiPaused = @serpApiPaused,
         searchApiPaused = @searchApiPaused,
         hasdataPaused = @hasdataPaused,
@@ -59,6 +62,7 @@ export const settingsDb = {
         scheduleFarOut = @scheduleFarOut,
         scheduleStandard = @scheduleStandard,
         scheduleFinalStretch = @scheduleFinalStretch,
+        checkStartTime = @checkStartTime,
         operatingHoursStart = @operatingHoursStart,
         operatingHoursEnd = @operatingHoursEnd,
         minDropDollar = @minDropDollar,
@@ -88,5 +92,14 @@ export const settingsDb = {
   resetApiUsage: (newResetDate: string): void => {
     const stmt = db.prepare('UPDATE settings SET serpApiUsed = 0, searchApiUsed = 0, hasdataUsed = 0, fastFlightsUsed = 0, quotaResetDate = @newResetDate WHERE id = 1');
     stmt.run({ newResetDate });
+  },
+  resetProviderUsage: (source: 'serpapi' | 'searchapi' | 'hasdata', newResetDate: string): void => {
+    if (source === 'serpapi') {
+      db.prepare('UPDATE settings SET serpApiUsed = 0, serpApiResetDate = ? WHERE id = 1').run(newResetDate);
+    } else if (source === 'searchapi') {
+      db.prepare('UPDATE settings SET searchApiUsed = 0, searchApiResetDate = ? WHERE id = 1').run(newResetDate);
+    } else if (source === 'hasdata') {
+      db.prepare('UPDATE settings SET hasdataUsed = 0, hasdataResetDate = ? WHERE id = 1').run(newResetDate);
+    }
   }
 };

@@ -1,18 +1,35 @@
 import { settingsDb } from '../db/settings';
-import { getNextMonthString } from '../utils/date';
+import { getNextMonthResetDate } from '../utils/date';
 import { Settings } from '../types';
 
 export const checkAndResetQuota = (settings: Settings): Settings => {
   const today = new Date().toISOString().split('T')[0];
-  
+  let changed = false;
+
+  const checkProvider = (
+    provider: 'serpapi' | 'searchapi' | 'hasdata',
+    resetDate?: string | null
+  ) => {
+    const effectiveDate = resetDate || settings.quotaResetDate;
+    if (effectiveDate && today >= effectiveDate) {
+      console.log(`[Quota] Resetting ${provider} monthly quota usage (reached ${effectiveDate}).`);
+      const nextReset = getNextMonthResetDate(effectiveDate);
+      settingsDb.resetProviderUsage(provider, nextReset);
+      changed = true;
+    }
+  };
+
+  checkProvider('serpapi', settings.serpApiResetDate);
+  checkProvider('searchapi', settings.searchApiResetDate);
+  checkProvider('hasdata', settings.hasdataResetDate);
+
   if (today >= settings.quotaResetDate) {
-    console.log("Monthly quota reset triggered.");
-    const nextReset = getNextMonthString();
+    const nextReset = getNextMonthResetDate(settings.quotaResetDate);
     settingsDb.resetApiUsage(nextReset);
-    return settingsDb.get(); // Fetch updated settings
+    changed = true;
   }
-  
-  return settings;
+
+  return changed ? settingsDb.get() : settings;
 };
 
 export const canMakeApiCall = (settings: Settings): boolean => {

@@ -1,9 +1,23 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-02*  
-*Current Version: v0.5.2*
+*Current Version: v0.5.4*
 
 ## Changelog
+
+### Release v0.5.4
+- Rounded all currency amounts across the application to whole dollars (no cents).
+- Replaced global save button with granular saves per provider, routing strategy, schedule, and alert thresholds.
+- Streamlined notification channel cards to a single "Save & Test" action.
+- Added in-app unsaved changes modal guarding tab switches and dashboard navigation.
+- Removed operating hours in favor of daily check start time with 24-hour schedule preview.
+- Standardized schedule cadence selectors to curated dropdowns with a pause option.
+- Added data source badges to price history check logs.
+- Added independent quota reset dates for metered API providers.
+- Made upper region of flight cards and condensed rows clickable to open history.
+- Added direct Google Flights links to flight cards and condensed rows.
+- Disabled flight creation when data sources are unconfigured, paused, or live lookup fails.
+- Footer Updates
 
 ### Release v0.5.2
 - Updated DataSourcesTab provider cards to match Query Routing Strategy background styling.

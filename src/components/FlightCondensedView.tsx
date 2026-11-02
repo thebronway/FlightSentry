@@ -1,9 +1,10 @@
 'use client';
 
 import { Flight } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
+import { getGoogleFlightsUrl } from '@/utils/airline';
 
 interface Props {
   flights: Flight[];
@@ -37,10 +38,15 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
               const isDrop = flight.currentPrice < benchmarkPrice;
               const delta = benchmarkPrice - flight.currentPrice;
               const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
+              const googleFlightsUrl = getGoogleFlightsUrl(flight);
               return (
                 <tr key={flight.id} className="hover:bg-gunmetal-canvas/40 transition-colors">
-                  <td className="py-3 px-4">
-                    <div className="font-bold text-slate-100 font-sans">
+                  <td 
+                    onClick={() => onShowHistory(flight)} 
+                    className="py-3 px-4 cursor-pointer group"
+                    title="Click to view price history"
+                  >
+                    <div className="font-bold text-slate-100 font-sans group-hover:text-sky-400 transition-colors">
                       {isFlightNumMode ? `${flight.airline} ${flight.flightNumber}` : `${flight.origin} → ${flight.destination}`}
                     </div>
                     <div className="text-xs text-gunmetal-muted">
@@ -115,6 +121,15 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
                       >
                         <Clock className="w-3.5 h-3.5" />
                       </button>
+                      <a
+                        href={googleFlightsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Search on Google Flights"
+                        className="p-1.5 text-slate-300 hover:text-sky-400 hover:bg-gunmetal-canvas rounded transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                       <button
                         title="Edit Flight"
                         onClick={() => onEdit(flight)}

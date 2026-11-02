@@ -29,6 +29,10 @@ export function initDb() {
         "ALTER TABLE price_history ADD COLUMN flightNumber TEXT",
         "ALTER TABLE price_history ADD COLUMN metadata TEXT",
         "ALTER TABLE price_history ADD COLUMN sourceUsed TEXT",
+        "ALTER TABLE settings ADD COLUMN serpApiResetDate TEXT",
+        "ALTER TABLE settings ADD COLUMN searchApiResetDate TEXT",
+        "ALTER TABLE settings ADD COLUMN hasdataResetDate TEXT",
+        "ALTER TABLE settings ADD COLUMN checkStartTime TEXT DEFAULT '06:00'",
     ];
     for (const migration of migrations) {
         try {
@@ -36,6 +40,19 @@ export function initDb() {
         } catch {
             // Column already exists
         }
+    }
+
+    // Initialize per-provider reset dates from quotaResetDate if unset
+    try {
+        const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, hasdataResetDate FROM settings WHERE id = 1').get() as any;
+        if (row) {
+            const fallbackReset = row.quotaResetDate || new Date().toISOString().split('T')[0];
+            if (!row.serpApiResetDate) db.prepare('UPDATE settings SET serpApiResetDate = ? WHERE id = 1').run(fallbackReset);
+            if (!row.searchApiResetDate) db.prepare('UPDATE settings SET searchApiResetDate = ? WHERE id = 1').run(fallbackReset);
+            if (!row.hasdataResetDate) db.prepare('UPDATE settings SET hasdataResetDate = ? WHERE id = 1').run(fallbackReset);
+        }
+    } catch {
+        // Ignored
     }
 
     // Ensure all 5 providers exist in dataSourceStrategy for existing databases

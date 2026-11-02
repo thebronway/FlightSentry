@@ -90,9 +90,13 @@ export async function POST(req: NextRequest) {
           settingsDb.incrementApiUsage(searchResult.sourceUsed);
         }
       } else {
-        return NextResponse.json({ 
-          error: `Live search could not locate a fare (${searchResult.status}). Please enter an initial price manually or verify airport codes and date.` 
-        }, { status: 400 });
+        const errorMsg = searchResult.status === 'SoldOut'
+          ? 'No flights found for this route and date across active data sources. Please verify airport codes or try another date.'
+          : searchResult.status === 'RateLimited'
+          ? 'Active data sources are currently rate-limited. Please wait a few moments or configure an alternative provider in Settings.'
+          : `Live fare lookup failed across all active data sources (${searchResult.status}). Please verify the route, carrier, and date, or check provider credentials in Settings.`;
+
+        return NextResponse.json({ error: errorMsg }, { status: 400 });
       }
     }
 

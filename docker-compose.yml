@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - TZ=UTC
+      - TZ=America/New_York
       - PORT=4000
 
   worker:
@@ -26,6 +26,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - TZ=UTC
+      - TZ=America/New_York
     depends_on:
       - web

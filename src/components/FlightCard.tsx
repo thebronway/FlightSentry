@@ -1,9 +1,10 @@
 'use client';
 
 import { Flight } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
+import { getGoogleFlightsUrl } from '@/utils/airline';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
@@ -44,15 +45,24 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
   }
 
   const isPast = flight.status === 'Past';
+  const googleFlightsUrl = getGoogleFlightsUrl(flight);
 
   return (
-    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${isPast ? 'border-slate-800/80 bg-gunmetal-card/60 opacity-70' : 'border-gunmetal-border'} p-5 flex flex-col justify-between transition-colors`}>
-      <div>
+    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${isPast ? 'border-slate-800/80 bg-gunmetal-card/60 opacity-70' : 'border-gunmetal-border hover:border-slate-600'} p-5 flex flex-col justify-between transition-all group/card`}>
+      {/* Top 2/3 Clickable Region -> Directly Opens History Modal */}
+      <div
+        onClick={onShowHistory}
+        className="cursor-pointer select-none"
+        title="Click to view flight price history, trend graph & carrier matrix"
+      >
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans">
-              {primaryHeadline}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
+                {primaryHeadline}
+              </h3>
+              <Clock className="w-3.5 h-3.5 text-gunmetal-muted opacity-0 group-hover/card:opacity-75 transition-opacity" />
+            </div>
             <p className="text-sm font-medium text-slate-300 mt-0.5">
               {flight.departureDate} <span className="text-gunmetal-muted font-normal">• {secondaryDetail}</span>
             </p>
@@ -115,10 +125,14 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
         )}
       </div>
 
-      <div className="mt-auto grid grid-cols-5 gap-1.5 pt-3 border-t border-gunmetal-border">
+      {/* Bottom Action Bar (Clicks isolated from triggering history) */}
+      <div
+        onClick={e => e.stopPropagation()}
+        className="mt-auto grid grid-cols-6 gap-1 pt-3 border-t border-gunmetal-border"
+      >
         <button
           title={isPast ? "Checks disabled for past flights" : "Check Price Now"}
-          onClick={() => checkNow(flight.id)}
+          onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
           disabled={isPast || flight.status === 'Paused'}
           className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
         >
@@ -126,21 +140,31 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
         </button>
         <button
           title="Price History & Graph"
-          onClick={onShowHistory}
+          onClick={(e) => { e.stopPropagation(); onShowHistory(); }}
           className="flex justify-center items-center p-2 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded-md transition-colors"
         >
           <Clock className="w-4 h-4" />
         </button>
+        <a
+          href={googleFlightsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Search this route on Google Flights"
+          onClick={(e) => e.stopPropagation()}
+          className="flex justify-center items-center p-2 text-slate-300 hover:text-sky-400 hover:bg-gunmetal-canvas rounded-md transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
         <button
           title="Edit Flight"
-          onClick={() => onEdit(flight)}
+          onClick={(e) => { e.stopPropagation(); onEdit(flight); }}
           className="flex justify-center items-center p-2 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded-md transition-colors"
         >
           <Pencil className="w-4 h-4" />
         </button>
         <button
           title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause Monitoring' : 'Resume Monitoring'}
-          onClick={() => toggleStatus(flight)}
+          onClick={(e) => { e.stopPropagation(); toggleStatus(flight); }}
           disabled={isPast}
           className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
         >
@@ -148,7 +172,7 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
         </button>
         <button
           title="Delete Flight"
-          onClick={() => deleteFlight(flight.id)}
+          onClick={(e) => { e.stopPropagation(); deleteFlight(flight.id); }}
           className="flex justify-center items-center p-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-md transition-colors"
         >
           <Trash2 className="w-4 h-4" />

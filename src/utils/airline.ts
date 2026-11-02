@@ -109,3 +109,93 @@ export function cleanDisplayTime(timeStr?: string): string | null {
   const displayHours = hours % 12 || 12;
   return `${displayHours}:${minutes} ${period}`;
 }
+
+export function getGoogleFlightsUrl(flight: {
+  origin?: string | null;
+  destination?: string | null;
+  departureDate: string;
+  airline?: string | null;
+  flightNumber?: string | null;
+  cabinClass?: string | null;
+  searchMode?: string | null;
+}): string {
+  const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
+  const cabinClassQuery = flight.cabinClass === 'premium_economy'
+    ? '%20premium%20economy'
+    : flight.cabinClass === 'business'
+    ? '%20business'
+    : flight.cabinClass === 'first'
+    ? '%20first%20class'
+    : '';
+
+  const flightNumQuery = isFlightNumMode && flight.flightNumber && flight.airline
+    ? `%20${encodeURIComponent(flight.airline)}%20${encodeURIComponent(flight.flightNumber)}`
+    : '';
+
+  return `https://www.google.com/travel/flights?q=Flights%20to%20${encodeURIComponent(flight.destination || '')}%20from%20${encodeURIComponent(flight.origin || '')}%20on%20${flight.departureDate}${flightNumQuery}${cabinClassQuery}%20oneway`;
+}
+
+export function getDataSourceStatus(settings?: any | null): {
+  configured: boolean;
+  allPaused: boolean;
+  available: boolean;
+  reason?: string;
+} {
+  if (!settings) {
+    return { configured: true, allPaused: false, available: true };
+  }
+
+  const isEnabled = (val: any) => val === 1 || val === true || val === '1' || val === 'true';
+  const isPaused = (val: any) => val === 1 || val === true || val === '1' || val === 'true';
+
+  const serpKey = (settings.serpApiKey || '').trim();
+  const searchKey = (settings.searchApiKey || '').trim();
+  const hasdataKey = (settings.hasdataApiKey || '').trim();
+
+  const serpConfigured = isEnabled(settings.serpApiEnabled) && Boolean(serpKey);
+  const searchConfigured = isEnabled(settings.searchApiEnabled) && Boolean(searchKey);
+  const hasdataConfigured = isEnabled(settings.hasdataEnabled) && Boolean(hasdataKey);
+  const fastConfigured = isEnabled(settings.fastFlightsEnabled);
+
+  const anyConfigured = serpConfigured || searchConfigured || hasdataConfigured || fastConfigured;
+
+  if (!anyConfigured) {
+    return {
+      configured: false,
+      allPaused: false,
+      available: false,
+      reason: 'No data sources configured. Please configure an API key or enable a data source in Settings.',
+    };
+  }
+
+  if (settings.globalPause === 1) {
+    return {
+      configured: true,
+      allPaused: true,
+      available: false,
+      reason: 'All data sources are currently paused (Global Pause is active).',
+    };
+  }
+
+  const serpActive = serpConfigured && !isPaused(settings.serpApiPaused) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
+  const searchActive = searchConfigured && !isPaused(settings.searchApiPaused) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
+  const hasdataActive = hasdataConfigured && !isPaused(settings.hasdataPaused) && (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
+  const fastActive = fastConfigured && !isPaused(settings.fastFlightsPaused);
+
+  const anyActive = serpActive || searchActive || hasdataActive || fastActive;
+
+  if (!anyActive) {
+    return {
+      configured: true,
+      allPaused: true,
+      available: false,
+      reason: 'All configured data sources are paused or have exhausted their monthly quota.',
+    };
+  }
+
+  return {
+    configured: true,
+    allPaused: false,
+    available: true,
+  };
+}

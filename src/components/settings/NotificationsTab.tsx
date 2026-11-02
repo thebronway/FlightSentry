@@ -7,8 +7,10 @@ interface Props {
   onChange: (settings: Settings) => void;
   savingChannel: string | null;
   channelStatus: Record<string, { type: 'success' | 'error'; message: string } | null>;
-  onSaveChannel: (channelKey: string) => Promise<void>;
   onSaveAndTestChannel: (channelKey: 'discord' | 'slack' | 'generic' | 'smtp') => Promise<void>;
+  onSaveThresholds: () => Promise<void>;
+  savingThresholds: boolean;
+  thresholdsStatus: { type: 'success' | 'error'; message: string } | null;
 }
 
 export default function NotificationsTab({
@@ -16,8 +18,10 @@ export default function NotificationsTab({
   onChange,
   savingChannel,
   channelStatus,
-  onSaveChannel,
   onSaveAndTestChannel,
+  onSaveThresholds,
+  savingThresholds,
+  thresholdsStatus,
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
@@ -26,44 +30,68 @@ export default function NotificationsTab({
         Configure notification channels and baseline price drop thresholds. Tracked flights inherit these dollar and percentage thresholds unless custom overrides are defined on a specific flight.
       </div>
 
-      {/* Master Enable and Thresholds */}
-      <div className="flex items-center gap-2 mb-2">
-        <input
-          type="checkbox"
-          id="notificationsEnabled"
-          checked={settings.notificationsEnabled === 1}
-          onChange={e => onChange({ ...settings, notificationsEnabled: e.target.checked ? 1 : 0 })}
-          className="w-5 h-5 accent-slate-500 rounded"
-        />
-        <label htmlFor="notificationsEnabled" className="font-bold text-slate-200">
-          Enable Global Notifications
-        </label>
-      </div>
+      {/* Master Enable and Thresholds Card */}
+      <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-4 rounded-lg space-y-4">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="notificationsEnabled"
+            checked={settings.notificationsEnabled === 1}
+            onChange={e => onChange({ ...settings, notificationsEnabled: e.target.checked ? 1 : 0 })}
+            className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
+          />
+          <label htmlFor="notificationsEnabled" className="font-bold text-slate-200 text-sm cursor-pointer">
+            Enable Global Notifications
+          </label>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1 text-slate-300">Min $ Drop to Alert</label>
-          <div className="flex items-center gap-2">
-            <span className="text-gunmetal-muted">$</span>
-            <input
-              type="number"
-              value={settings.minDropDollar}
-              onChange={e => onChange({ ...settings, minDropDollar: Number(e.target.value) })}
-              className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Min $ Drop to Alert
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-gunmetal-muted text-xs">$</span>
+              <input
+                type="number"
+                value={settings.minDropDollar}
+                onChange={e => onChange({ ...settings, minDropDollar: Number(e.target.value) })}
+                className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Min % Drop to Alert
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-gunmetal-muted text-xs">%</span>
+              <input
+                type="number"
+                value={settings.minDropPercent}
+                onChange={e => onChange({ ...settings, minDropPercent: Number(e.target.value) })}
+                className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+              />
+            </div>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1 text-slate-300">Min % Drop to Alert</label>
-          <div className="flex items-center gap-2">
-            <span className="text-gunmetal-muted">%</span>
-            <input
-              type="number"
-              value={settings.minDropPercent}
-              onChange={e => onChange({ ...settings, minDropPercent: Number(e.target.value) })}
-              className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500"
-            />
+
+        <div className="pt-3 border-t border-gunmetal-border flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs">
+            {thresholdsStatus && (
+              <span className={thresholdsStatus.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                {thresholdsStatus.message}
+              </span>
+            )}
           </div>
+          <button
+            type="button"
+            disabled={savingThresholds}
+            onClick={onSaveThresholds}
+            className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
+          >
+            {savingThresholds ? 'Saving...' : 'Save Alert Thresholds'}
+          </button>
         </div>
       </div>
 
@@ -112,14 +140,6 @@ export default function NotificationsTab({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={savingChannel === 'discord'}
-                  onClick={() => onSaveChannel('discord')}
-                  className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                >
-                  Save
-                </button>
                 <button
                   type="button"
                   disabled={savingChannel === 'discord'}
@@ -173,14 +193,6 @@ export default function NotificationsTab({
                 <button
                   type="button"
                   disabled={savingChannel === 'slack'}
-                  onClick={() => onSaveChannel('slack')}
-                  className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  disabled={savingChannel === 'slack'}
                   onClick={() => onSaveAndTestChannel('slack')}
                   className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded transition-colors disabled:opacity-50"
                 >
@@ -228,14 +240,6 @@ export default function NotificationsTab({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={savingChannel === 'generic'}
-                  onClick={() => onSaveChannel('generic')}
-                  className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                >
-                  Save
-                </button>
                 <button
                   type="button"
                   disabled={savingChannel === 'generic'}
@@ -347,14 +351,6 @@ export default function NotificationsTab({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={savingChannel === 'smtp'}
-                  onClick={() => onSaveChannel('smtp')}
-                  className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                >
-                  Save
-                </button>
                 <button
                   type="button"
                   disabled={savingChannel === 'smtp'}

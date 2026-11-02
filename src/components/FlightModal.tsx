@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { FareTier, CabinClass, SearchMode, Flight, Settings } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
+import { getDataSourceStatus } from '@/utils/airline';
 import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
@@ -44,7 +45,10 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
   const [formData, setFormData] = useState(DEFAULT_STATE);
   const [defaultSettings, setDefaultSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lookupFailed, setLookupFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dsStatus = useMemo(() => getDataSourceStatus(defaultSettings), [defaultSettings]);
 
   const {
     detectedRoute,
@@ -80,9 +84,9 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
         if (initialFlight.scheduleOverride) {
           try {
             const override = JSON.parse(initialFlight.scheduleOverride);
-            farOut = override.farOut ? String(override.farOut) : '';
-            standard = override.standard ? String(override.standard) : '';
-            finalStretch = override.finalStretch ? String(override.finalStretch) : '';
+            farOut = override.farOut !== undefined && override.farOut !== null ? String(override.farOut) : '';
+            standard = override.standard !== undefined && override.standard !== null ? String(override.standard) : '';
+            finalStretch = override.finalStretch !== undefined && override.finalStretch !== null ? String(override.finalStretch) : '';
           } catch (e) {
             console.error('Failed to parse scheduleOverride', e);
           }
@@ -127,12 +131,25 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
     setFormData(DEFAULT_STATE);
     resetLookupState();
     setError(null);
+    setLookupFailed(false);
     onClose();
+  };
+
+  const handleFieldChange = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+    if (lookupFailed) setLookupFailed(false);
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLookupFailed(false);
+
+    if (!initialFlight && !dsStatus.available && formData.trackingGoal === 'watching') {
+      setError(dsStatus.reason || 'No active data sources available. Please visit Settings.');
+      return;
+    }
 
     const todayStr = new Date().toISOString().split('T')[0];
     if (formData.departureDate < todayStr) {
@@ -142,11 +159,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
 
     setLoading(true);
 
-    const scheduleOverride = (formData.overrideFarOut || formData.overrideStandard || formData.overrideFinalStretch)
+    const scheduleOverride = (formData.overrideFarOut !== '' || formData.overrideStandard !== '' || formData.overrideFinalStretch !== '')
       ? JSON.stringify({
-          farOut: formData.overrideFarOut ? parseInt(formData.overrideFarOut, 10) : undefined,
-          standard: formData.overrideStandard ? parseInt(formData.overrideStandard, 10) : undefined,
-          finalStretch: formData.overrideFinalStretch ? parseInt(formData.overrideFinalStretch, 10) : undefined,
+          farOut: formData.overrideFarOut !== '' ? parseInt(formData.overrideFarOut, 10) : undefined,
+          standard: formData.overrideStandard !== '' ? parseInt(formData.overrideStandard, 10) : undefined,
+          finalStretch: formData.overrideFinalStretch !== '' ? parseInt(formData.overrideFinalStretch, 10) : undefined,
         })
       : null;
 
@@ -192,10 +209,13 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error?.message || data.error || 'Failed to save flight');
+        const errMessage = data.error?.message || data.error || 'Failed to save flight';
+        setLookupFailed(true);
+        throw new Error(errMessage);
       }
 
       setFormData(DEFAULT_STATE);
+      setLookupFailed(false);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -223,8 +243,22 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="bg-red-950/40 border border-red-800 text-red-300 p-3 rounded-md text-sm font-medium">
-              {error}
+            <div className="bg-red-950/40 border border-red-800 text-red-300 p-3 rounded-md text-sm font-medium space-y-1">
+              <div className="flex items-center gap-2 font-bold text-red-200">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <span>Price Lookup Failed</span>
+              </div>
+              <p className="text-xs text-red-300/90 leading-relaxed">{error}</p>
+            </div>
+          )}
+
+          {!initialFlight && !dsStatus.available && (
+            <div className="bg-amber-950/30 border border-amber-800/60 p-3 rounded-md text-xs text-amber-200 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-amber-100 block mb-0.5">Automated Search Unavailable</span>
+                {dsStatus.reason}
+              </div>
             </div>
           )}
 
@@ -529,11 +563,24 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="px-5 py-2 text-sm font-medium bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 rounded-md disabled:opacity-50 shadow-sm transition-colors flex items-center gap-2"
+                disabled={loading || lookupFailed || (!initialFlight && !dsStatus.available && formData.trackingGoal === 'watching')}
+                title={
+                  lookupFailed
+                    ? 'Lookup failed across all data sources. Adjust route/date inputs to try again.'
+                    : !dsStatus.available
+                    ? dsStatus.reason
+                    : initialFlight ? 'Update Flight' : 'Track Flight'
+                }
+                className={`px-5 py-2 text-sm font-medium rounded-md shadow-sm transition-colors flex items-center gap-2 ${
+                  loading || lookupFailed || (!initialFlight && !dsStatus.available && formData.trackingGoal === 'watching')
+                    ? 'bg-gunmetal-card border border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
+                    : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400'
+                }`}
               >
                 {loading ? (
                   !initialFlight ? 'Querying Fares & Saving...' : 'Saving Flight...'
+                ) : lookupFailed ? (
+                  'Lookup Failed (Modify Inputs)'
                 ) : initialFlight ? (
                   'Update Flight'
                 ) : (

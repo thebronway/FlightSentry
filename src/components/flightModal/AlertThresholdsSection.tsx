@@ -44,7 +44,7 @@ export default function AlertThresholdsSection({
               <span className="text-gunmetal-muted text-xs">$</span>
               <input
                 type="number"
-                step="0.01"
+                step="1"
                 min="0"
                 placeholder={defaultSettings?.minDropDollar != null ? String(defaultSettings.minDropDollar) : '15'}
                 value={minDropDollar}

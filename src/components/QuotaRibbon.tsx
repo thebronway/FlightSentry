@@ -6,14 +6,19 @@ import { PauseCircle, PlayCircle, Pause, Play } from 'lucide-react';
 
 interface Props {
   refreshTrigger?: number;
+  onSettingsChange?: (settings: SettingsType) => void;
 }
 
-export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
+export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Props) {
   const [settings, setSettings] = useState<SettingsType | null>(null);
 
   const fetchSettings = async () => {
-    const res = await fetch('/api/settings');
-    if (res.ok) setSettings(await res.json());
+    const res = await fetch('/api/settings', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      setSettings(data);
+      onSettingsChange?.(data);
+    }
   };
 
   useEffect(() => {
@@ -23,23 +28,35 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
   const toggleGlobalPause = async () => {
     if (!settings) return;
     const newPauseState = settings.globalPause === 1 ? 0 : 1;
-    await fetch('/api/settings', {
+    const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...settings, globalPause: newPauseState }),
     });
-    fetchSettings();
+    if (res.ok) {
+      const updated = await res.json();
+      setSettings(updated);
+      onSettingsChange?.(updated);
+    } else {
+      fetchSettings();
+    }
   };
 
   const toggleSourcePause = async (pauseKey: 'serpApiPaused' | 'searchApiPaused' | 'hasdataPaused' | 'fastFlightsPaused') => {
     if (!settings) return;
     const currentState = settings[pauseKey] === 1;
-    await fetch('/api/settings', {
+    const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...settings, [pauseKey]: currentState ? 0 : 1 }),
     });
-    fetchSettings();
+    if (res.ok) {
+      const updated = await res.json();
+      setSettings(updated);
+      onSettingsChange?.(updated);
+    } else {
+      fetchSettings();
+    }
   };
 
   if (!settings) return null;
@@ -53,6 +70,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'serpApiPaused' as const,
       used: settings.serpApiUsed,
       quota: settings.serpApiQuota,
+      resetDate: settings.serpApiResetDate || settings.quotaResetDate,
       isScraper: false,
     },
     {
@@ -63,6 +81,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'searchApiPaused' as const,
       used: settings.searchApiUsed,
       quota: settings.searchApiQuota,
+      resetDate: settings.searchApiResetDate || settings.quotaResetDate,
       isScraper: false,
     },
     {
@@ -73,6 +92,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'hasdataPaused' as const,
       used: settings.hasdataUsed,
       quota: settings.hasdataQuota,
+      resetDate: settings.hasdataResetDate || settings.quotaResetDate,
       isScraper: false,
     },
     {
@@ -83,6 +103,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       pauseKey: 'fastFlightsPaused' as const,
       used: settings.fastFlightsUsed,
       quota: 0,
+      resetDate: null,
       isScraper: true,
     },
   ].filter(s => s.enabled === 1);
@@ -99,7 +120,7 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
       <div className="flex justify-between items-center border-b border-gunmetal-border pb-3 mb-4">
         <div>
           <h3 className="text-sm font-bold text-slate-200">Active Data Sources & Monthly Quotas</h3>
-          <p className="text-xs text-gunmetal-muted mt-0.5">Quota reset date: {settings.quotaResetDate}</p>
+          <p className="text-xs text-gunmetal-muted mt-0.5">Automated tracking and quota monitoring across configured providers</p>
         </div>
         <button 
           onClick={toggleGlobalPause}
@@ -140,6 +161,11 @@ export default function QuotaRibbon({ refreshTrigger = 0 }: Props) {
                   <span className="text-xs text-gunmetal-muted">
                     {source.used} / {isUnlimited ? 'Unlimited' : source.quota} queries
                   </span>
+                  {!source.isScraper && source.resetDate && (
+                    <span className="text-[11px] text-gunmetal-muted block mt-0.5 font-mono">
+                      Resets: {source.resetDate}
+                    </span>
+                  )}
                 </div>
 
                 <button

@@ -1,19 +1,22 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Flight } from '@/types';
+import Link from 'next/link';
+import { Flight, Settings } from '@/types';
 import FlightCard from '@/components/FlightCard';
 import FlightCondensedView from '@/components/FlightCondensedView';
 import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
-import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight } from 'lucide-react';
+import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle } from 'lucide-react';
+import { getDataSourceStatus } from '@/utils/airline';
 
 type SortOption = 'departure-soonest' | 'departure-latest' | 'price-low' | 'price-high' | 'route-az';
 type ViewMode = 'cards' | 'condensed';
 
 export default function Dashboard() {
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [historyFlight, setHistoryFlight] = useState<Flight | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
@@ -23,18 +26,34 @@ export default function Dashboard() {
   const [showPastFlights, setShowPastFlights] = useState(false);
 
   const fetchFlights = async () => {
-    const res = await fetch('/api/flights');
+    const res = await fetch('/api/flights', { cache: 'no-store' });
     if (res.ok) setFlights(await res.json());
+  };
+
+  const fetchSettings = async () => {
+    const res = await fetch('/api/settings', { cache: 'no-store' });
+    if (res.ok) setSettings(await res.json());
   };
 
   const handleRefreshAll = () => {
     fetchFlights();
+    fetchSettings();
     setQuotaRefreshTrigger(prev => prev + 1);
   };
 
   useEffect(() => { 
-    fetchFlights(); 
+    fetchFlights();
+    fetchSettings();
+
+    // Re-check settings when returning to the tab or dashboard
+    const handleFocus = () => {
+      fetchSettings();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  const dsStatus = useMemo(() => getDataSourceStatus(settings), [settings]);
 
   const handleEdit = (flight: Flight) => {
     setEditingFlight(flight);
@@ -122,15 +141,40 @@ export default function Dashboard() {
           </div>
 
           <button 
-            onClick={handleAddNew} 
-            className="bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm px-4 py-2 rounded-md hover:bg-slate-700 hover:border-slate-400 flex items-center gap-2 text-sm font-semibold transition-colors"
+            onClick={handleAddNew}
+            disabled={!dsStatus.available}
+            title={!dsStatus.available ? dsStatus.reason : 'Track New Flight'}
+            className={`border shadow-sm px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
+              !dsStatus.available
+                ? 'bg-gunmetal-card border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
+                : 'bg-gunmetal-border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400'
+            }`}
           >
             <Plus className="w-4 h-4" /> Add Flight
           </button>
         </div>
       </div>
 
-      <QuotaRibbon refreshTrigger={quotaRefreshTrigger} />
+      {/* Warning banner when Add Flight is disabled due to unconfigured or paused data sources */}
+      {!dsStatus.available && (
+        <div className="mb-6 p-4 rounded-lg bg-amber-950/30 border border-amber-800/60 flex items-start gap-3 text-amber-200 text-xs">
+          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-bold text-amber-100 block mb-0.5">
+              {!dsStatus.configured ? 'No Data Sources Configured' : 'All Data Sources Paused'}
+            </span>
+            <span>{dsStatus.reason} </span>
+            <Link href="/settings" className="underline font-semibold text-white hover:text-amber-300 ml-1">
+              Configure Settings &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <QuotaRibbon 
+        refreshTrigger={quotaRefreshTrigger} 
+        onSettingsChange={setSettings} 
+      />
 
       {(() => {
         const activeFlights = sortedFlights.filter(f => f.status !== 'Past');

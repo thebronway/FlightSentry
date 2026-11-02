@@ -8,32 +8,34 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ## Release Roadmap
 
-### Release v0.5.4: UX Fixes
-- All amounts seems to be rounded to the nearest dollar from google flights, if so, we should not show cents anywhere
-- No more save all settings
-    - Every api key should have a save, and if you navigate away, it should prompt you 
-    - Scehdule can just have a Save Button for the whole page, and if you navigate away, it should prompt you 
-    - Notifcations should have a save button for the min dollar and % alert, it doesnt need a save all setting, , and if you navigate away, it should prompt you 
-    - There should be a better ui for saving the settings, not using the brower popup
-- Scheduling operating hours
-- When are checks done?
-    - Users should be able to set what time of day checks start, no start / end hours
-    - Each one (far our, standard, final) should have it own candence. And if less than 12, when a user types in one number it should compute and show the next
-- Add what data source was used on the history table. 
-- No data sources configured or all paused? No add flight. If fails to look up across all data sources, no add flight. create appropriate error messages for each.
-- Dashboard Flight Card (expanded and slim) Add Google Flights Link
-    - I think history is the most important here, maybe make the top 1/2 or 2/3 clickable to the history. need ideas for better ui/ux. 
-- APIs need a set reset date for api quota, and the ui needs to keep track of that. 
-
-### Release v0.5.4:
-- Mobile optimization
-
 ### Release v0.5.6:
-- Points tracking (manual)
-- Dollar tracking (manual)
-- Currency Selector
+- Docker not passing correct local time to container, verify with commands.
+- Schedule dropdown arrows need right padding
+- Quota Reset should be day of the month dropdown?
+- Compute min $ and % drop alerts on edit page
+    - take current price and subtrack value to show when it will alert
+    - Add to flight card somewhere, consider good ui/ux
+- Add a log button to each data source that shows the last queries and if they succeeded or failed (and why they failed espcially for fast flights)
+- market cooridor not matching up
+- Why is there a save for fast flights scrapper. checkboxes to enable and arrows should autosave (and get that green status message when they do)
+- All data sources are currently paused (Global Pause is active). Configure Settings → error message. Configure Settings → should only be if no data sources or out of api tokens, when pasued Configure Settings → should not be there, maybe change to unpause all
+- change quota ribbon
+    - if 3, 1x3 (current)
+    - if 6, 1x3 and then 1x3 (current)
+    - if 2, 1x2 (current)
+    - if 4, 1x2 and then 1x2 (new) (current is 1x3 and then 1 by itself on bottom)
+    - if 5, do 1x3 and then 1x2 (I know there isnt 5 data sources currently, but one day maybe)
+- Footer - want to replace brian.conway.im with something that says like this is the developer's website, come look at more apps, but in like 2 to 3 words instead of just showing the link, I think right?
 
-### Release v0.5.8: Security and Best Practices Audit
+### Release v0.5.8:
+- Points tracking (manual) mode for a flight
+- Money tracking (manual) mode for a flight
+- Currency Selector, for app wide - does google flights support (and all data sources support that?) if not do not add
+- other free scrappers to add?
 
-### Release v0.6.0:
-- Old flights cleanup 
+### Release v0.6.0: Security and Best Practices Audit
+
+### Release v0.6.2:
+- Old flights cleanup worth it? keep 1 year, but user changeable in settings? performance implications? 
+
+### Release v0.6.4: Mobile Optimization
