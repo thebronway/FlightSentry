@@ -20,6 +20,12 @@ export const flightSchema = z.object({
   notes: z.string().optional().nullable(),
   scheduleOverride: z.string().optional().nullable(),
   disableNotifications: z.number().min(0).max(1).optional().default(0),
+  earliestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
+  latestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
+  noRedeye: z.number().min(0).max(1).optional().default(0),
+  priceTrackingDirection: z.enum(['drop', 'increase', 'both']).default('drop'),
+  minIncreaseDollar: z.number().nonnegative().optional().nullable(),
+  minIncreasePercent: z.number().nonnegative().optional().nullable(),
 });
 
 export const flightStatusSchema = z.object({
@@ -42,6 +48,10 @@ export const settingsSchema = z.object({
   serpApiResetDate: z.string().optional().nullable().or(z.literal('')),
   searchApiResetDate: z.string().optional().nullable().or(z.literal('')),
   hasdataResetDate: z.string().optional().nullable().or(z.literal('')),
+  quotaResetDay: z.number().int().min(1).max(31).optional(),
+  serpApiResetDay: z.number().int().min(1).max(31).optional().nullable(),
+  searchApiResetDay: z.number().int().min(1).max(31).optional().nullable(),
+  hasdataResetDay: z.number().int().min(1).max(31).optional().nullable(),
   appriseUrl: z.string().url().optional().nullable().or(z.literal('')),
   smtpHost: z.string().optional().nullable().or(z.literal('')),
   smtpPort: z.number().optional().nullable(),

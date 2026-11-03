@@ -1,30 +1,35 @@
 import { settingsDb } from '../db/settings';
-import { getNextMonthResetDate } from '../utils/date';
+import { calculateNextResetDate, getTodayDateString } from '../utils/date';
 import { Settings } from '../types';
 
 export const checkAndResetQuota = (settings: Settings): Settings => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateString(settings.timezone);
   let changed = false;
 
   const checkProvider = (
     provider: 'serpapi' | 'searchapi' | 'hasdata',
+    resetDay?: number | null,
     resetDate?: string | null
   ) => {
+    const effectiveDay = (resetDay !== undefined && resetDay !== null && resetDay >= 1 && resetDay <= 31)
+      ? resetDay
+      : settings.quotaResetDay || 1;
     const effectiveDate = resetDate || settings.quotaResetDate;
+
     if (effectiveDate && today >= effectiveDate) {
       console.log(`[Quota] Resetting ${provider} monthly quota usage (reached ${effectiveDate}).`);
-      const nextReset = getNextMonthResetDate(effectiveDate);
+      const nextReset = calculateNextResetDate(effectiveDay, settings.timezone);
       settingsDb.resetProviderUsage(provider, nextReset);
       changed = true;
     }
   };
 
-  checkProvider('serpapi', settings.serpApiResetDate);
-  checkProvider('searchapi', settings.searchApiResetDate);
-  checkProvider('hasdata', settings.hasdataResetDate);
+  checkProvider('serpapi', settings.serpApiResetDay, settings.serpApiResetDate);
+  checkProvider('searchapi', settings.searchApiResetDay, settings.searchApiResetDate);
+  checkProvider('hasdata', settings.hasdataResetDay, settings.hasdataResetDate);
 
-  if (today >= settings.quotaResetDate) {
-    const nextReset = getNextMonthResetDate(settings.quotaResetDate);
+  if (settings.quotaResetDate && today >= settings.quotaResetDate) {
+    const nextReset = calculateNextResetDate(settings.quotaResetDay || 1, settings.timezone);
     settingsDb.resetApiUsage(nextReset);
     changed = true;
   }

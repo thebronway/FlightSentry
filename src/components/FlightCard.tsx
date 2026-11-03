@@ -1,10 +1,10 @@
 'use client';
 
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff } from 'lucide-react';
-import { formatCurrency, computeAlertTargets } from '@/utils/format';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff, ShoppingBag } from 'lucide-react';
+import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl } from '@/utils/airline';
+import { getGoogleFlightsUrl, cleanDisplayTime } from '@/utils/airline';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
@@ -13,9 +13,10 @@ interface Props {
   onRefresh: () => void;
   onShowHistory: () => void;
   onEdit: (flight: Flight) => void;
+  onConvertToBooked?: (flight: Flight) => void;
 }
 
-export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit }: Props) {
+export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked }: Props) {
   const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
 
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
@@ -53,126 +54,171 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
       {/* Top 2/3 Clickable Region -> Directly Opens History Modal */}
       <div
         onClick={onShowHistory}
-        className="cursor-pointer select-none"
+        className="cursor-pointer select-none flex-1 flex flex-col justify-between"
         title="Click to view flight price history, trend graph & carrier matrix"
       >
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
-                {primaryHeadline}
-              </h3>
-              <Clock className="w-3.5 h-3.5 text-gunmetal-muted opacity-0 group-hover/card:opacity-75 transition-opacity" />
+        <div>
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
+                  {primaryHeadline}
+                </h3>
+                <Clock className="w-3.5 h-3.5 text-gunmetal-muted opacity-0 group-hover/card:opacity-75 transition-opacity" />
+              </div>
+              <p className="text-sm font-medium text-slate-300 mt-0.5">
+                {flight.departureDate} <span className="text-gunmetal-muted font-normal">• {secondaryDetail}</span>
+              </p>
             </div>
-            <p className="text-sm font-medium text-slate-300 mt-0.5">
-              {flight.departureDate} <span className="text-gunmetal-muted font-normal">• {secondaryDetail}</span>
-            </p>
-          </div>
-          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-            flight.status === 'Upcoming'
-              ? 'bg-green-900/30 text-green-400 border border-green-800/40'
-              : flight.status === 'Paused'
-              ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
-              : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
-          }`}>
-            {flight.status}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 my-3">
-          <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
-            {CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
-          </span>
-          <span className="bg-gunmetal-canvas text-gunmetal-muted border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
-            {flight.fareTier}
-          </span>
-          {flight.pnr && (
-            <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
-              PNR: {flight.pnr}
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+              flight.status === 'Upcoming'
+                ? 'bg-green-900/30 text-green-400 border border-green-800/40'
+                : flight.status === 'Paused'
+                ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
+                : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
+            }`}>
+              {flight.status}
             </span>
-          )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 my-2.5">
+            <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
+              {CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
+            </span>
+            <span className="bg-gunmetal-canvas text-gunmetal-muted border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
+              {flight.fareTier}
+            </span>
+            {flight.noRedeye === 1 && (
+              <span className="bg-gunmetal-canvas text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-medium">
+                No Redeye
+              </span>
+            )}
+            {!isPurchased && flight.priceTrackingDirection === 'increase' && (
+              <span className="bg-gunmetal-canvas text-rose-400 border border-rose-800/60 px-2 py-0.5 rounded text-xs font-medium">
+                Surges Only
+              </span>
+            )}
+            {!isPurchased && flight.priceTrackingDirection === 'both' && (
+              <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-2 py-0.5 rounded text-xs font-medium">
+                Drops & Surges
+              </span>
+            )}
+            {flight.pnr && (
+              <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
+                PNR: {flight.pnr}
+              </span>
+            )}
+          </div>
+
+          {(() => {
+            const effectiveDollar =
+              flight.minDropDollar !== null && flight.minDropDollar !== undefined
+                ? flight.minDropDollar
+                : settings?.minDropDollar ?? 15;
+            const effectivePercent =
+              flight.minDropPercent !== null && flight.minDropPercent !== undefined
+                ? flight.minDropPercent
+                : settings?.minDropPercent ?? 5;
+
+            const dropTargets = computeAlertTargets(
+              flight.currentPrice,
+              effectiveDollar,
+              effectivePercent
+            );
+
+            const effectiveIncDollar =
+              flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined
+                ? flight.minIncreaseDollar
+                : settings?.minDropDollar ?? 15;
+            const effectiveIncPercent =
+              flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined
+                ? flight.minIncreasePercent
+                : settings?.minDropPercent ?? 5;
+
+            const incTargets = computeIncreaseAlertTargets(
+              flight.currentPrice,
+              effectiveIncDollar,
+              effectiveIncPercent
+            );
+
+            const dir = isPurchased ? 'drop' : (flight.priceTrackingDirection || 'drop');
+
+            return (
+              <div className="flex justify-between items-end mt-3 mb-2">
+                <div>
+                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
+                  <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
+                  {delta !== 0 && (
+                    <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+                      {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
+                    </div>
+                  )}
+                  {!isPast && (
+                    <p
+                      className={`text-[11px] font-medium mt-1 flex items-center justify-end gap-1 ${
+                        flight.disableNotifications === 1
+                          ? 'text-gunmetal-muted'
+                          : 'text-sky-400'
+                      }`}
+                      title={
+                        flight.disableNotifications === 1
+                          ? 'Notifications muted for this flight'
+                          : dir === 'both'
+                          ? `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}, surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          : dir === 'increase'
+                          ? `Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          : `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`
+                      }
+                    >
+                      {flight.disableNotifications === 1 ? (
+                        <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                      ) : (
+                        <Bell className="w-3 h-3 text-sky-400 flex-shrink-0" />
+                      )}
+                      <span>
+                        {flight.disableNotifications === 1
+                          ? 'Muted'
+                          : dir === 'both'
+                          ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          : dir === 'increase'
+                          ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
-
-        {(() => {
-          const effectiveDollar =
-            flight.minDropDollar !== null && flight.minDropDollar !== undefined
-              ? flight.minDropDollar
-              : settings?.minDropDollar ?? 15;
-          const effectivePercent =
-            flight.minDropPercent !== null && flight.minDropPercent !== undefined
-              ? flight.minDropPercent
-              : settings?.minDropPercent ?? 5;
-          const { effectiveTarget } = computeAlertTargets(
-            flight.currentPrice,
-            effectiveDollar,
-            effectivePercent
-          );
-
-          return (
-            <div className="flex justify-between items-end my-4">
-              <div>
-                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
-                <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
-                {delta !== 0 && (
-                  <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
-                    {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
-                  </div>
-                )}
-                {!isPast && effectiveTarget !== null && (
-                  <p
-                    className={`text-[11px] font-medium mt-1 flex items-center justify-end gap-1 ${
-                      flight.disableNotifications === 1
-                        ? 'text-gunmetal-muted'
-                        : 'text-sky-400'
-                    }`}
-                    title={
-                      flight.disableNotifications === 1
-                        ? 'Notifications muted for this flight'
-                        : `Alerts when price drops to ${formatCurrency(effectiveTarget)} or below`
-                    }
-                  >
-                    {flight.disableNotifications === 1 ? (
-                      <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
-                    ) : (
-                      <Bell className="w-3 h-3 text-sky-400 flex-shrink-0" />
-                    )}
-                    <span>
-                      {flight.disableNotifications === 1
-                        ? 'Muted'
-                        : `Alerts at ≤ ${formatCurrency(effectiveTarget)}`}
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* Route Market Corridor Gauge on Card */}
         {!isFlightNumMode && flight.allTimeLow !== null && flight.allTimeLow !== undefined && flight.allTimeHigh !== null && flight.allTimeHigh !== undefined && (
-          <RouteCorridorSummary
-            compact
-            metrics={{
-              currentFloor: flight.currentPrice,
-              allTimeLow: flight.allTimeLow,
-              allTimeHigh: flight.allTimeHigh,
-              spreadPercent: (flight.allTimeHigh - flight.allTimeLow) > 0
-                ? Math.min(100, Math.max(0, Math.round(((flight.currentPrice - flight.allTimeLow) / (flight.allTimeHigh - flight.allTimeLow)) * 100)))
-                : 50,
-              totalChecks: 1,
-              hasSpread: flight.allTimeHigh > flight.allTimeLow,
-            }}
-          />
+          <div className="mt-2">
+            <RouteCorridorSummary
+              compact
+              metrics={{
+                currentFloor: flight.currentPrice,
+                allTimeLow: flight.allTimeLow,
+                allTimeHigh: flight.allTimeHigh,
+                spreadPercent: (flight.allTimeHigh - flight.allTimeLow) > 0
+                  ? Math.min(100, Math.max(0, Math.round(((flight.currentPrice - flight.allTimeLow) / (flight.allTimeHigh - flight.allTimeLow)) * 100)))
+                  : 50,
+                totalChecks: 1,
+                hasSpread: flight.allTimeHigh > flight.allTimeLow,
+              }}
+            />
+          </div>
         )}
       </div>
 
       {/* Bottom Action Bar (Clicks isolated from triggering history) */}
       <div
         onClick={e => e.stopPropagation()}
-        className="mt-auto grid grid-cols-6 gap-1 pt-3 border-t border-gunmetal-border"
+        className={`mt-auto grid ${!isPurchased && onConvertToBooked ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
         <button
           title={isPast ? "Checks disabled for past flights" : "Check Price Now"}
@@ -206,6 +252,15 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
         >
           <Pencil className="w-4 h-4" />
         </button>
+        {!isPurchased && onConvertToBooked && (
+          <button
+            title="Convert to Booked (I bought this flight)"
+            onClick={(e) => { e.stopPropagation(); onConvertToBooked(flight); }}
+            className="flex justify-center items-center p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded-md transition-colors"
+          >
+            <ShoppingBag className="w-4 h-4" />
+          </button>
+        )}
         <button
           title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause Monitoring' : 'Resume Monitoring'}
           onClick={(e) => { e.stopPropagation(); toggleStatus(flight); }}

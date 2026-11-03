@@ -30,7 +30,7 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
 
   if (compact) {
     return (
-      <div className="space-y-1.5 pt-2 border-t border-gunmetal-border/70">
+      <div className="space-y-2 pt-2.5 pb-2 border-t border-gunmetal-border/70">
         <div className="flex justify-between items-center text-[11px]">
           <span className="text-gunmetal-muted flex items-center gap-1 font-medium">
             <Gauge className="w-3 h-3 text-slate-400" /> Market Corridor

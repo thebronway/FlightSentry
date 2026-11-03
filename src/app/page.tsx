@@ -8,6 +8,7 @@ import FlightCondensedView from '@/components/FlightCondensedView';
 import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
+import ConvertFlightModal from '@/components/ConvertFlightModal';
 import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [historyFlight, setHistoryFlight] = useState<Flight | null>(null);
+  const [convertingFlight, setConvertingFlight] = useState<Flight | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -240,6 +242,7 @@ export default function Dashboard() {
                     onRefresh={handleRefreshAll} 
                     onShowHistory={() => setHistoryFlight(f)} 
                     onEdit={handleEdit} 
+                    onConvertToBooked={setConvertingFlight}
                   />
                 ))}
               </div>
@@ -250,6 +253,7 @@ export default function Dashboard() {
                 onRefresh={handleRefreshAll} 
                 onShowHistory={f => setHistoryFlight(f)} 
                 onEdit={handleEdit} 
+                onConvertToBooked={setConvertingFlight}
               />
             )}
 
@@ -308,6 +312,13 @@ export default function Dashboard() {
          }} 
          onSuccess={handleRefreshAll} 
          initialFlight={editingFlight} 
+      />
+
+      <ConvertFlightModal
+        isOpen={Boolean(convertingFlight)}
+        flight={convertingFlight}
+        onClose={() => setConvertingFlight(null)}
+        onSuccess={handleRefreshAll}
       />
     </div>
   );

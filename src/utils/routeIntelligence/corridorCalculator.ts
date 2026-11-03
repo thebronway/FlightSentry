@@ -13,7 +13,7 @@ export function computeRouteCorridor(
   }
 
   history.forEach(h => {
-    if (h.status === 'Success' && typeof h.price === 'number' && h.price > 0) {
+    if ((h.status === 'Success' || h.status === 'Booked') && typeof h.price === 'number' && h.price > 0) {
       allRecordedPrices.push(h.price);
     }
   });

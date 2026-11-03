@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.5.8-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -23,7 +23,11 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Cabin Class & Restrictions:** Support for Economy, Premium Economy, Business, and First Class, with options to filter out or include Basic fares.
 - **Interactive Price Graphs:** Multi-airline and single-flight trend charts with carrier filter toggles, tooltips, benchmark lines, and route corridor gauges.
 - **Dashboard Views:** Toggle between full-card and condensed table views, with sorting by departure date, price, or route.
-- **Custom Price Drop Alerts:** Automated alerts via Discord Webhook, Slack Webhook, Generic Webhook, or SMTP Email with independent channel toggles, isolated testing, and custom dollar or percentage drop thresholds.
+- **Search Preferences:** Filter itineraries by departure time windows (earliest/latest in 15-minute increments) and exclude overnight redeye flights.
+- **Price Surge & Drop Alerts:** Monitor price drops, price increases, or both for prospective flights with custom dollar or percentage alert thresholds.
+- **Convert to Booked:** 1-click in-place transition from watching to booked status that preserves historical price trends and switches tracking to rebooking drop credits.
+- **Custom Price Alerts:** Automated drop and surge alerts via Discord Webhook, Slack Webhook, Generic Webhook, or SMTP Email with independent channel toggles, isolated testing, and custom thresholds.
+- **Recurring Quota Resets:** Configure monthly quota resets by day of the month (1st–31st) with automatic calendar rollover and short-month clamping.
 - **Smart Scheduling:** Preserves API tokens by dynamically scaling check frequency based on departure date—flights closer to departure are checked more frequently, while distant flights are polled on longer intervals.
 - **Multi-Strategy Query Routing:** Pool quotas across active providers using an atomic SQLite Round-Robin rotation, dynamically route queries via Balanced Usage (% quota consumed), or fail over using Exhaust Quota priority, with unmetered scrapers prioritized first.
 

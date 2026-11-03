@@ -6,7 +6,7 @@ import { getAirlineColor, getAirlineName, cleanDisplayTime } from '@/utils/airli
 export function computeCarrierMatrix(history: PriceHistory[]): CarrierMatrixRow[] {
   // Sort chronologically (oldest to newest)
   const sorted = [...history]
-    .filter(h => typeof h.price === 'number' && h.price > 0 && h.status === 'Success')
+    .filter(h => typeof h.price === 'number' && h.price > 0 && (h.status === 'Success' || h.status === 'Booked'))
     .sort((a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime());
 
   if (sorted.length === 0) return [];

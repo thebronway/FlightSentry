@@ -2,6 +2,7 @@ export type FlightStatus = 'Upcoming' | 'Paused' | 'Past';
 export type FareTier = 'Basic Economy' | 'Standard';
 export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 export type SearchMode = 'Route' | 'FlightNumber';
+export type PriceTrackingDirection = 'drop' | 'increase' | 'both';
 
 export interface Flight {
   id: number;
@@ -31,6 +32,12 @@ export interface Flight {
   updatedAt: string;
   allTimeLow?: number | null;
   allTimeHigh?: number | null;
+  earliestDeparture?: string | null; // HH:MM
+  latestDeparture?: string | null; // HH:MM
+  noRedeye?: number; // 0 (false) or 1 (true)
+  priceTrackingDirection: PriceTrackingDirection; // 'drop' | 'increase' | 'both'
+  minIncreaseDollar?: number | null;
+  minIncreasePercent?: number | null;
 }
 
 export interface RouteItinerary {
@@ -110,5 +117,9 @@ export interface Settings {
   searchApiResetDate?: string | null; // YYYY-MM-DD
   hasdataResetDate?: string | null; // YYYY-MM-DD
   quotaResetDate: string; // YYYY-MM-DD
+  quotaResetDay: number; // Day of the month (1-31)
+  serpApiResetDay?: number | null; // Day of the month (1-31)
+  searchApiResetDay?: number | null; // Day of the month (1-31)
+  hasdataResetDay?: number | null; // Day of the month (1-31)
   globalPause: number; // 0 (false) or 1 (true)
 }

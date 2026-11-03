@@ -5,8 +5,8 @@ export const flightDb = {
   getAll: (): Flight[] => {
     return db.prepare(`
       SELECT f.*,
-        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeLow,
-        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeHigh
+        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeLow,
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh
       FROM flights f
       ORDER BY f.departureDate ASC
     `).all() as Flight[];
@@ -15,8 +15,8 @@ export const flightDb = {
   getById: (id: number): Flight | undefined => {
     return db.prepare(`
       SELECT f.*,
-        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeLow,
-        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status = 'Success') as allTimeHigh
+        (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeLow,
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh
       FROM flights f
       WHERE f.id = ?
     `).get(id) as Flight | undefined;
@@ -40,12 +40,16 @@ export const flightDb = {
         searchMode, origin, destination, departureDate, airline, flightNumber, 
         includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
         purchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
-        notes, scheduleOverride, disableNotifications, nextCheckAt, status, createdAt, updatedAt
+        notes, scheduleOverride, disableNotifications, nextCheckAt, status,
+        earliestDeparture, latestDeparture, noRedeye, priceTrackingDirection,
+        minIncreaseDollar, minIncreasePercent, createdAt, updatedAt
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
         @purchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
-        @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status, @now, @now
+        @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
+        @earliestDeparture, @latestDeparture, @noRedeye, @priceTrackingDirection,
+        @minIncreaseDollar, @minIncreasePercent, @now, @now
       )
     `);
     
@@ -56,6 +60,13 @@ export const flightDb = {
     const minDropDollar = flight.minDropDollar ?? null;
     const minDropPercent = flight.minDropPercent ?? null;
     const cabinClass = flight.cabinClass || 'economy';
+    const earliestDeparture = flight.earliestDeparture || null;
+    const latestDeparture = flight.latestDeparture || null;
+    const noRedeye = flight.noRedeye ? 1 : 0;
+    const priceTrackingDirection = flight.priceTrackingDirection || 'drop';
+    const minIncreaseDollar = flight.minIncreaseDollar ?? null;
+    const minIncreasePercent = flight.minIncreasePercent ?? null;
+
     const result = stmt.run({ 
       ...flight, 
       currentPrice, 
@@ -63,7 +74,13 @@ export const flightDb = {
       targetPrice, 
       minDropDollar, 
       minDropPercent, 
-      cabinClass, 
+      cabinClass,
+      earliestDeparture,
+      latestDeparture,
+      noRedeye,
+      priceTrackingDirection,
+      minIncreaseDollar,
+      minIncreasePercent,
       now 
     });
     return result.lastInsertRowid as number;
@@ -94,6 +111,12 @@ export const flightDb = {
         scheduleOverride = @scheduleOverride,
         disableNotifications = @disableNotifications,
         status = @status,
+        earliestDeparture = @earliestDeparture,
+        latestDeparture = @latestDeparture,
+        noRedeye = @noRedeye,
+        priceTrackingDirection = @priceTrackingDirection,
+        minIncreaseDollar = @minIncreaseDollar,
+        minIncreasePercent = @minIncreasePercent,
         updatedAt = @updatedAt
       WHERE id = @id
     `);

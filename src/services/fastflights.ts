@@ -2,6 +2,7 @@ import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
 import { getFlights, createQuery, Passengers } from 'fast-flights-ts';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
+import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 
 const formatSimpleDatetime = (dt: any): string | undefined => {
   if (!dt) return undefined;
@@ -128,6 +129,10 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
       candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
     }
 
+    // Apply time-of-day and redeye search preferences
+    candidates = filterItinerariesBySearchPreferences(candidates, flight);
+    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+
     if (candidates.length > 0) {
       candidates.sort((a, b) => a.price - b.price);
       const lowest = candidates[0];
@@ -136,7 +141,7 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
         status: 'Success',
         leadingAirline: lowest.airline,
         leadingFlightNumber: lowest.flightNumber,
-        itineraries: parsedItineraries,
+        itineraries: eligibleItineraries,
       };
     }
 

@@ -1,6 +1,7 @@
 import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
+import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 
 export const checkFlightPrice = async (
   flight: Flight,
@@ -165,6 +166,10 @@ export const checkFlightPrice = async (
       candidates = candidates.filter((it: RouteItinerary) => !excluded.includes(it.airline));
     }
 
+    // Apply time-of-day and redeye search preferences
+    candidates = filterItinerariesBySearchPreferences(candidates, flight);
+    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+
     if (candidates.length > 0) {
       candidates.sort((a, b) => a.price - b.price);
       const lowest = candidates[0];
@@ -173,7 +178,7 @@ export const checkFlightPrice = async (
         status: 'Success',
         leadingAirline: lowest.airline,
         leadingFlightNumber: lowest.flightNumber,
-        itineraries: parsedItineraries,
+        itineraries: eligibleItineraries,
       };
     }
 

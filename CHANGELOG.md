@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-02*  
-*Current Version: v0.5.8*
+*Last updated: 2026-11-03*  
+*Current Version: v0.6.0*
 
 ## Changelog
+
+### Release v0.6.0
+- Added recurring monthly quota reset day selector (1st–31st) with automatic date calculation and shorter month clamping.
+- Added departure time window filters (earliest and latest departure) with 15-minute stepper increments.
+- Added "Exclude Redeye Flights" search filter to eliminate overnight departures.
+- Added price increase tracking and surge alert notifications for prospective flights with custom dollar and percentage thresholds.
+- Added in-place "Convert to Booked" action to transition watched flights to booked status while retaining all historical price data.
+- Refined dashboard card layout and market corridor gauge padding to maintain balanced vertical spacing across multi-badge flights.
 
 ### Release v0.5.8: Bug Fixes
 - Bug Fix: Synchronized Pause All and Resume All buttons with individual provider pause toggles.

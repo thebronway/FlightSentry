@@ -28,7 +28,7 @@ export function usePriceChartScales({
   // Filter valid checks and sort chronologically (oldest to newest)
   const sorted = useMemo(() => {
     return [...history]
-      .filter(h => typeof h.price === 'number' && h.price > 0 && h.status === 'Success')
+      .filter(h => typeof h.price === 'number' && h.price > 0 && (h.status === 'Success' || h.status === 'Booked'))
       .sort((a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime());
   }, [history]);
 

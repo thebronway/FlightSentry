@@ -5,6 +5,7 @@ import { sendSlackWebhook } from './channels/slack';
 import { sendGenericWebhook } from './channels/generic';
 import { sendSmtpEmail } from './channels/smtp';
 import { formatPriceDropAlert } from './templates/priceDropAlert';
+import { formatPriceIncreaseAlert } from './templates/priceIncreaseAlert';
 
 export * from './types';
 export * from './channels/discord';
@@ -12,6 +13,7 @@ export * from './channels/slack';
 export * from './channels/generic';
 export * from './channels/smtp';
 export * from './templates/priceDropAlert';
+export * from './templates/priceIncreaseAlert';
 
 export const sendNotification = async (
   settings: Settings,
@@ -99,5 +101,23 @@ export const sendPriceDropAlert = async (
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
   const { title, body, htmlBody } = formatPriceDropAlert(flight, newPrice, details);
+  await sendNotification(settings, title, body, htmlBody);
+};
+
+export const sendPriceIncreaseAlert = async (
+  settings: Settings,
+  flight: Flight,
+  newPrice: number,
+  details?: {
+    airline?: string | null;
+    flightNumber?: string | null;
+    metadata?: string | null;
+    sourceUsed?: string | null;
+    itineraries?: RouteItinerary[];
+  }
+): Promise<void> => {
+  if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
+
+  const { title, body, htmlBody } = formatPriceIncreaseAlert(flight, newPrice, details);
   await sendNotification(settings, title, body, htmlBody);
 };

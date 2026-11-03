@@ -47,6 +47,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       notes: parsed.notes ?? null,
       disableNotifications: parsed.disableNotifications ?? 0,
       status: updatedStatus,
+      earliestDeparture: parsed.earliestDeparture !== undefined ? parsed.earliestDeparture : existing.earliestDeparture,
+      latestDeparture: parsed.latestDeparture !== undefined ? parsed.latestDeparture : existing.latestDeparture,
+      noRedeye: parsed.noRedeye !== undefined ? parsed.noRedeye : existing.noRedeye,
+      priceTrackingDirection: parsed.priceTrackingDirection ?? existing.priceTrackingDirection ?? 'drop',
+      minIncreaseDollar: parsed.minIncreaseDollar !== undefined ? parsed.minIncreaseDollar : existing.minIncreaseDollar,
+      minIncreasePercent: parsed.minIncreasePercent !== undefined ? parsed.minIncreasePercent : existing.minIncreasePercent,
     });
 
     const updated = flightDb.getById(id);

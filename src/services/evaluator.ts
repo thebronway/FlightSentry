@@ -1,7 +1,7 @@
 import { Flight, Settings, RouteItinerary } from '../types';
 import { flightDb } from '../db/flights';
 import { historyDb } from '../db/history';
-import { sendPriceDropAlert } from './apprise';
+import { sendPriceDropAlert, sendPriceIncreaseAlert } from './notifications';
 
 export interface EvaluationDetails {
   airline?: string | null;
@@ -28,41 +28,69 @@ export const evaluatePrice = async (
     sourceUsed: details?.sourceUsed,
   });
 
-  // 3. Evaluate threshold rules using active benchmark (purchase price takes priority if set)
+  // 3. Evaluate threshold rules using active benchmark
   const previousPrice = flight.currentPrice;
-  const benchmarkPrice = (flight.purchasePrice && flight.purchasePrice > 0)
-    ? flight.purchasePrice
-    : flight.baselinePrice;
+  const isBooked = Boolean(flight.purchasePrice && flight.purchasePrice > 0);
+  const benchmarkPrice = isBooked ? flight.purchasePrice! : flight.baselinePrice;
 
-  const dropFromPrevious = previousPrice - newPrice;
-  const dropFromBenchmark = benchmarkPrice - newPrice;
-  const dropPercentFromBenchmark = benchmarkPrice > 0 ? (dropFromBenchmark / benchmarkPrice) * 100 : 0;
+  // Tracking direction: drop (default), increase, or both
+  const direction = flight.priceTrackingDirection || 'drop';
 
-  const isLowerThanPrevious = newPrice < previousPrice;
-  const isLowerThanBenchmark = newPrice < benchmarkPrice;
+  // --- BRANCH A: PRICE DROP EVALUATION ---
+  if (direction === 'drop' || direction === 'both') {
+    const dropFromBenchmark = benchmarkPrice - newPrice;
+    const dropPercentFromBenchmark = benchmarkPrice > 0 ? (dropFromBenchmark / benchmarkPrice) * 100 : 0;
+    const isLowerThanPrevious = newPrice < previousPrice;
+    const isLowerThanBenchmark = newPrice < benchmarkPrice;
 
-  // Per-flight threshold overrides with fallback to global settings
-  const minDropDollar = (flight.minDropDollar !== null && flight.minDropDollar !== undefined)
-    ? flight.minDropDollar
-    : settings.minDropDollar;
+    const minDropDollar = (flight.minDropDollar !== null && flight.minDropDollar !== undefined)
+      ? flight.minDropDollar
+      : settings.minDropDollar;
 
-  const minDropPercent = (flight.minDropPercent !== null && flight.minDropPercent !== undefined)
-    ? flight.minDropPercent
-    : settings.minDropPercent;
+    const minDropPercent = (flight.minDropPercent !== null && flight.minDropPercent !== undefined)
+      ? flight.minDropPercent
+      : settings.minDropPercent;
 
-  const hasDollarRule = minDropDollar !== null && minDropDollar !== undefined && minDropDollar > 0;
-  const hitsDollarThreshold = hasDollarRule ? dropFromBenchmark >= minDropDollar : false;
+    const hasDollarRule = minDropDollar !== null && minDropDollar !== undefined && minDropDollar > 0;
+    const hitsDollarThreshold = hasDollarRule ? dropFromBenchmark >= minDropDollar : false;
 
-  const hasPercentRule = minDropPercent !== null && minDropPercent !== undefined && minDropPercent > 0;
-  const hitsPercentThreshold = hasPercentRule ? dropPercentFromBenchmark >= minDropPercent : false;
+    const hasPercentRule = minDropPercent !== null && minDropPercent !== undefined && minDropPercent > 0;
+    const hitsPercentThreshold = hasPercentRule ? dropPercentFromBenchmark >= minDropPercent : false;
 
-  const hitsTargetPrice = flight.targetPrice ? newPrice <= flight.targetPrice : false;
+    const hitsTargetPrice = flight.targetPrice ? newPrice <= flight.targetPrice : false;
 
-  // STRICT RULES:
-  // Must be lower than last check AND lower than the benchmark.
-  // AND must meet at least one configured threshold ($ drop, % drop, or hits target price)
-  if (isLowerThanPrevious && isLowerThanBenchmark && (hitsDollarThreshold || hitsPercentThreshold || hitsTargetPrice)) {
-    console.log(`Alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minDropDollar}, Min%: ${minDropPercent})`);
-    await sendPriceDropAlert(settings, flight, newPrice, details);
+    if (isLowerThanPrevious && isLowerThanBenchmark && (hitsDollarThreshold || hitsPercentThreshold || hitsTargetPrice)) {
+      console.log(`[Alert] Drop alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minDropDollar}, Min%: ${minDropPercent})`);
+      await sendPriceDropAlert(settings, flight, newPrice, details);
+    }
+  }
+
+  // --- BRANCH B: PRICE INCREASE EVALUATION ---
+  // Strictly permitted ONLY when planning to buy (unpurchased)
+  if (!isBooked && (direction === 'increase' || direction === 'both')) {
+    const surgeFromBenchmark = newPrice - benchmarkPrice;
+    const surgePercentFromBenchmark = benchmarkPrice > 0 ? (surgeFromBenchmark / benchmarkPrice) * 100 : 0;
+    const isHigherThanPrevious = newPrice > previousPrice;
+    const isHigherThanBenchmark = newPrice > benchmarkPrice;
+
+    // Use per-flight surge overrides, fallback to global defaults
+    const minIncreaseDollar = (flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined)
+      ? flight.minIncreaseDollar
+      : settings.minDropDollar ?? 15;
+
+    const minIncreasePercent = (flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined)
+      ? flight.minIncreasePercent
+      : settings.minDropPercent ?? 5;
+
+    const hasIncreaseDollarRule = minIncreaseDollar !== null && minIncreaseDollar !== undefined && minIncreaseDollar > 0;
+    const hitsIncreaseDollarThreshold = hasIncreaseDollarRule ? surgeFromBenchmark >= minIncreaseDollar : false;
+
+    const hasIncreasePercentRule = minIncreasePercent !== null && minIncreasePercent !== undefined && minIncreasePercent > 0;
+    const hitsIncreasePercentThreshold = hasIncreasePercentRule ? surgePercentFromBenchmark >= minIncreasePercent : false;
+
+    if (isHigherThanPrevious && isHigherThanBenchmark && (hitsIncreaseDollarThreshold || hitsIncreasePercentThreshold)) {
+      console.log(`[Alert] Surge alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minIncreaseDollar}, Min%: ${minIncreasePercent})`);
+      await sendPriceIncreaseAlert(settings, flight, newPrice, details);
+    }
   }
 };

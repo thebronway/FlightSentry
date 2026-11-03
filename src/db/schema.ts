@@ -23,6 +23,12 @@ CREATE TABLE IF NOT EXISTS flights (
     disableNotifications INTEGER NOT NULL DEFAULT 0,
     nextCheckAt TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'Upcoming',
+    earliestDeparture TEXT,
+    latestDeparture TEXT,
+    noRedeye INTEGER NOT NULL DEFAULT 0,
+    priceTrackingDirection TEXT NOT NULL DEFAULT 'drop',
+    minIncreaseDollar REAL,
+    minIncreasePercent REAL,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
 );
@@ -108,6 +114,10 @@ CREATE TABLE IF NOT EXISTS settings (
     genericWebhookUrl TEXT,
     smtpEnabled INTEGER NOT NULL DEFAULT 0,
     quotaResetDate TEXT NOT NULL,
+    quotaResetDay INTEGER NOT NULL DEFAULT 1,
+    serpApiResetDay INTEGER DEFAULT 1,
+    searchApiResetDay INTEGER DEFAULT 1,
+    hasdataResetDay INTEGER DEFAULT 1,
     globalPause INTEGER NOT NULL DEFAULT 0
 );
 `;

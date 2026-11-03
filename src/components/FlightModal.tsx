@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
-import { FareTier, CabinClass, SearchMode, Flight, Settings } from '@/types';
+import { FareTier, CabinClass, SearchMode, PriceTrackingDirection, Flight, Settings } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
 import { getDataSourceStatus } from '@/utils/airline';
 import { getTodayDateString } from '@/utils/date';
 import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
+import SearchPreferencesSection from './flightModal/SearchPreferencesSection';
 
 interface Props {
   isOpen: boolean;
@@ -40,6 +41,12 @@ const DEFAULT_STATE = {
   overrideFinalStretch: '',
   pauseTracking: false,
   disableNotifications: false,
+  earliestDeparture: '',
+  latestDeparture: '',
+  noRedeye: false,
+  priceTrackingDirection: 'drop' as PriceTrackingDirection,
+  minIncreaseDollar: '',
+  minIncreasePercent: '',
 };
 
 export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight }: Props) {
@@ -118,6 +125,12 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
           overrideFinalStretch: finalStretch,
           pauseTracking: initialFlight.status === 'Paused',
           disableNotifications: initialFlight.disableNotifications === 1,
+          earliestDeparture: initialFlight.earliestDeparture || '',
+          latestDeparture: initialFlight.latestDeparture || '',
+          noRedeye: initialFlight.noRedeye === 1,
+          priceTrackingDirection: initialFlight.priceTrackingDirection || 'drop',
+          minIncreaseDollar: (initialFlight.minIncreaseDollar !== null && initialFlight.minIncreaseDollar !== undefined) ? String(initialFlight.minIncreaseDollar) : '',
+          minIncreasePercent: (initialFlight.minIncreasePercent !== null && initialFlight.minIncreasePercent !== undefined) ? String(initialFlight.minIncreasePercent) : '',
         });
       } else {
         setFormData(DEFAULT_STATE);
@@ -196,6 +209,12 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
       status: formData.pauseTracking ? 'Paused' : 'Upcoming',
       disableNotifications: formData.disableNotifications ? 1 : 0,
       scheduleOverride,
+      earliestDeparture: formData.earliestDeparture ? formData.earliestDeparture.trim() : null,
+      latestDeparture: formData.latestDeparture ? formData.latestDeparture.trim() : null,
+      noRedeye: formData.noRedeye ? 1 : 0,
+      priceTrackingDirection: formData.trackingGoal === 'booked' ? 'drop' : formData.priceTrackingDirection,
+      minIncreaseDollar: formData.minIncreaseDollar ? parseFloat(formData.minIncreaseDollar) : null,
+      minIncreasePercent: formData.minIncreasePercent ? parseFloat(formData.minIncreasePercent) : null,
     };
 
     try {
@@ -507,16 +526,33 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             </div>
           </div>
 
+          {/* Search Preferences: Time of Day and No Redeye */}
+          <SearchPreferencesSection
+            earliestDeparture={formData.earliestDeparture}
+            latestDeparture={formData.latestDeparture}
+            noRedeye={formData.noRedeye}
+            onEarliestChange={val => setFormData({ ...formData, earliestDeparture: val })}
+            onLatestChange={val => setFormData({ ...formData, latestDeparture: val })}
+            onNoRedeyeChange={val => setFormData({ ...formData, noRedeye: val })}
+          />
+
           {/* Alert Thresholds and Mute/Pause Toggles */}
           <AlertThresholdsSection
             minDropDollar={formData.minDropDollar}
             minDropPercent={formData.minDropPercent}
+            priceTrackingDirection={formData.priceTrackingDirection}
+            minIncreaseDollar={formData.minIncreaseDollar}
+            minIncreasePercent={formData.minIncreasePercent}
+            isBooked={formData.trackingGoal === 'booked'}
             pauseTracking={formData.pauseTracking}
             disableNotifications={formData.disableNotifications}
             defaultSettings={defaultSettings}
             currentPrice={initialFlight?.currentPrice || (formData.purchasePrice ? parseFloat(formData.purchasePrice) : null)}
             onDollarChange={val => setFormData({ ...formData, minDropDollar: val })}
             onPercentChange={val => setFormData({ ...formData, minDropPercent: val })}
+            onDirectionChange={dir => setFormData({ ...formData, priceTrackingDirection: dir })}
+            onIncreaseDollarChange={val => setFormData({ ...formData, minIncreaseDollar: val })}
+            onIncreasePercentChange={val => setFormData({ ...formData, minIncreasePercent: val })}
             onPauseChange={val => setFormData({ ...formData, pauseTracking: val })}
             onDisableNotificationsChange={val => setFormData({ ...formData, disableNotifications: val })}
           />

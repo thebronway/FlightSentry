@@ -118,10 +118,12 @@ export default function HistoryIntradayLog({
                           className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
                             record.status === 'Success'
                               ? 'bg-green-900/30 text-green-400 border-green-800/40'
+                              : record.status === 'Booked'
+                              ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/60'
                               : 'bg-red-900/30 text-red-400 border-red-800/40'
                           }`}
                         >
-                          {record.status}
+                          {record.status === 'Booked' ? 'Booked Fare' : record.status}
                         </span>
                         {record.sourceUsed && (
                           <span
@@ -135,7 +137,7 @@ export default function HistoryIntradayLog({
                             {SOURCE_LABEL_MAP[record.sourceUsed] || record.sourceUsed}
                           </span>
                         )}
-                        {record.status === 'Success' && (
+                        {(record.status === 'Success' || record.status === 'Booked') && (
                           <a
                             href={`https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}${record.airline ? `%20${encodeURIComponent(record.airline)}` : ''}${record.flightNumber ? `%20${encodeURIComponent(record.flightNumber)}` : ''}%20oneway`}
                             target="_blank"

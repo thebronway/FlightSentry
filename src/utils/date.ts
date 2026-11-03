@@ -7,6 +7,46 @@ export const getCurrentLocalHour = (timezone: string): number => {
   return parseInt(formatter.format(new Date()), 10);
 };
 
+export const formatOrdinalDay = (day: number): string => {
+  const j = day % 10;
+  const k = day % 100;
+  if (j === 1 && k !== 11) return `${day}st`;
+  if (j === 2 && k !== 12) return `${day}nd`;
+  if (j === 3 && k !== 13) return `${day}rd`;
+  return `${day}th`;
+};
+
+export const calculateNextResetDate = (
+  resetDay: number,
+  timezone?: string | null
+): string => {
+  const clampedDay = Math.min(31, Math.max(1, Math.round(resetDay || 1)));
+  const todayStr = getTodayDateString(timezone);
+  const parts = todayStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+
+  const getClampedDateStr = (y: number, m: number, d: number): string => {
+    // Day 0 of month m+1 resolves to the final day of month m in UTC
+    const maxDays = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const targetDay = Math.min(d, maxDays);
+    const mm = String(m + 1).padStart(2, '0');
+    const dd = String(targetDay).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  };
+
+  // 1. Candidate in current month
+  const candidateCurrent = getClampedDateStr(year, month, clampedDay);
+  if (candidateCurrent > todayStr) {
+    return candidateCurrent;
+  }
+
+  // 2. If already passed or today, candidate is in next month
+  const nextMonth = (month + 1) % 12;
+  const nextYear = month === 11 ? year + 1 : year;
+  return getClampedDateStr(nextYear, nextMonth, clampedDay);
+};
+
 export const getNextMonthString = (): string => {
   const date = new Date();
   date.setMonth(date.getMonth() + 1);

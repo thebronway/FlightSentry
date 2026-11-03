@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Settings } from '@/types';
 import { ChevronUp, ChevronDown, FileText } from 'lucide-react';
+import { calculateNextResetDate, formatOrdinalDay } from '@/utils/date';
 import DataSourceLogsModal from './DataSourceLogsModal';
 
 interface Props {
@@ -300,26 +301,51 @@ export default function DataSourcesTab({
                     </div>
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                        Quota Reset Date
+                        Monthly Reset Day
                       </label>
-                      <input
-                        type="date"
-                        disabled={!isEnabled}
-                        value={
-                          (key === 'serpapi'
-                            ? settings.serpApiResetDate
-                            : key === 'searchapi'
-                            ? settings.searchApiResetDate
-                            : settings.hasdataResetDate) || ''
-                        }
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (key === 'serpapi') onChange({ ...settings, serpApiResetDate: val });
-                          if (key === 'searchapi') onChange({ ...settings, searchApiResetDate: val });
-                          if (key === 'hasdata') onChange({ ...settings, hasdataResetDate: val });
-                        }}
-                        className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm [color-scheme:dark]"
-                      />
+                      <div className="relative">
+                        <select
+                          disabled={!isEnabled}
+                          value={
+                            (key === 'serpapi'
+                              ? settings.serpApiResetDay
+                              : key === 'searchapi'
+                              ? settings.searchApiResetDay
+                              : settings.hasdataResetDay) ?? 1
+                          }
+                          onChange={e => {
+                            const day = parseInt(e.target.value, 10);
+                            const nextReset = calculateNextResetDate(day, settings.timezone);
+                            if (key === 'serpapi') {
+                              onChange({ ...settings, serpApiResetDay: day, serpApiResetDate: nextReset });
+                            } else if (key === 'searchapi') {
+                              onChange({ ...settings, searchApiResetDay: day, searchApiResetDate: nextReset });
+                            } else if (key === 'hasdata') {
+                              onChange({ ...settings, hasdataResetDay: day, hasdataResetDate: nextReset });
+                            }
+                          }}
+                          className="w-full appearance-none border border-gunmetal-border p-2 pr-8 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm cursor-pointer"
+                        >
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day}>
+                              {formatOrdinalDay(day)} of every month
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+                      </div>
+                      <span className="text-[11px] text-gunmetal-muted block mt-1 font-mono">
+                        Next reset:{' '}
+                        {(() => {
+                          const resetDate =
+                            key === 'serpapi'
+                              ? settings.serpApiResetDate
+                              : key === 'searchapi'
+                              ? settings.searchApiResetDate
+                              : settings.hasdataResetDate;
+                          return resetDate || calculateNextResetDate(1, settings.timezone);
+                        })()}
+                      </span>
                     </div>
                   </div>
                 ) : (

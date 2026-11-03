@@ -1,8 +1,8 @@
 'use client';
 
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff } from 'lucide-react';
-import { formatCurrency, computeAlertTargets } from '@/utils/format';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff, ShoppingBag } from 'lucide-react';
+import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 
@@ -12,9 +12,10 @@ interface Props {
   onRefresh: () => void;
   onShowHistory: (flight: Flight) => void;
   onEdit: (flight: Flight) => void;
+  onConvertToBooked?: (flight: Flight) => void;
 }
 
-export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit }: Props) {
+export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked }: Props) {
   const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
 
   return (
@@ -74,6 +75,9 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     </span>
                     <span className="text-[11px] text-gunmetal-muted block">
                       {flight.fareTier}
+                      {flight.noRedeye === 1 && ' • No Redeye'}
+                      {(flight.earliestDeparture || flight.latestDeparture) &&
+                        ` • ${flight.earliestDeparture || '00:00'}–${flight.latestDeparture || '23:59'}`}
                     </span>
                   </td>
 
@@ -96,12 +100,27 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         flight.minDropPercent !== null && flight.minDropPercent !== undefined
                           ? flight.minDropPercent
                           : settings?.minDropPercent ?? 5;
-                      const { effectiveTarget } = computeAlertTargets(
+                      const dropTargets = computeAlertTargets(
                         flight.currentPrice,
                         effDollar,
                         effPercent
                       );
-                      if (effectiveTarget === null) return null;
+
+                      const effIncDollar =
+                        flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined
+                          ? flight.minIncreaseDollar
+                          : settings?.minDropDollar ?? 15;
+                      const effIncPercent =
+                        flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined
+                          ? flight.minIncreasePercent
+                          : settings?.minDropPercent ?? 5;
+                      const incTargets = computeIncreaseAlertTargets(
+                        flight.currentPrice,
+                        effIncDollar,
+                        effIncPercent
+                      );
+
+                      const dir = isPurchased ? 'drop' : (flight.priceTrackingDirection || 'drop');
 
                       return (
                         <span
@@ -113,7 +132,11 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                           title={
                             flight.disableNotifications === 1
                               ? 'Muted'
-                              : `Alerts at ≤ ${formatCurrency(effectiveTarget)}`
+                              : dir === 'both'
+                              ? `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} or ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              : dir === 'increase'
+                              ? `Alerts at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              : `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`
                           }
                         >
                           {flight.disableNotifications === 1 ? (
@@ -121,7 +144,13 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                           ) : (
                             <Bell className="w-3 h-3 text-sky-400" />
                           )}
-                          <span>≤ {formatCurrency(effectiveTarget)}</span>
+                          <span>
+                            {dir === 'both'
+                              ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              : dir === 'increase'
+                              ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`}
+                          </span>
                         </span>
                       );
                     })()}
@@ -177,6 +206,15 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
+                      {!isPurchased && onConvertToBooked && (
+                        <button
+                          title="Convert to Booked (I bought this flight)"
+                          onClick={() => onConvertToBooked(flight)}
+                          className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded transition-colors"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         title={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause' : 'Resume'}
                         onClick={() => toggleStatus(flight)}

@@ -33,6 +33,16 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN searchApiResetDate TEXT",
         "ALTER TABLE settings ADD COLUMN hasdataResetDate TEXT",
         "ALTER TABLE settings ADD COLUMN checkStartTime TEXT DEFAULT '06:00'",
+        "ALTER TABLE flights ADD COLUMN earliestDeparture TEXT",
+        "ALTER TABLE flights ADD COLUMN latestDeparture TEXT",
+        "ALTER TABLE flights ADD COLUMN noRedeye INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE flights ADD COLUMN priceTrackingDirection TEXT NOT NULL DEFAULT 'drop'",
+        "ALTER TABLE flights ADD COLUMN minIncreaseDollar REAL",
+        "ALTER TABLE flights ADD COLUMN minIncreasePercent REAL",
+        "ALTER TABLE settings ADD COLUMN quotaResetDay INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN serpApiResetDay INTEGER DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN searchApiResetDay INTEGER DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN hasdataResetDay INTEGER DEFAULT 1",
     ];
     for (const migration of migrations) {
         try {
@@ -62,14 +72,35 @@ export function initDb() {
         // Ignored
     }
 
-    // Initialize per-provider reset dates from quotaResetDate if unset
+    // Initialize per-provider reset dates and recurring days from quotaResetDate if unset
     try {
-        const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, hasdataResetDate FROM settings WHERE id = 1').get() as any;
+        const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, hasdataResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay, hasdataResetDay FROM settings WHERE id = 1').get() as any;
         if (row) {
             const fallbackReset = row.quotaResetDate || new Date().toISOString().split('T')[0];
             if (!row.serpApiResetDate) db.prepare('UPDATE settings SET serpApiResetDate = ? WHERE id = 1').run(fallbackReset);
             if (!row.searchApiResetDate) db.prepare('UPDATE settings SET searchApiResetDate = ? WHERE id = 1').run(fallbackReset);
             if (!row.hasdataResetDate) db.prepare('UPDATE settings SET hasdataResetDate = ? WHERE id = 1').run(fallbackReset);
+
+            const parseDay = (dateStr?: string | null): number => {
+                if (!dateStr) return 1;
+                const parts = dateStr.split('-');
+                const d = parseInt(parts[2], 10);
+                return (!isNaN(d) && d >= 1 && d <= 31) ? d : 1;
+            };
+
+            const globalDay = row.quotaResetDay || parseDay(row.quotaResetDate);
+            const serpDay = row.serpApiResetDay || parseDay(row.serpApiResetDate || row.quotaResetDate);
+            const searchDay = row.searchApiResetDay || parseDay(row.searchApiResetDate || row.quotaResetDate);
+            const hasdataDay = row.hasdataResetDay || parseDay(row.hasdataResetDate || row.quotaResetDate);
+
+            db.prepare(`
+                UPDATE settings SET 
+                    quotaResetDay = COALESCE(quotaResetDay, ?),
+                    serpApiResetDay = COALESCE(serpApiResetDay, ?),
+                    searchApiResetDay = COALESCE(searchApiResetDay, ?),
+                    hasdataResetDay = COALESCE(hasdataResetDay, ?)
+                WHERE id = 1
+            `).run(globalDay, serpDay, searchDay, hasdataDay);
         }
     } catch {
         // Ignored
@@ -101,7 +132,8 @@ export function initDb() {
     if (!getSettings.get()) {
         const insertSettings = db.prepare(`
             INSERT INTO settings (
-                id, timezone, quotaResetDate, scheduleFarOut, scheduleStandard, 
+                id, timezone, quotaResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay, hasdataResetDay,
+                scheduleFarOut, scheduleStandard, 
                 scheduleFinalStretch, operatingHoursStart, operatingHoursEnd, dataSourceStrategy,
                 fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled, hasdataEnabled,
                 fastFlightsEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
@@ -109,7 +141,7 @@ export function initDb() {
                 genericWebhookEnabled, smtpEnabled
             ) 
             VALUES (
-                1, 'UTC', date('now', 'start of month', '+1 month'), 
+                1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
                 'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0
             )

@@ -48,3 +48,35 @@ export const computeAlertTargets = (
 
   return { dollarTarget, percentTarget, effectiveTarget };
 };
+
+export const computeIncreaseAlertTargets = (
+  currentPrice: number,
+  increaseDollar?: number | null,
+  increasePercent?: number | null
+): AlertTargetResult => {
+  if (!currentPrice || currentPrice <= 0) {
+    return { dollarTarget: null, percentTarget: null, effectiveTarget: null };
+  }
+
+  const dollarTarget =
+    increaseDollar !== undefined && increaseDollar !== null && increaseDollar > 0
+      ? Math.round(currentPrice + increaseDollar)
+      : null;
+
+  const percentTarget =
+    increasePercent !== undefined && increasePercent !== null && increasePercent > 0
+      ? Math.round(currentPrice * (1 + increasePercent / 100))
+      : null;
+
+  let effectiveTarget: number | null = null;
+  if (dollarTarget !== null && percentTarget !== null) {
+    // Whichever threshold is met first as the price ascends (the lower ceiling)
+    effectiveTarget = Math.min(dollarTarget, percentTarget);
+  } else if (dollarTarget !== null) {
+    effectiveTarget = dollarTarget;
+  } else if (percentTarget !== null) {
+    effectiveTarget = percentTarget;
+  }
+
+  return { dollarTarget, percentTarget, effectiveTarget };
+};
