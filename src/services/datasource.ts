@@ -1,5 +1,6 @@
 import { Flight, Settings, RouteItinerary } from '../types';
 import { settingsDb } from '../db/settings';
+import { logsDb } from '../db/logs';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
 import { checkHasDataPrice as queryHasData } from './hasdata';
@@ -68,6 +69,8 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
     console.log(`[Router] -> Executing: ${strategy}`);
     let result: DataSourceResult = { price: null, status: 'Error', sourceUsed: strategy };
+    let failureReason: string | null = null;
+    const startTime = Date.now();
 
     try {
       if (strategy === 'serpapi' && settings.serpApiKey) {
@@ -79,12 +82,40 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
       } else if (strategy === 'fastflights') {
         result = { ...(await queryFastFlights(flight)), sourceUsed: strategy };
       }
-    } catch (error) {
+    } catch (error: any) {
+      failureReason = error?.message || 'Unhandled provider exception';
       console.error(`[Router] Strategy ${strategy} threw an exception:`, error);
     }
 
+    const durationMs = Date.now() - startTime;
+
     if (result.status === 'RateLimited') {
+      failureReason = failureReason || 'Rate limit or anti-bot challenge (CAPTCHA / 429) detected';
       console.warn(`[Router] RATE LIMIT / BOT BLOCK DETECTED on provider: ${strategy}. Logged for tracking.`);
+    } else if (result.status === 'SoldOut') {
+      failureReason = 'No matching itineraries or available seats found';
+    } else if (result.status === 'Error' && !failureReason) {
+      failureReason = 'API request failed or returned invalid response format';
+    }
+
+    // Persist execution log for diagnostics
+    try {
+      const flightNumLabel = flight.airline && flight.flightNumber
+        ? `${flight.airline} ${flight.flightNumber}`
+        : flight.airline || null;
+
+      logsDb.insert({
+        provider: strategy,
+        route: flight.origin && flight.destination ? `${flight.origin} → ${flight.destination}` : null,
+        flightNumber: flightNumLabel,
+        departureDate: flight.departureDate,
+        status: result.status,
+        statusCode: result.status === 'Success' ? 200 : result.status === 'RateLimited' ? 429 : 500,
+        errorMessage: failureReason,
+        durationMs,
+      });
+    } catch (logErr) {
+      console.error('[Router] Failed to record query log:', logErr);
     }
 
     console.log(`[Router] Result from ${strategy}: Status=${result.status}, Price=${result.price}`);

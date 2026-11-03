@@ -1,9 +1,21 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-02*  
-*Current Version: v0.5.4*
+*Current Version: v0.5.6*
 
 ## Changelog
+
+### Release v0.5.6
+- Installed `tzdata` in Alpine Docker container to ensure correct local timezone resolution.
+- Added custom chevron indicator with right padding to scheduling and strategy select dropdowns.
+- Re-architected Quota Ribbon grid to adapt dynamically to 2, 3, 4, 5, and 6 active data sources.
+- Streamlined Fast-Flights scraper settings by removing redundant save buttons and adding autosave with confirmation toasts.
+- Refined dashboard warning banner to replace "Configure Settings" with an immediate "Unpause All" action when automation is paused.
+- Computed real-time minimum dollar and percentage drop alert thresholds on the flight edit modal.
+- Added balanced right-aligned alert threshold targets to dashboard flight cards and condensed rows.
+- Aligned Route Market Corridor calculations to strictly reflect tracked price history.
+- Added persistent diagnostic query logging and log inspection modal per data source.
+- Updated footer attribution link copy.
 
 ### Release v0.5.4
 - Rounded all currency amounts across the application to whole dollars (no cents).

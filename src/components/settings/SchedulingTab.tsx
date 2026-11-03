@@ -1,7 +1,7 @@
 'use client';
 
 import { Settings } from '@/types';
-import { Clock } from 'lucide-react';
+import { Clock, ChevronDown } from 'lucide-react';
 
 interface Props {
   settings: Settings;
@@ -107,17 +107,20 @@ export default function SchedulingTab({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Far Out (&gt;90 days)
             </label>
-            <select
-              value={settings.scheduleFarOut}
-              onChange={e => onChange({ ...settings, scheduleFarOut: Number(e.target.value) })}
-              className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-            >
-              {CADENCE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={settings.scheduleFarOut}
+                onChange={e => onChange({ ...settings, scheduleFarOut: Number(e.target.value) })}
+                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+              >
+                {CADENCE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+            </div>
           </div>
 
           <div>
@@ -146,17 +149,20 @@ export default function SchedulingTab({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Standard (14–90 days)
             </label>
-            <select
-              value={settings.scheduleStandard}
-              onChange={e => onChange({ ...settings, scheduleStandard: Number(e.target.value) })}
-              className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-            >
-              {CADENCE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={settings.scheduleStandard}
+                onChange={e => onChange({ ...settings, scheduleStandard: Number(e.target.value) })}
+                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+              >
+                {CADENCE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+            </div>
           </div>
 
           <div>
@@ -185,17 +191,20 @@ export default function SchedulingTab({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Final Stretch (&lt;14 days)
             </label>
-            <select
-              value={settings.scheduleFinalStretch}
-              onChange={e => onChange({ ...settings, scheduleFinalStretch: Number(e.target.value) })}
-              className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-            >
-              {CADENCE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={settings.scheduleFinalStretch}
+                onChange={e => onChange({ ...settings, scheduleFinalStretch: Number(e.target.value) })}
+                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+              >
+                {CADENCE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+            </div>
           </div>
 
           <div>

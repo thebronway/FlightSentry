@@ -8,7 +8,7 @@ import FlightCondensedView from '@/components/FlightCondensedView';
 import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
-import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 
 type SortOption = 'departure-soonest' | 'departure-latest' | 'price-low' | 'price-high' | 'route-az';
@@ -63,6 +63,27 @@ export default function Dashboard() {
   const handleAddNew = () => {
     setEditingFlight(null);
     setIsModalOpen(true);
+  };
+
+  const handleUnpauseAll = async () => {
+    if (!settings) return;
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...settings,
+        globalPause: 0,
+        serpApiPaused: 0,
+        searchApiPaused: 0,
+        hasdataPaused: 0,
+        fastFlightsPaused: 0,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSettings(updated);
+      setQuotaRefreshTrigger(prev => prev + 1);
+    }
   };
 
   // Default sort is soonest flight, with other sort options
@@ -159,14 +180,31 @@ export default function Dashboard() {
       {!dsStatus.available && (
         <div className="mb-6 p-4 rounded-lg bg-amber-950/30 border border-amber-800/60 flex items-start gap-3 text-amber-200 text-xs">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-bold text-amber-100 block mb-0.5">
-              {!dsStatus.configured ? 'No Data Sources Configured' : 'All Data Sources Paused'}
-            </span>
-            <span>{dsStatus.reason} </span>
-            <Link href="/settings" className="underline font-semibold text-white hover:text-amber-300 ml-1">
-              Configure Settings &rarr;
-            </Link>
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="font-bold text-amber-100 block mb-0.5">
+                {!dsStatus.configured
+                  ? 'No Data Sources Configured'
+                  : dsStatus.allPaused
+                  ? 'All Data Sources Paused'
+                  : 'API Quotas Exhausted'}
+              </span>
+              <span>{dsStatus.reason}</span>
+            </div>
+            {dsStatus.allPaused ? (
+              <button
+                type="button"
+                onClick={handleUnpauseAll}
+                className="self-start sm:self-center flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-amber-900/60 hover:bg-amber-800/70 border border-amber-600/70 text-amber-100 rounded text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span>Unpause All</span>
+              </button>
+            ) : (
+              <Link href="/settings" className="self-start sm:self-center flex-shrink-0 underline font-semibold text-white hover:text-amber-300 whitespace-nowrap">
+                Configure Settings &rarr;
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -198,6 +236,7 @@ export default function Dashboard() {
                   <FlightCard 
                     key={f.id} 
                     flight={f} 
+                    settings={settings}
                     onRefresh={handleRefreshAll} 
                     onShowHistory={() => setHistoryFlight(f)} 
                     onEdit={handleEdit} 
@@ -207,6 +246,7 @@ export default function Dashboard() {
             ) : (
               <FlightCondensedView 
                 flights={activeFlights} 
+                settings={settings}
                 onRefresh={handleRefreshAll} 
                 onShowHistory={f => setHistoryFlight(f)} 
                 onEdit={handleEdit} 
@@ -235,6 +275,7 @@ export default function Dashboard() {
                         <FlightCard 
                           key={f.id} 
                           flight={f} 
+                          settings={settings}
                           onRefresh={handleRefreshAll} 
                           onShowHistory={() => setHistoryFlight(f)} 
                           onEdit={handleEdit} 
@@ -244,6 +285,7 @@ export default function Dashboard() {
                   ) : (
                     <FlightCondensedView 
                       flights={pastFlights} 
+                      settings={settings}
                       onRefresh={handleRefreshAll} 
                       onShowHistory={f => setHistoryFlight(f)} 
                       onEdit={handleEdit} 

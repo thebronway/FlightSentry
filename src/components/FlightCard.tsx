@@ -1,20 +1,21 @@
 'use client';
 
-import { Flight } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink } from 'lucide-react';
-import { formatCurrency } from '@/utils/format';
+import { Flight, Settings } from '@/types';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff } from 'lucide-react';
+import { formatCurrency, computeAlertTargets } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
   flight: Flight;
+  settings?: Settings | null;
   onRefresh: () => void;
   onShowHistory: () => void;
   onEdit: (flight: Flight) => void;
 }
 
-export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }: Props) {
+export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit }: Props) {
   const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
 
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
@@ -92,20 +93,63 @@ export default function FlightCard({ flight, onRefresh, onShowHistory, onEdit }:
           )}
         </div>
 
-        <div className="flex justify-between items-end my-4">
-          <div>
-            <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
-            <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
-            {delta !== 0 && (
-              <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
-                {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
+        {(() => {
+          const effectiveDollar =
+            flight.minDropDollar !== null && flight.minDropDollar !== undefined
+              ? flight.minDropDollar
+              : settings?.minDropDollar ?? 15;
+          const effectivePercent =
+            flight.minDropPercent !== null && flight.minDropPercent !== undefined
+              ? flight.minDropPercent
+              : settings?.minDropPercent ?? 5;
+          const { effectiveTarget } = computeAlertTargets(
+            flight.currentPrice,
+            effectiveDollar,
+            effectivePercent
+          );
+
+          return (
+            <div className="flex justify-between items-end my-4">
+              <div>
+                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
+                <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
               </div>
-            )}
-          </div>
-        </div>
+              <div className="text-right">
+                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
+                {delta !== 0 && (
+                  <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+                    {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
+                  </div>
+                )}
+                {!isPast && effectiveTarget !== null && (
+                  <p
+                    className={`text-[11px] font-medium mt-1 flex items-center justify-end gap-1 ${
+                      flight.disableNotifications === 1
+                        ? 'text-gunmetal-muted'
+                        : 'text-sky-400'
+                    }`}
+                    title={
+                      flight.disableNotifications === 1
+                        ? 'Notifications muted for this flight'
+                        : `Alerts when price drops to ${formatCurrency(effectiveTarget)} or below`
+                    }
+                  >
+                    {flight.disableNotifications === 1 ? (
+                      <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                    ) : (
+                      <Bell className="w-3 h-3 text-sky-400 flex-shrink-0" />
+                    )}
+                    <span>
+                      {flight.disableNotifications === 1
+                        ? 'Muted'
+                        : `Alerts at ≤ ${formatCurrency(effectiveTarget)}`}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Route Market Corridor Gauge on Card */}
         {!isFlightNumMode && flight.allTimeLow !== null && flight.allTimeLow !== undefined && flight.allTimeHigh !== null && flight.allTimeHigh !== undefined && (

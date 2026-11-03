@@ -153,6 +153,29 @@ export default function SettingsForm() {
     }
   };
 
+  const handleAutoSave = async (
+    updatedSettings: SettingsType,
+    statusKey: string,
+    pillMessage?: string,
+    toastMessage?: string
+  ) => {
+    setSettings(updatedSettings);
+    if (statusKey) {
+      setProviderStatus(prev => ({ ...prev, [statusKey]: null }));
+    }
+    const ok = await persistSettings(updatedSettings);
+    if (ok) {
+      if (statusKey && pillMessage) {
+        setProviderStatus(prev => ({
+          ...prev,
+          [statusKey]: { type: 'success', message: pillMessage },
+        }));
+        setTimeout(() => setProviderStatus(prev => ({ ...prev, [statusKey]: null })), 3500);
+      }
+      showToast(toastMessage || `${statusKey.toUpperCase()} updated`, 'success');
+    }
+  };
+
   const handleSaveProvider = async (providerKey: string) => {
     if (!settings) return;
     setSavingProvider(providerKey);
@@ -315,6 +338,7 @@ export default function SettingsForm() {
           onSaveStrategy={handleSaveStrategy}
           savingStrategy={savingStrategy}
           strategyStatus={strategyStatus}
+          onAutoSave={handleAutoSave}
         />
       )}
 

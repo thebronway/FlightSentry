@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Settings } from '@/types';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, FileText } from 'lucide-react';
+import DataSourceLogsModal from './DataSourceLogsModal';
 
 interface Props {
   settings: Settings;
@@ -12,6 +14,12 @@ interface Props {
   onSaveStrategy: () => Promise<void>;
   savingStrategy: boolean;
   strategyStatus: { type: 'success' | 'error'; message: string } | null;
+  onAutoSave?: (
+    updatedSettings: Settings,
+    statusKey: string,
+    pillMessage?: string,
+    toastMessage?: string
+  ) => Promise<void>;
 }
 
 export default function DataSourcesTab({
@@ -23,6 +31,7 @@ export default function DataSourcesTab({
   onSaveStrategy,
   savingStrategy,
   strategyStatus,
+  onAutoSave,
 }: Props) {
   const allKeys = ['serpapi', 'searchapi', 'hasdata', 'fastflights'];
   const currentOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata,fastflights')
@@ -34,14 +43,6 @@ export default function DataSourcesTab({
     if (!currentOrder.includes(k)) currentOrder.push(k);
   });
 
-  const move = (index: number, dir: number) => {
-    const newOrder = [...currentOrder];
-    const temp = newOrder[index];
-    newOrder[index] = newOrder[index + dir];
-    newOrder[index + dir] = temp;
-    onChange({ ...settings, dataSourceStrategy: newOrder.join(',') });
-  };
-
   const nameMap: Record<string, string> = {
     serpapi: 'SerpAPI',
     searchapi: 'SearchApi.io',
@@ -49,12 +50,32 @@ export default function DataSourcesTab({
     fastflights: 'Fast-Flights (Scraper)',
   };
 
-  const toggleEnabled = (key: string, checked: boolean) => {
+  const move = async (index: number, dir: number) => {
+    const newOrder = [...currentOrder];
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[index + dir];
+    newOrder[index + dir] = temp;
+    const updated = { ...settings, dataSourceStrategy: newOrder.join(',') };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(updated, '', '', 'Priority order updated');
+    }
+  };
+
+  const [selectedLogsProvider, setSelectedLogsProvider] = useState<string | null>(null);
+
+  const toggleEnabled = async (key: string, checked: boolean) => {
     const val = checked ? 1 : 0;
-    if (key === 'serpapi') onChange({ ...settings, serpApiEnabled: val });
-    if (key === 'searchapi') onChange({ ...settings, searchApiEnabled: val });
-    if (key === 'hasdata') onChange({ ...settings, hasdataEnabled: val });
-    if (key === 'fastflights') onChange({ ...settings, fastFlightsEnabled: val });
+    const updated = { ...settings };
+    if (key === 'serpapi') updated.serpApiEnabled = val;
+    if (key === 'searchapi') updated.searchApiEnabled = val;
+    if (key === 'hasdata') updated.hasdataEnabled = val;
+    if (key === 'fastflights') updated.fastFlightsEnabled = val;
+    onChange(updated);
+    if (onAutoSave) {
+      const providerLabel = nameMap[key] || key;
+      await onAutoSave(updated, key, 'Saved!', `${providerLabel} ${checked ? 'enabled' : 'disabled'}`);
+    }
   };
 
   return (
@@ -67,15 +88,18 @@ export default function DataSourcesTab({
       {/* Query Routing Strategy Selector */}
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-4 rounded-lg space-y-2">
         <label className="block text-sm font-semibold text-slate-200">Query Routing Strategy</label>
-        <select
-          value={settings.fallbackStrategyMode}
-          onChange={e => onChange({ ...settings, fallbackStrategyMode: e.target.value })}
-          className="w-full border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-        >
-          <option value="sequential-query">Round-Robin (Atomic Rotation)</option>
-          <option value="balanced-usage">Balanced Usage (% Quota Consumed)</option>
-          <option value="exhaust-quota">Exhaust Quota (Priority Failover)</option>
-        </select>
+        <div className="relative">
+          <select
+            value={settings.fallbackStrategyMode}
+            onChange={e => onChange({ ...settings, fallbackStrategyMode: e.target.value })}
+            className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+          >
+            <option value="sequential-query">Round-Robin (Atomic Rotation)</option>
+            <option value="balanced-usage">Balanced Usage (% Quota Consumed)</option>
+            <option value="exhaust-quota">Exhaust Quota (Priority Failover)</option>
+          </select>
+          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+        </div>
         <div className="space-y-1 text-xs text-gunmetal-muted pt-1">
           <p>
             <strong className="text-slate-300">Round-Robin:</strong> Evenly alternates checks across active data sources to balance quota consumption using an atomic database pointer.
@@ -168,26 +192,48 @@ export default function DataSourcesTab({
                       Disabled
                     </span>
                   )}
+                  {providerStatus[key] && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        providerStatus[key]?.type === 'success'
+                          ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                          : 'bg-red-950/60 text-red-400 border-red-800/60'
+                      }`}
+                    >
+                      {providerStatus[key]?.message}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0}
-                    title="Move up in priority"
-                    className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
+                    onClick={() => setSelectedLogsProvider(key)}
+                    title={`View recent query logs for ${nameMap[key] || key}`}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-slate-300 hover:text-white hover:bg-gunmetal-border rounded-md shadow-sm transition-colors cursor-pointer"
                   >
-                    <ChevronUp className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Logs</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => move(index, 1)}
-                    disabled={index === currentOrder.length - 1}
-                    title="Move down in priority"
-                    className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => move(index, -1)}
+                      disabled={index === 0}
+                      title="Move up in priority"
+                      className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(index, 1)}
+                      disabled={index === currentOrder.length - 1}
+                      title="Move down in priority"
+                      className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -278,28 +324,30 @@ export default function DataSourcesTab({
                   </div>
                 )}
 
-                <div className="mt-4 pt-3 border-t border-gunmetal-border/70 flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-xs">
-                    {providerStatus[key] && (
-                      <span className={providerStatus[key]?.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                        {providerStatus[key]?.message}
-                      </span>
-                    )}
+                {isMetered && (
+                  <div className="mt-4 pt-3 border-t border-gunmetal-border/70 flex justify-end">
+                    <button
+                      type="button"
+                      disabled={savingProvider === key}
+                      onClick={() => onSaveProvider(key)}
+                      className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
+                    >
+                      {savingProvider === key ? 'Saving...' : `Save ${nameMap[key] || 'Provider'}`}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    disabled={savingProvider === key}
-                    onClick={() => onSaveProvider(key)}
-                    className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                  >
-                    {savingProvider === key ? 'Saving...' : `Save ${nameMap[key] || 'Provider'}`}
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <DataSourceLogsModal
+        isOpen={Boolean(selectedLogsProvider)}
+        providerKey={selectedLogsProvider}
+        providerName={selectedLogsProvider ? nameMap[selectedLogsProvider] || selectedLogsProvider : ''}
+        onClose={() => setSelectedLogsProvider(null)}
+      />
     </div>
   );
 }

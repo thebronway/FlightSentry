@@ -22,10 +22,11 @@ export default function Footer() {
             href="https://brian.conway.im/" 
             target="_blank" 
             rel="noopener noreferrer" 
+            title="Developer's Website & Projects"
             className="hover:text-emerald-500 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Globe className="w-4 h-4" />
-            <span>brian.conway.im</span>
+            <span>Developer's Website</span>
           </a>
           <a 
             href="https://github.com/thebronway/FlightSentry/issues" 

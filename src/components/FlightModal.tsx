@@ -513,6 +513,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
             pauseTracking={formData.pauseTracking}
             disableNotifications={formData.disableNotifications}
             defaultSettings={defaultSettings}
+            currentPrice={initialFlight?.currentPrice || (formData.purchasePrice ? parseFloat(formData.purchasePrice) : null)}
             onDollarChange={val => setFormData({ ...formData, minDropDollar: val })}
             onPercentChange={val => setFormData({ ...formData, minDropPercent: val })}
             onPauseChange={val => setFormData({ ...formData, pauseTracking: val })}

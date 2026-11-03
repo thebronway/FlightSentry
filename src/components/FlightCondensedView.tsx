@@ -1,19 +1,20 @@
 'use client';
 
-import { Flight } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink } from 'lucide-react';
-import { formatCurrency } from '@/utils/format';
+import { Flight, Settings } from '@/types';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff } from 'lucide-react';
+import { formatCurrency, computeAlertTargets } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 
 interface Props {
   flights: Flight[];
+  settings?: Settings | null;
   onRefresh: () => void;
   onShowHistory: (flight: Flight) => void;
   onEdit: (flight: Flight) => void;
 }
 
-export default function FlightCondensedView({ flights, onRefresh, onShowHistory, onEdit }: Props) {
+export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit }: Props) {
   const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
 
   return (
@@ -85,6 +86,45 @@ export default function FlightCondensedView({ flights, onRefresh, onShowHistory,
                         {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta))}
                       </span>
                     )}
+                    {(() => {
+                      if (flight.status === 'Past') return null;
+                      const effDollar =
+                        flight.minDropDollar !== null && flight.minDropDollar !== undefined
+                          ? flight.minDropDollar
+                          : settings?.minDropDollar ?? 15;
+                      const effPercent =
+                        flight.minDropPercent !== null && flight.minDropPercent !== undefined
+                          ? flight.minDropPercent
+                          : settings?.minDropPercent ?? 5;
+                      const { effectiveTarget } = computeAlertTargets(
+                        flight.currentPrice,
+                        effDollar,
+                        effPercent
+                      );
+                      if (effectiveTarget === null) return null;
+
+                      return (
+                        <span
+                          className={`text-[11px] font-mono flex items-center gap-1 mt-0.5 ${
+                            flight.disableNotifications === 1
+                              ? 'text-gunmetal-muted'
+                              : 'text-sky-400'
+                          }`}
+                          title={
+                            flight.disableNotifications === 1
+                              ? 'Muted'
+                              : `Alerts at ≤ ${formatCurrency(effectiveTarget)}`
+                          }
+                        >
+                          {flight.disableNotifications === 1 ? (
+                            <BellOff className="w-3 h-3 text-gunmetal-muted" />
+                          ) : (
+                            <Bell className="w-3 h-3 text-sky-400" />
+                          )}
+                          <span>≤ {formatCurrency(effectiveTarget)}</span>
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   <td className="py-3 px-4 text-gunmetal-muted whitespace-nowrap">

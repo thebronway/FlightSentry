@@ -16,13 +16,6 @@ export function computeRouteCorridor(
     if (h.status === 'Success' && typeof h.price === 'number' && h.price > 0) {
       allRecordedPrices.push(h.price);
     }
-    // Also inspect parsed competitor fares from the check metadata
-    const itineraries = parseHistoryItineraries(h);
-    itineraries.forEach(it => {
-      if (typeof it.price === 'number' && it.price > 0) {
-        allRecordedPrices.push(it.price);
-      }
-    });
   });
 
   if (allRecordedPrices.length === 0) {

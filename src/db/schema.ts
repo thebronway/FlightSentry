@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS price_history (
     FOREIGN KEY (flightId) REFERENCES flights(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS datasource_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    route TEXT,
+    flightNumber TEXT,
+    departureDate TEXT,
+    status TEXT NOT NULL,
+    statusCode INTEGER,
+    errorMessage TEXT,
+    durationMs INTEGER,
+    queriedAt TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     serpApiKey TEXT,

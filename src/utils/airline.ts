@@ -138,11 +138,12 @@ export function getGoogleFlightsUrl(flight: {
 export function getDataSourceStatus(settings?: any | null): {
   configured: boolean;
   allPaused: boolean;
+  quotaExhausted: boolean;
   available: boolean;
   reason?: string;
 } {
   if (!settings) {
-    return { configured: true, allPaused: false, available: true };
+    return { configured: true, allPaused: false, quotaExhausted: false, available: true };
   }
 
   const isEnabled = (val: any) => val === 1 || val === true || val === '1' || val === 'true';
@@ -163,6 +164,7 @@ export function getDataSourceStatus(settings?: any | null): {
     return {
       configured: false,
       allPaused: false,
+      quotaExhausted: false,
       available: false,
       reason: 'No data sources configured. Please configure an API key or enable a data source in Settings.',
     };
@@ -172,6 +174,7 @@ export function getDataSourceStatus(settings?: any | null): {
     return {
       configured: true,
       allPaused: true,
+      quotaExhausted: false,
       available: false,
       reason: 'All data sources are currently paused (Global Pause is active).',
     };
@@ -185,17 +188,37 @@ export function getDataSourceStatus(settings?: any | null): {
   const anyActive = serpActive || searchActive || hasdataActive || fastActive;
 
   if (!anyActive) {
+    const serpExhausted = serpConfigured && settings.serpApiQuota > 0 && settings.serpApiUsed >= settings.serpApiQuota;
+    const searchExhausted = searchConfigured && settings.searchApiQuota > 0 && settings.searchApiUsed >= settings.searchApiQuota;
+    const hasdataExhausted = hasdataConfigured && settings.hasdataQuota > 0 && settings.hasdataUsed >= settings.hasdataQuota;
+
+    const allConfiguredMeteredExhausted = (!serpConfigured || serpExhausted) &&
+                                          (!searchConfigured || searchExhausted) &&
+                                          (!hasdataConfigured || hasdataExhausted);
+
+    if (allConfiguredMeteredExhausted && !fastConfigured) {
+      return {
+        configured: true,
+        allPaused: false,
+        quotaExhausted: true,
+        available: false,
+        reason: 'All configured data sources have exhausted their monthly API quota.',
+      };
+    }
+
     return {
       configured: true,
       allPaused: true,
+      quotaExhausted: false,
       available: false,
-      reason: 'All configured data sources are paused or have exhausted their monthly quota.',
+      reason: 'All configured data sources are currently paused.',
     };
   }
 
   return {
     configured: true,
     allPaused: false,
+    quotaExhausted: false,
     available: true,
   };
 }

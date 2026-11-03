@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
-# Install dependencies required for better-sqlite3 native bindings
-RUN apk add --no-cache python3 make g++ sqlite-dev
+# Install tzdata for IANA timezone resolution and build dependencies for better-sqlite3 native bindings
+RUN apk add --no-cache tzdata python3 make g++ sqlite-dev
 
 WORKDIR /app
 

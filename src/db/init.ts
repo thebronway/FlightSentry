@@ -42,6 +42,26 @@ export function initDb() {
         }
     }
 
+    // Ensure datasource_logs table exists for existing databases
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS datasource_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                provider TEXT NOT NULL,
+                route TEXT,
+                flightNumber TEXT,
+                departureDate TEXT,
+                status TEXT NOT NULL,
+                statusCode INTEGER,
+                errorMessage TEXT,
+                durationMs INTEGER,
+                queriedAt TEXT NOT NULL
+            )
+        `);
+    } catch {
+        // Ignored
+    }
+
     // Initialize per-provider reset dates from quotaResetDate if unset
     try {
         const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, hasdataResetDate FROM settings WHERE id = 1').get() as any;

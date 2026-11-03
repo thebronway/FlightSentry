@@ -108,12 +108,19 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
     },
   ].filter(s => s.enabled === 1);
 
-  // Dynamic grid fitting up to 3 per line, wrapping onto second line if 4-6
-  const gridLayoutClass = sources.length === 1
-    ? 'grid-cols-1'
-    : sources.length === 2
-    ? 'grid-cols-1 md:grid-cols-2'
-    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+  const getGridContainerClass = (count: number) => {
+    if (count <= 1) return 'grid-cols-1';
+    if (count === 2 || count === 4) return 'grid-cols-1 md:grid-cols-2';
+    if (count === 5) return 'grid-cols-1 md:grid-cols-6';
+    return 'grid-cols-1 md:grid-cols-3';
+  };
+
+  const getItemSpanClass = (count: number, index: number) => {
+    if (count === 5) {
+      return index < 3 ? 'md:col-span-2' : 'md:col-span-3';
+    }
+    return '';
+  };
 
   return (
     <div className="bg-gunmetal-card p-5 rounded-lg shadow-sm border border-gunmetal-border mb-6 flex flex-col transition-colors">
@@ -135,8 +142,8 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
         </button>
       </div>
       
-      <div className={`grid ${gridLayoutClass} gap-4`}>
-        {sources.map(source => {
+      <div className={`grid ${getGridContainerClass(sources.length)} gap-4`}>
+        {sources.map((source, index) => {
           const isUnlimited = source.quota === 0;
           const usagePercent = isUnlimited ? 0 : Math.min((source.used / source.quota) * 100, 100);
           const isPaused = source.paused === 1;
@@ -144,7 +151,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
           return (
             <div 
               key={source.key} 
-              className={`p-3.5 rounded-md border bg-gunmetal-canvas/60 flex flex-col justify-between transition-colors ${
+              className={`p-3.5 rounded-md border bg-gunmetal-canvas/60 flex flex-col justify-between transition-colors ${getItemSpanClass(sources.length, index)} ${
                 isPaused ? 'border-amber-900/40 opacity-70' : 'border-gunmetal-border'
               }`}
             >
