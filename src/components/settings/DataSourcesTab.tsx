@@ -11,9 +11,9 @@ interface Props {
   onSaveProvider: (providerKey: string) => Promise<void>;
   savingProvider: string | null;
   providerStatus: Record<string, { type: 'success' | 'error'; message: string } | null>;
-  onSaveStrategy: () => Promise<void>;
-  savingStrategy: boolean;
-  strategyStatus: { type: 'success' | 'error'; message: string } | null;
+  onSaveStrategy?: () => Promise<void>;
+  savingStrategy?: boolean;
+  strategyStatus?: { type: 'success' | 'error'; message: string } | null;
   onAutoSave?: (
     updatedSettings: Settings,
     statusKey: string,
@@ -87,11 +87,41 @@ export default function DataSourcesTab({
 
       {/* Query Routing Strategy Selector */}
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-4 rounded-lg space-y-2">
-        <label className="block text-sm font-semibold text-slate-200">Query Routing Strategy</label>
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-semibold text-slate-200">Query Routing Strategy</label>
+          {providerStatus['strategy'] && (
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                providerStatus['strategy']?.type === 'success'
+                  ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                  : 'bg-red-950/60 text-red-400 border-red-800/60'
+              }`}
+            >
+              {providerStatus['strategy']?.message}
+            </span>
+          )}
+        </div>
         <div className="relative">
           <select
             value={settings.fallbackStrategyMode}
-            onChange={e => onChange({ ...settings, fallbackStrategyMode: e.target.value })}
+            onChange={async e => {
+              const newMode = e.target.value;
+              const updated = { ...settings, fallbackStrategyMode: newMode };
+              onChange(updated);
+              if (onAutoSave) {
+                const modeLabels: Record<string, string> = {
+                  'sequential-query': 'Round-Robin',
+                  'balanced-usage': 'Balanced Usage',
+                  'exhaust-quota': 'Exhaust Quota',
+                };
+                await onAutoSave(
+                  updated,
+                  'strategy',
+                  'Saved!',
+                  `Routing strategy set to ${modeLabels[newMode] || newMode}`
+                );
+              }
+            }}
             className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
           >
             <option value="sequential-query">Round-Robin (Atomic Rotation)</option>
@@ -114,24 +144,6 @@ export default function DataSourcesTab({
         <p className="text-[11px] text-amber-400 font-medium pt-1">
           Priority Rule: Any active unmetered data source will automatically be queried first before any metered datasource, regardless of Query Routing Strategy.
         </p>
-
-        <div className="pt-3 border-t border-gunmetal-border flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs">
-            {strategyStatus && (
-              <span className={strategyStatus.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                {strategyStatus.message}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            disabled={savingStrategy}
-            onClick={onSaveStrategy}
-            className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-          >
-            {savingStrategy ? 'Saving...' : 'Save Strategy'}
-          </button>
-        </div>
       </div>
 
       {/* Consolidated Reorderable Stack of Provider Cards */}

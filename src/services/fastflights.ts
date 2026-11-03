@@ -140,15 +140,59 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
       };
     }
 
-    return { price: null, status: 'SoldOut' };
+    return { 
+      price: null, 
+      status: 'SoldOut', 
+      errorMessage: `No flights matching airline filters (${flight.airline || flight.includedAirlines || 'all'}) found` 
+    };
   } catch (error: any) {
-    console.error("Error fetching from Fast-Flights:", error.message);
-    
-    // Detect CAPTCHA or HTTP 429 Rate Limits from the scraper
-    if (error.message?.includes('429') || error.message?.toLowerCase().includes('captcha')) {
-      return { price: null, status: 'RateLimited' };
+    const rawMsg = error?.message || (typeof error === 'string' ? error : 'Scraper query failed');
+    console.error('[FastFlights] Exception during price lookup:', rawMsg);
+
+    const lower = rawMsg.toLowerCase();
+    if (
+      lower.includes('429') ||
+      lower.includes('captcha') ||
+      lower.includes('unusual traffic') ||
+      lower.includes('consent') ||
+      lower.includes('blocked')
+    ) {
+      return {
+        price: null,
+        status: 'RateLimited',
+        errorMessage: `Google Flights anti-bot / CAPTCHA challenge detected (${rawMsg})`,
+      };
     }
-    
-    return { price: null, status: 'Error' };
+
+    if (lower.includes('timeout') || lower.includes('aborted') || lower.includes('econnreset')) {
+      return {
+        price: null,
+        status: 'Error',
+        errorMessage: `Connection timed out connecting to Google Flights (${rawMsg})`,
+      };
+    }
+
+    if (lower.includes('econnrefused') || lower.includes('enotfound') || lower.includes('fetch failed')) {
+      return {
+        price: null,
+        status: 'Error',
+        errorMessage: `Network connection failed reaching Google Flights (${rawMsg})`,
+      };
+    }
+
+    // Google Flights blocked the scraper or returned a bot challenge / missing flight payload
+    if (lower.includes('missing flight data at') || lower.includes('rpc response missing')) {
+      return {
+        price: null,
+        status: 'Error',
+        errorMessage: 'Google Flights blocked the scraper (anti-bot challenge or rate limit)',
+      };
+    }
+
+    return {
+      price: null,
+      status: 'Error',
+      errorMessage: `Fast-Flights scraper error: ${rawMsg}`,
+    };
   }
 };

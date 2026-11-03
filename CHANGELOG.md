@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-02*  
-*Current Version: v0.5.6*
+*Current Version: v0.5.8*
 
 ## Changelog
+
+### Release v0.5.8: Bug Fixes
+- Bug Fix: Synchronized Pause All and Resume All buttons with individual provider pause toggles.
+- Bug Fix: Fixed cadence dropdown displaying "Do not check (Paused)" when set to unlisted intervals.
+- Bug Fix: Fixed timezone bug preventing flight creation for the current day after 8:00 PM local time.
+- Bug Fix: Replaced generic Fast-Flights error logs with specific failure reasons and prevented scraper errors from blocking provider failover.
+- Bug Fix: Fixed SearchApi.io parameter mappings for cabin class and included airlines to resolve HTTP 400 errors during rotation.
+- Bug Fix: Removed manual Save Strategy button and enabled autosave on dropdown selection.
 
 ### Release v0.5.6
 - Installed `tzdata` in Alpine Docker container to ensure correct local timezone resolution.

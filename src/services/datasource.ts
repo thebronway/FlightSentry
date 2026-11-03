@@ -15,6 +15,7 @@ export interface DataSourceResult {
   leadingAirline?: string | null;
   leadingFlightNumber?: string | null;
   itineraries?: RouteItinerary[];
+  errorMessage?: string | null;
 }
 
 export const executeSearchStrategy = async (flight: Flight, settings: Settings): Promise<DataSourceResult> => {
@@ -90,12 +91,12 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     const durationMs = Date.now() - startTime;
 
     if (result.status === 'RateLimited') {
-      failureReason = failureReason || 'Rate limit or anti-bot challenge (CAPTCHA / 429) detected';
+      failureReason = result.errorMessage || failureReason || 'Rate limit or anti-bot challenge (CAPTCHA / 429) detected';
       console.warn(`[Router] RATE LIMIT / BOT BLOCK DETECTED on provider: ${strategy}. Logged for tracking.`);
     } else if (result.status === 'SoldOut') {
-      failureReason = 'No matching itineraries or available seats found';
+      failureReason = result.errorMessage || 'No matching itineraries or available seats found';
     } else if (result.status === 'Error' && !failureReason) {
-      failureReason = 'API request failed or returned invalid response format';
+      failureReason = result.errorMessage || `${strategy} query failed or returned an unparseable response`;
     }
 
     // Persist execution log for diagnostics

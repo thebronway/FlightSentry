@@ -34,22 +34,60 @@ export const getNextMonthResetDate = (currentDateStr?: string | null): string =>
   return nextDate.toISOString().split('T')[0];
 };
 
+export const getSystemTimezone = (settingsTimezone?: string | null): string => {
+  if (settingsTimezone && settingsTimezone !== 'UTC') {
+    return settingsTimezone;
+  }
+  if (typeof process !== 'undefined' && process.env?.TZ) {
+    return process.env.TZ;
+  }
+  if (typeof Intl !== 'undefined') {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+      return 'UTC';
+    }
+  }
+  return 'UTC';
+};
+
+export const getTodayDateString = (timezone?: string | null): string => {
+  // Client-side browser: always return the client's local calendar date (never rolls to UTC tomorrow)
+  if (typeof window !== 'undefined') {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Server-side: resolve against container TZ or configured timezone
+  const tz = getSystemTimezone(timezone);
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find(p => p.type === 'year')?.value;
+    const month = parts.find(p => p.type === 'month')?.value;
+    const day = parts.find(p => p.type === 'day')?.value;
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Fallback if the timezone name is invalid
+  }
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const isFlightExpired = (departureDate: string, timezone: string): boolean => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  
-  // Format returns MM/DD/YYYY, we need to compare it against YYYY-MM-DD
-  const parts = formatter.formatToParts(new Date());
-  const year = parts.find(p => p.type === 'year')?.value;
-  const month = parts.find(p => p.type === 'month')?.value;
-  const day = parts.find(p => p.type === 'day')?.value;
-  
-  const localToday = `${year}-${month}-${day}`;
-  
-  // If the local current date string is lexicographically greater than the departure date, it has passed.
+  const localToday = getTodayDateString(timezone);
   return localToday > departureDate;
 };

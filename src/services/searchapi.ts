@@ -23,21 +23,21 @@ export const checkSearchApiPrice = async (
     url.searchParams.append('api_key', apiKey);
 
     const searchApiCabinMap: Record<string, string> = {
-      economy: '1',
-      premium_economy: '2',
-      business: '3',
-      first: '4',
+      economy: 'economy',
+      premium_economy: 'premium_economy',
+      business: 'business',
+      first: 'first_class',
     };
-    url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || '1');
+    url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || 'economy');
 
     if (flight.fareTier === 'Standard') {
       url.searchParams.append('exclude_basic_economy', 'true');
     }
     if (flight.includedAirlines) {
-      url.searchParams.append('include_airlines', flight.includedAirlines.replace(/\s+/g, ''));
+      url.searchParams.append('included_airlines', flight.includedAirlines.replace(/\s+/g, ''));
     }
     if (flight.excludedAirlines) {
-      url.searchParams.append('exclude_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      url.searchParams.append('excluded_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
     }
 
     console.log(`[SearchApi] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
@@ -45,13 +45,26 @@ export const checkSearchApiPrice = async (
 
     if (response.status === 429) {
       console.warn("[SearchApi] Rate limit (HTTP 429)");
-      return { price: null, status: 'RateLimited' };
+      return { price: null, status: 'RateLimited', errorMessage: 'SearchApi.io rate limit (HTTP 429)' };
     }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[SearchApi] HTTP ${response.status} ${response.statusText}: ${errorText}`);
-      return { price: null, status: 'Error' };
+      
+      let parsedMessage = errorText;
+      try {
+        const json = JSON.parse(errorText);
+        parsedMessage = json.error || json.message || errorText;
+      } catch {
+        // use raw text
+      }
+
+      return {
+        price: null,
+        status: 'Error',
+        errorMessage: `SearchApi HTTP ${response.status}: ${parsedMessage}`,
+      };
     }
 
     const data = await response.json();
@@ -149,9 +162,10 @@ export const checkSearchApiPrice = async (
       };
     }
 
-    return { price: null, status: 'SoldOut' };
-  } catch (error) {
-    console.error("Error fetching from SearchApi.io:", error);
-    return { price: null, status: 'Error' };
+    return { price: null, status: 'SoldOut', errorMessage: 'No flight itineraries found for this route and date' };
+  } catch (error: any) {
+    const msg = error?.message || 'Network exception calling SearchApi.io';
+    console.error("[SearchApi] Exception during request:", msg);
+    return { price: null, status: 'Error', errorMessage: `SearchApi exception: ${msg}` };
   }
 };

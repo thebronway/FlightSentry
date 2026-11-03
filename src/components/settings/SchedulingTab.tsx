@@ -47,11 +47,14 @@ function computeCheckSchedule(startTime: string, cadenceHours: number): string[]
 
 export const CADENCE_OPTIONS = [
   { value: 0, label: "Do not check (Paused)" },
+  { value: 1, label: "Every 1 hour (24 checks/day)" },
   { value: 2, label: "Every 2 hours (12 checks/day)" },
   { value: 3, label: "Every 3 hours (8 checks/day)" },
   { value: 4, label: "Every 4 hours (6 checks/day)" },
   { value: 6, label: "Every 6 hours (4 checks/day)" },
   { value: 8, label: "Every 8 hours (3 checks/day)" },
+  { value: 10, label: "Every 10 hours" },
+  { value: 11, label: "Every 11 hours" },
   { value: 12, label: "Every 12 hours (2 checks/day)" },
   { value: 24, label: "Every day (24 hrs)" },
   { value: 48, label: "Every 2 days (48 hrs)" },
@@ -59,6 +62,28 @@ export const CADENCE_OPTIONS = [
   { value: 96, label: "Every 4 days (96 hrs)" },
   { value: 168, label: "Every week (168 hrs)" },
 ];
+
+export const renderCadenceOptions = (currentValue: number) => {
+  const hasMatch = CADENCE_OPTIONS.some(opt => opt.value === currentValue);
+  return (
+    <>
+      {!hasMatch && currentValue !== undefined && currentValue !== null && (
+        <option key={currentValue} value={currentValue}>
+          {currentValue === 0
+            ? "Do not check (Paused)"
+            : currentValue < 24
+            ? `Every ${currentValue} hours (${currentValue} hrs)`
+            : `Every ${Math.round(currentValue / 24)} days (${currentValue} hrs)`}
+        </option>
+      )}
+      {CADENCE_OPTIONS.map(opt => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </>
+  );
+};
 
 export default function SchedulingTab({
   settings,
@@ -113,11 +138,7 @@ export default function SchedulingTab({
                 onChange={e => onChange({ ...settings, scheduleFarOut: Number(e.target.value) })}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
-                {CADENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
+                {renderCadenceOptions(settings.scheduleFarOut)}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
             </div>
@@ -155,11 +176,7 @@ export default function SchedulingTab({
                 onChange={e => onChange({ ...settings, scheduleStandard: Number(e.target.value) })}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
-                {CADENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
+                {renderCadenceOptions(settings.scheduleStandard)}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
             </div>
@@ -197,11 +214,7 @@ export default function SchedulingTab({
                 onChange={e => onChange({ ...settings, scheduleFinalStretch: Number(e.target.value) })}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
-                {CADENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
+                {renderCadenceOptions(settings.scheduleFinalStretch)}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
             </div>

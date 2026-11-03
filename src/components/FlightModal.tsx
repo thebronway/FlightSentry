@@ -5,6 +5,7 @@ import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } 
 import { FareTier, CabinClass, SearchMode, Flight, Settings } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
 import { getDataSourceStatus } from '@/utils/airline';
+import { getTodayDateString } from '@/utils/date';
 import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
@@ -151,7 +152,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
       return;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayDateString(defaultSettings?.timezone);
     if (formData.departureDate < todayStr) {
       setError('Departure date cannot be in the past. Please select today or a future date.');
       return;
@@ -461,11 +462,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
               <input
                 required
                 type="date"
-                min={new Date().toISOString().split('T')[0]}
+                min={getTodayDateString(defaultSettings?.timezone)}
                 value={formData.departureDate}
                 onChange={e => {
                   const selected = e.target.value;
-                  const today = new Date().toISOString().split('T')[0];
+                  const today = getTodayDateString(defaultSettings?.timezone);
                   if (selected && selected < today) {
                     setError('Departure date cannot be in the past. Please select today or a future date.');
                   } else if (error && error.includes('in the past')) {

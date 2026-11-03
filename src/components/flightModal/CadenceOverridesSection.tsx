@@ -14,11 +14,14 @@ interface Props {
 
 const OVERRIDE_OPTIONS = [
   { value: '0', label: "Do not check (Paused)" },
+  { value: '1', label: "Every 1 hour" },
   { value: '2', label: "Every 2 hours" },
   { value: '3', label: "Every 3 hours" },
   { value: '4', label: "Every 4 hours" },
   { value: '6', label: "Every 6 hours" },
   { value: '8', label: "Every 8 hours" },
+  { value: '10', label: "Every 10 hours" },
+  { value: '11', label: "Every 11 hours" },
   { value: '12', label: "Every 12 hours" },
   { value: '24', label: "Every day (24 hrs)" },
   { value: '48', label: "Every 2 days (48 hrs)" },
@@ -26,6 +29,26 @@ const OVERRIDE_OPTIONS = [
   { value: '96', label: "Every 4 days (96 hrs)" },
   { value: '168', label: "Every week (168 hrs)" },
 ];
+
+const renderOverrideOptions = (currentValue: string) => {
+  const isCustom = currentValue !== '' && !OVERRIDE_OPTIONS.some(opt => opt.value === currentValue);
+  return (
+    <>
+      {isCustom && (
+        <option key={currentValue} value={currentValue}>
+          {Number(currentValue) < 24
+            ? `Every ${currentValue} hours`
+            : `Every ${Math.round(Number(currentValue) / 24)} days (${currentValue} hrs)`}
+        </option>
+      )}
+      {OVERRIDE_OPTIONS.map(opt => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </>
+  );
+};
 
 export default function CadenceOverridesSection({
   overrideFarOut,
@@ -57,11 +80,7 @@ export default function CadenceOverridesSection({
             className="w-full h-10 px-3 py-2 text-xs rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none"
           >
             <option value="">{formatDefaultLabel(defaultSettings?.scheduleFarOut)}</option>
-            {OVERRIDE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            {renderOverrideOptions(overrideFarOut)}
           </select>
         </div>
         <div>
@@ -72,11 +91,7 @@ export default function CadenceOverridesSection({
             className="w-full h-10 px-3 py-2 text-xs rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none"
           >
             <option value="">{formatDefaultLabel(defaultSettings?.scheduleStandard)}</option>
-            {OVERRIDE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            {renderOverrideOptions(overrideStandard)}
           </select>
         </div>
         <div>
@@ -87,11 +102,7 @@ export default function CadenceOverridesSection({
             className="w-full h-10 px-3 py-2 text-xs rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none"
           >
             <option value="">{formatDefaultLabel(defaultSettings?.scheduleFinalStretch)}</option>
-            {OVERRIDE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            {renderOverrideOptions(overrideFinalStretch)}
           </select>
         </div>
       </div>

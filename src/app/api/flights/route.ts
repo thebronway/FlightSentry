@@ -8,6 +8,7 @@ import { checkAndResetQuota } from '@/services/quota';
 import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
 import { expireOldFlights } from '@/services/scheduler';
+import { getTodayDateString } from '@/utils/date';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest) {
       baselinePrice = parsed.purchasePrice;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    let settings = settingsDb.get();
+    const todayStr = getTodayDateString(settings.timezone);
     if (parsed.departureDate < todayStr) {
       return NextResponse.json({ error: 'Departure date cannot be in the past.' }, { status: 400 });
     }
@@ -49,7 +51,6 @@ export async function POST(req: NextRequest) {
 
     // If initial price is still not provided, trigger a live search immediately
     if (!baselinePrice || baselinePrice <= 0) {
-      let settings = settingsDb.get();
       settings = checkAndResetQuota(settings);
 
       const probeFlight = {
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const settings = settingsDb.get();
+    settings = settingsDb.get();
     const nextCheckAt = calculateNextCheck({
       ...parsed,
       id: 0,

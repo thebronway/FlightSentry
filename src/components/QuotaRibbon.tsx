@@ -27,11 +27,24 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
 
   const toggleGlobalPause = async () => {
     if (!settings) return;
-    const newPauseState = settings.globalPause === 1 ? 0 : 1;
+    const isCurrentlyAllPaused =
+      settings.globalPause === 1 ||
+      (sources.length > 0 && sources.every(s => s.paused === 1));
+
+    const nextPauseState = isCurrentlyAllPaused ? 0 : 1;
+    const payload = {
+      ...settings,
+      globalPause: nextPauseState,
+      serpApiPaused: nextPauseState,
+      searchApiPaused: nextPauseState,
+      hasdataPaused: nextPauseState,
+      fastFlightsPaused: nextPauseState,
+    };
+
     const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...settings, globalPause: newPauseState }),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -44,11 +57,27 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
 
   const toggleSourcePause = async (pauseKey: 'serpApiPaused' | 'searchApiPaused' | 'hasdataPaused' | 'fastFlightsPaused') => {
     if (!settings) return;
-    const currentState = settings[pauseKey] === 1;
+    const nextSourceState = settings[pauseKey] === 1 ? 0 : 1;
+    const updatedDraft = {
+      ...settings,
+      [pauseKey]: nextSourceState,
+    };
+
+    // Evaluate whether all enabled data sources are paused after this change
+    const checkSources = [
+      { enabled: updatedDraft.serpApiEnabled, paused: updatedDraft.serpApiPaused },
+      { enabled: updatedDraft.searchApiEnabled, paused: updatedDraft.searchApiPaused },
+      { enabled: updatedDraft.hasdataEnabled, paused: updatedDraft.hasdataPaused },
+      { enabled: updatedDraft.fastFlightsEnabled, paused: updatedDraft.fastFlightsPaused },
+    ].filter(s => s.enabled === 1);
+
+    const willAllBePaused = checkSources.length > 0 && checkSources.every(s => s.paused === 1);
+    updatedDraft.globalPause = willAllBePaused ? 1 : 0;
+
     const res = await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...settings, [pauseKey]: currentState ? 0 : 1 }),
+      body: JSON.stringify(updatedDraft),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -129,17 +158,25 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
           <h3 className="text-sm font-bold text-slate-200">Active Data Sources & Monthly Quotas</h3>
           <p className="text-xs text-gunmetal-muted mt-0.5">Automated tracking and quota monitoring across configured providers</p>
         </div>
-        <button 
-          onClick={toggleGlobalPause}
-          className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shadow-sm ${
-            settings.globalPause === 1 
-              ? 'bg-amber-950/50 border border-amber-500 text-amber-300 hover:bg-amber-900/60'
-              : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700'
-          }`}
-        >
-          {settings.globalPause === 1 ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
-          <span>{settings.globalPause === 1 ? 'All Data Sources Paused (Resume)' : 'Pause All Data Sources'}</span>
-        </button>
+        {(() => {
+          const isAllPaused =
+            settings.globalPause === 1 ||
+            (sources.length > 0 && sources.every(s => s.paused === 1));
+
+          return (
+            <button 
+              onClick={toggleGlobalPause}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shadow-sm ${
+                isAllPaused 
+                  ? 'bg-amber-950/50 border border-amber-500 text-amber-300 hover:bg-amber-900/60'
+                  : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700'
+              }`}
+            >
+              {isAllPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+              <span>{isAllPaused ? 'Resume All Data Sources' : 'Pause All Data Sources'}</span>
+            </button>
+          );
+        })()}
       </div>
       
       <div className={`grid ${getGridContainerClass(sources.length)} gap-4`}>
