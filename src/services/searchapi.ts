@@ -5,7 +5,8 @@ import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence
 
 export const checkSearchApiPrice = async (
   flight: Flight,
-  apiKey: string
+  apiKey: string,
+  currency: string = 'USD'
 ): Promise<DataSourceResult> => {
   try {
     const url = new URL('https://www.searchapi.io/api/v1/search');
@@ -19,7 +20,7 @@ export const checkSearchApiPrice = async (
     url.searchParams.append('arrival_id', flight.destination);
     url.searchParams.append('outbound_date', flight.departureDate);
     url.searchParams.append('flight_type', 'one_way'); // SearchApi.io documented parameter
-    url.searchParams.append('currency', 'USD');
+    url.searchParams.append('currency', currency || 'USD');
     url.searchParams.append('hl', 'en');
     url.searchParams.append('api_key', apiKey);
 

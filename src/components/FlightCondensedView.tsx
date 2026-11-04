@@ -178,11 +178,11 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       const effIncDollar =
                         flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined
                           ? flight.minIncreaseDollar
-                          : settings?.minDropDollar ?? 15;
+                          : settings?.minIncreaseDollar ?? 50;
                       const effIncPercent =
                         flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined
                           ? flight.minIncreasePercent
-                          : settings?.minDropPercent ?? 5;
+                          : settings?.minIncreasePercent ?? 10;
                       const incTargets = computeIncreaseAlertTargets(
                         flight.currentPrice,
                         effIncDollar,

@@ -7,6 +7,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const settings = settingsDb.get();
+    const containerTz = process.env.TZ;
+    if (containerTz && containerTz !== 'UTC' && (!settings.timezone || settings.timezone === 'UTC')) {
+      settingsDb.update({ timezone: containerTz });
+      settings.timezone = containerTz;
+    }
     return NextResponse.json(settings, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

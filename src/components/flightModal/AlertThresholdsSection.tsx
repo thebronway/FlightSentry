@@ -1,7 +1,7 @@
 'use client';
 
 import { Settings, PriceTrackingDirection } from '@/types';
-import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
+import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, getCurrencySymbol } from '@/utils/format';
 import { Bell, TrendingDown, TrendingUp, ArrowUpDown } from 'lucide-react';
 
 interface Props {
@@ -56,12 +56,12 @@ export default function AlertThresholdsSection({
   const effectiveIncreaseDollar =
     minIncreaseDollar !== ''
       ? parseFloat(minIncreaseDollar)
-      : defaultSettings?.minDropDollar ?? 15;
+      : defaultSettings?.minIncreaseDollar ?? 50;
 
   const effectiveIncreasePercent =
     minIncreasePercent !== ''
       ? parseFloat(minIncreasePercent)
-      : defaultSettings?.minDropPercent ?? 5;
+      : defaultSettings?.minIncreasePercent ?? 10;
 
   const hasCurrentPrice = typeof currentPrice === 'number' && currentPrice > 0;
 
@@ -148,10 +148,10 @@ export default function AlertThresholdsSection({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                Min $ Drop to Alert
+                Min {getCurrencySymbol(defaultSettings?.currency)} Drop to Alert
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-gunmetal-muted text-xs">$</span>
+                <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(defaultSettings?.currency)}</span>
                 <input
                   type="number"
                   step="1"
@@ -219,15 +219,15 @@ export default function AlertThresholdsSection({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">
-                Min $ Surge to Alert
+                Min {getCurrencySymbol(defaultSettings?.currency)} Surge to Alert
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-gunmetal-muted text-xs">$</span>
+                <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(defaultSettings?.currency)}</span>
                 <input
                   type="number"
                   step="1"
                   min="0"
-                  placeholder={defaultSettings?.minDropDollar != null ? String(defaultSettings.minDropDollar) : '15'}
+                  placeholder={defaultSettings?.minIncreaseDollar != null ? String(defaultSettings.minIncreaseDollar) : '50'}
                   value={minIncreaseDollar}
                   onChange={e => onIncreaseDollarChange(e.target.value)}
                   className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
@@ -249,7 +249,7 @@ export default function AlertThresholdsSection({
                   type="number"
                   step="0.1"
                   min="0"
-                  placeholder={defaultSettings?.minDropPercent != null ? String(defaultSettings.minDropPercent) : '5'}
+                  placeholder={defaultSettings?.minIncreasePercent != null ? String(defaultSettings.minIncreasePercent) : '10'}
                   value={minIncreasePercent}
                   onChange={e => onIncreasePercentChange(e.target.value)}
                   className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"

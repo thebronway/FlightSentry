@@ -1,10 +1,58 @@
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount || 0));
+let activeAppCurrency = 'USD';
+
+export const setActiveCurrency = (code?: string | null) => {
+  if (code && typeof code === 'string') {
+    activeAppCurrency = code.toUpperCase();
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('flightsentry_currency', activeAppCurrency);
+      } catch {}
+    }
+  }
+};
+
+export const getActiveCurrency = (): string => {
+  if (typeof window !== 'undefined' && activeAppCurrency === 'USD') {
+    try {
+      const stored = localStorage.getItem('flightsentry_currency');
+      if (stored) activeAppCurrency = stored.toUpperCase();
+    } catch {}
+  }
+  return activeAppCurrency;
+};
+
+export const formatCurrency = (amount: number, currencyCode?: string | null): string => {
+  const code = currencyCode || getActiveCurrency();
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(amount || 0));
+  } catch {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(amount || 0));
+  }
+};
+
+export const getCurrencySymbol = (currencyCode?: string | null): string => {
+  const code = currencyCode || getActiveCurrency();
+  try {
+    const parts = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find(p => p.type === 'currency')?.value || '$';
+  } catch {
+    return '$';
+  }
 };
 
 export const formatPercent = (percent: number): string => {

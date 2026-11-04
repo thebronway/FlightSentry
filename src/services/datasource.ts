@@ -74,14 +74,15 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     const startTime = Date.now();
 
     try {
+      const activeCurrency = settings.currency || 'USD';
       if (strategy === 'serpapi' && settings.serpApiKey) {
-        result = { ...(await querySerpApi(flight, settings.serpApiKey)), sourceUsed: strategy };
+        result = { ...(await querySerpApi(flight, settings.serpApiKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'searchapi' && settings.searchApiKey) {
-        result = { ...(await querySearchApi(flight, settings.searchApiKey)), sourceUsed: strategy };
+        result = { ...(await querySearchApi(flight, settings.searchApiKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'hasdata' && settings.hasdataApiKey) {
-        result = { ...(await queryHasData(flight, settings.hasdataApiKey)), sourceUsed: strategy };
+        result = { ...(await queryHasData(flight, settings.hasdataApiKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'fastflights') {
-        result = { ...(await queryFastFlights(flight)), sourceUsed: strategy };
+        result = { ...(await queryFastFlights(flight, activeCurrency)), sourceUsed: strategy };
       }
     } catch (error: any) {
       failureReason = error?.message || 'Unhandled provider exception';

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Flight } from '@/types';
 import { X, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, getCurrencySymbol } from '@/utils/format';
 
 interface Props {
   isOpen: boolean;
@@ -127,11 +127,11 @@ export default function ConvertFlightModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Purchase Price ($ Paid) *
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              Purchase Price (Amount Paid) *
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-gunmetal-muted font-mono text-sm">$</span>
+              <span className="text-gunmetal-muted font-mono text-sm">{getCurrencySymbol(flight.baselinePrice ? undefined : undefined)}</span>
               <input
                 required
                 type="number"

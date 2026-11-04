@@ -209,11 +209,11 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
             const effectiveIncDollar =
               flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined
                 ? flight.minIncreaseDollar
-                : settings?.minDropDollar ?? 15;
+                : settings?.minIncreaseDollar ?? 50;
             const effectiveIncPercent =
               flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined
                 ? flight.minIncreasePercent
-                : settings?.minDropPercent ?? 5;
+                : settings?.minIncreasePercent ?? 10;
 
             const incTargets = computeIncreaseAlertTargets(
               flight.currentPrice,

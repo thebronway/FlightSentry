@@ -89,6 +89,9 @@ export interface Settings {
   operatingHoursEnd?: number | null;
   minDropDollar: number;
   minDropPercent: number;
+  currency?: string;
+  minIncreaseDollar?: number;
+  minIncreasePercent?: number;
   fallbackStrategyMode: string;
   serpApiEnabled: number;
   searchApiEnabled: number;

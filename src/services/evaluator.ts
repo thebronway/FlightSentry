@@ -76,11 +76,11 @@ export const evaluatePrice = async (
     // Use per-flight surge overrides, fallback to global defaults
     const minIncreaseDollar = (flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined)
       ? flight.minIncreaseDollar
-      : settings.minDropDollar ?? 15;
+      : settings.minIncreaseDollar ?? 50;
 
     const minIncreasePercent = (flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined)
       ? flight.minIncreasePercent
-      : settings.minDropPercent ?? 5;
+      : settings.minIncreasePercent ?? 10;
 
     const hasIncreaseDollarRule = minIncreaseDollar !== null && minIncreaseDollar !== undefined && minIncreaseDollar > 0;
     const hitsIncreaseDollarThreshold = hasIncreaseDollarRule ? surgeFromBenchmark >= minIncreaseDollar : false;

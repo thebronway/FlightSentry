@@ -42,7 +42,10 @@ const formatSimpleDatetime = (dt: any): string | undefined => {
   return undefined;
 };
 
-export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceResult> => {
+export const checkFastFlightsPrice = async (
+  flight: Flight,
+  currency: string = 'USD'
+): Promise<DataSourceResult> => {
   try {
     const fastFlightsSeatMap: Record<string, 'economy' | 'premium-economy' | 'business' | 'first'> = {
       economy: 'economy',
@@ -64,6 +67,7 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
       trip: 'one-way',
       passengers: new Passengers({ adults: 1 }),
       max_stops: flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
+      currency: (currency || 'USD') as any,
     });
 
     const results = await getFlights(query);

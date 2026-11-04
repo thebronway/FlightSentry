@@ -1,6 +1,7 @@
 'use client';
 
 import { Tag, ShoppingBag } from 'lucide-react';
+import { getCurrencySymbol } from '@/utils/format';
 
 export type TrackingGoal = 'watching' | 'booked';
 
@@ -64,7 +65,7 @@ export default function TrackingGoalSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Purchase Price ($ Paid)
+              Purchase Price (Amount Paid)
             </label>
             <input
               required={trackingGoal === 'booked'}

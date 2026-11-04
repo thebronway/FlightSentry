@@ -17,7 +17,8 @@ export function formatPriceIncreaseAlert(
     metadata?: string | null;
     sourceUsed?: string | null;
     itineraries?: RouteItinerary[];
-  }
+  },
+  currency: string = 'USD'
 ): PriceIncreaseAlertPayload {
   const benchmarkPrice = flight.baselinePrice;
   const surgeAmount = newPrice - benchmarkPrice;

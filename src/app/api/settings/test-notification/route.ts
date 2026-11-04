@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { settingsDb } from '@/db/settings';
 import {
   sendDiscordWebhook,
   sendSlackWebhook,
@@ -11,31 +12,33 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const channel: NotificationChannel = body.channel;
+    const stored = settingsDb.get();
+    const config = { ...stored, ...body };
 
     const title = 'FlightSentry Test Notification';
     const message = 'Success! Your notification channel is configured properly. FlightSentry will dispatch price drop alerts here.';
     const htmlMessage = '<p><strong>Success!</strong> Your notification channel is configured properly. FlightSentry will dispatch price drop alerts here.</p>';
 
     if (channel === 'discord') {
-      if (!body.discordWebhookUrl) {
+      if (!config.discordWebhookUrl) {
         return NextResponse.json({ error: 'Discord Webhook URL is required.' }, { status: 400 });
       }
-      const res = await sendDiscordWebhook(body.discordWebhookUrl, title, message);
+      const res = await sendDiscordWebhook(config.discordWebhookUrl, title, message);
       if (!res.success) return NextResponse.json({ error: res.error }, { status: 400 });
       return NextResponse.json({ success: true });
     }
 
     if (channel === 'slack') {
-      if (!body.slackWebhookUrl) {
+      if (!config.slackWebhookUrl) {
         return NextResponse.json({ error: 'Slack Webhook URL is required.' }, { status: 400 });
       }
-      const res = await sendSlackWebhook(body.slackWebhookUrl, title, message);
+      const res = await sendSlackWebhook(config.slackWebhookUrl, title, message);
       if (!res.success) return NextResponse.json({ error: res.error }, { status: 400 });
       return NextResponse.json({ success: true });
     }
 
     if (channel === 'generic') {
-      const url = body.genericWebhookUrl || body.appriseUrl;
+      const url = config.genericWebhookUrl || config.appriseUrl;
       if (!url) {
         return NextResponse.json({ error: 'Generic Webhook URL is required.' }, { status: 400 });
       }
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (channel === 'smtp') {
-      const res = await sendSmtpEmail(body, title, message, htmlMessage);
+      const res = await sendSmtpEmail(config, title, message, htmlMessage);
       if (!res.success) return NextResponse.json({ error: res.error }, { status: 400 });
       return NextResponse.json({ success: true });
     }

@@ -5,7 +5,8 @@ import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence
 
 export const checkFlightPrice = async (
   flight: Flight,
-  apiKey: string
+  apiKey: string,
+  currency: string = 'USD'
 ): Promise<DataSourceResult> => {
   if (!apiKey) {
     console.error("SerpApi key is missing or not configured.");
@@ -24,7 +25,7 @@ export const checkFlightPrice = async (
     url.searchParams.append('arrival_id', flight.destination);
     url.searchParams.append('outbound_date', flight.departureDate);
     url.searchParams.append('type', '2'); // 2 = One-way in SerpAPI
-    url.searchParams.append('currency', 'USD');
+    url.searchParams.append('currency', currency || 'USD');
     url.searchParams.append('hl', 'en');
     url.searchParams.append('api_key', apiKey);
 

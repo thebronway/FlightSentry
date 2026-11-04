@@ -44,6 +44,9 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN serpApiResetDay INTEGER DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN searchApiResetDay INTEGER DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN hasdataResetDay INTEGER DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'",
+        "ALTER TABLE settings ADD COLUMN minIncreaseDollar REAL NOT NULL DEFAULT 50.0",
+        "ALTER TABLE settings ADD COLUMN minIncreasePercent REAL NOT NULL DEFAULT 10.0",
     ];
     for (const migration of migrations) {
         try {
@@ -107,6 +110,19 @@ export function initDb() {
         // Ignored
     }
 
+    // Ensure container environment TZ is synced if settings row is default 'UTC'
+    try {
+        const containerTz = process.env.TZ;
+        if (containerTz && containerTz !== 'UTC') {
+            const row = db.prepare('SELECT timezone FROM settings WHERE id = 1').get() as any;
+            if (row && (!row.timezone || row.timezone === 'UTC')) {
+                db.prepare('UPDATE settings SET timezone = ? WHERE id = 1').run(containerTz);
+            }
+        }
+    } catch {
+        // Ignored
+    }
+
     // Ensure all 5 providers exist in dataSourceStrategy for existing databases
     try {
         const row = db.prepare('SELECT dataSourceStrategy FROM settings WHERE id = 1').get() as { dataSourceStrategy?: string } | undefined;
@@ -139,12 +155,13 @@ export function initDb() {
                 fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled, hasdataEnabled,
                 fastFlightsEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
                 fastFlightsQuota, notificationsEnabled, discordEnabled, slackEnabled,
-                genericWebhookEnabled, smtpEnabled
+                genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
-                'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0
+                'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0,
+                'USD', 50.0, 10.0
             )
         `);
         insertSettings.run();

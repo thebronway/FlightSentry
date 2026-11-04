@@ -6,9 +6,12 @@ import { Clock, ChevronDown } from 'lucide-react';
 interface Props {
   settings: Settings;
   onChange: (settings: Settings) => void;
-  onSaveSchedule: () => Promise<void>;
-  savingSchedule: boolean;
-  scheduleStatus: { type: 'success' | 'error'; message: string } | null;
+  onAutoSave?: (
+    updatedSettings: Settings,
+    statusKey: string,
+    pillMessage?: string,
+    toastMessage?: string
+  ) => Promise<void>;
 }
 
 function computeCheckSchedule(startTime: string, cadenceHours: number): string[] {
@@ -88,9 +91,7 @@ export const renderCadenceOptions = (currentValue: number) => {
 export default function SchedulingTab({
   settings,
   onChange,
-  onSaveSchedule,
-  savingSchedule,
-  scheduleStatus,
+  onAutoSave,
 }: Props) {
   const startTime = settings.checkStartTime || '06:00';
 
@@ -116,6 +117,12 @@ export default function SchedulingTab({
             type="time"
             value={startTime}
             onChange={e => onChange({ ...settings, checkStartTime: e.target.value })}
+            onBlur={() => {
+              if (onAutoSave) onAutoSave(settings, 'schedule', undefined, 'Check start time updated');
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
             className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm [color-scheme:dark]"
           />
         </div>
@@ -135,7 +142,12 @@ export default function SchedulingTab({
             <div className="relative">
               <select
                 value={settings.scheduleFarOut}
-                onChange={e => onChange({ ...settings, scheduleFarOut: Number(e.target.value) })}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  const updated = { ...settings, scheduleFarOut: val };
+                  onChange(updated);
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Far out cadence updated');
+                }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 {renderCadenceOptions(settings.scheduleFarOut)}
@@ -173,7 +185,12 @@ export default function SchedulingTab({
             <div className="relative">
               <select
                 value={settings.scheduleStandard}
-                onChange={e => onChange({ ...settings, scheduleStandard: Number(e.target.value) })}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  const updated = { ...settings, scheduleStandard: val };
+                  onChange(updated);
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Standard cadence updated');
+                }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 {renderCadenceOptions(settings.scheduleStandard)}
@@ -211,7 +228,12 @@ export default function SchedulingTab({
             <div className="relative">
               <select
                 value={settings.scheduleFinalStretch}
-                onChange={e => onChange({ ...settings, scheduleFinalStretch: Number(e.target.value) })}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  const updated = { ...settings, scheduleFinalStretch: val };
+                  onChange(updated);
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Final stretch cadence updated');
+                }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 {renderCadenceOptions(settings.scheduleFinalStretch)}
@@ -239,24 +261,6 @@ export default function SchedulingTab({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="pt-4 border-t border-gunmetal-border flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs">
-          {scheduleStatus && (
-            <span className={scheduleStatus.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-              {scheduleStatus.message}
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          disabled={savingSchedule}
-          onClick={onSaveSchedule}
-          className="text-xs font-semibold px-4 py-2 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded-md transition-colors disabled:opacity-50 shadow-sm"
-        >
-          {savingSchedule ? 'Saving Schedule...' : 'Save Schedule Settings'}
-        </button>
       </div>
     </div>
   );

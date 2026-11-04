@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-04*  
-*Current Version: v0.6.3*
+*Current Version: v0.6.4*
 
 ## Changelog
+
+### Release v0.6.4
+- Universal Settings Autosave: Removed manual save buttons; automatically persist updates on blur, change, or Enter key with immediate toast feedback.
+- Decoupled Notification Testing: Replaced combined "Save & Test" actions with standalone "Test" triggers.
+- Global Surge Alert Defaults: Added global minimum price increase dollar and percentage settings to database schema, migrations, and Notifications tab, inherited by flight cards, condensed view, and flight modal inputs.
+- General Preferences Tab: Added a dedicated General tab in Settings displaying the instance currency selector, configured Docker container timezone, live local clock, application version, and developer links.
+- App-Wide Currency Selector: Added support for 15+ world currencies (USD, EUR, GBP, CAD, AUD, JPY, etc.), formatting all prices and graphs with the active currency symbol, with safety warnings for existing flights and upstream currency passing to SerpAPI, SearchApi.io, HasData, and Fast-Flights.
+- Flight Route Lookup Telemetry: Instrumented zero-quota route lookups to record queries in datasource_logs and added a live route lookup activity feed at the bottom of the Data Sources tab.
 
 ### Release v0.6.3
 - Added flight stops search preference dropdown (Any, Nonstop, 1 stop or fewer, 2+ stops or fewer) with database migration and provider parameter passing.

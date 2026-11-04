@@ -17,7 +17,8 @@ export function formatPriceDropAlert(
     metadata?: string | null;
     sourceUsed?: string | null;
     itineraries?: RouteItinerary[];
-  }
+  },
+  currency: string = 'USD'
 ): PriceDropAlertPayload {
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
@@ -45,7 +46,7 @@ export function formatPriceDropAlert(
 
   const googleFlightsUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}${cabinClassQuery}%20oneway`;
 
-  const title = `${alertType}: ${flight.origin} → ${flight.destination} via ${leadingAirlineCode}${leadingFlightNum ? ` #${leadingFlightNum}` : ''} (${formatCurrency(newPrice)})`;
+  const title = `${alertType}: ${flight.origin} → ${flight.destination} via ${leadingAirlineCode}${leadingFlightNum ? ` #${leadingFlightNum}` : ''} (${formatCurrency(newPrice, currency)})`;
 
   // Extract competitor itineraries captured in this query
   let itineraries: RouteItinerary[] = details?.itineraries || [];

@@ -100,7 +100,8 @@ export const sendPriceDropAlert = async (
 ): Promise<void> => {
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
-  const { title, body, htmlBody } = formatPriceDropAlert(flight, newPrice, details);
+  const activeCurrency = settings.currency || 'USD';
+  const { title, body, htmlBody } = formatPriceDropAlert(flight, newPrice, details, activeCurrency);
   await sendNotification(settings, title, body, htmlBody);
 };
 
@@ -118,6 +119,7 @@ export const sendPriceIncreaseAlert = async (
 ): Promise<void> => {
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
-  const { title, body, htmlBody } = formatPriceIncreaseAlert(flight, newPrice, details);
+  const activeCurrency = settings.currency || 'USD';
+  const { title, body, htmlBody } = formatPriceIncreaseAlert(flight, newPrice, details, activeCurrency);
   await sendNotification(settings, title, body, htmlBody);
 };

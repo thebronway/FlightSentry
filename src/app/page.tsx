@@ -12,6 +12,7 @@ import ConvertFlightModal from '@/components/ConvertFlightModal';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
+import { setActiveCurrency } from '@/utils/format';
 
 type SortOption = 'departure-soonest' | 'departure-latest' | 'price-low' | 'price-high' | 'route-az';
 type ViewMode = 'cards' | 'condensed';
@@ -38,7 +39,13 @@ export default function Dashboard() {
 
   const fetchSettings = async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
-    if (res.ok) setSettings(await res.json());
+    if (res.ok) {
+      const data = await res.json();
+      setSettings(data);
+      if (data.currency) {
+        setActiveCurrency(data.currency);
+      }
+    }
   };
 
   const handleRefreshAll = () => {

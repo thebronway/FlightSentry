@@ -71,6 +71,9 @@ export const settingsDb = {
         operatingHoursEnd = @operatingHoursEnd,
         minDropDollar = @minDropDollar,
         minDropPercent = @minDropPercent,
+        currency = @currency,
+        minIncreaseDollar = @minIncreaseDollar,
+        minIncreasePercent = @minIncreasePercent,
         globalPause = @globalPause
       WHERE id = 1
     `);

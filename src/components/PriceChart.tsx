@@ -4,6 +4,7 @@ import { PriceChartProps } from './priceChart/types';
 import { usePriceChartScales } from './priceChart/usePriceChartScales';
 import CarrierFilterPills from './priceChart/CarrierFilterPills';
 import ChartScrubberTooltip from './priceChart/ChartScrubberTooltip';
+import { formatCurrency } from '@/utils/format';
 
 export default function PriceChart({
   history,
@@ -102,7 +103,7 @@ export default function PriceChart({
                   textAnchor="end"
                   fontFamily="sans-serif"
                 >
-                  ${Math.round(val)}
+                  {formatCurrency(val)}
                 </text>
               </g>
             );
@@ -129,7 +130,7 @@ export default function PriceChart({
                 fontWeight="600"
                 fontFamily="sans-serif"
               >
-                {benchmarkLabel}: ${Math.round(benchmarkPrice)}
+                {benchmarkLabel}: {formatCurrency(benchmarkPrice)}
               </text>
             </g>
           )}

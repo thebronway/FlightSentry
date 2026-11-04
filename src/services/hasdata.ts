@@ -5,7 +5,8 @@ import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence
 
 export const checkHasDataPrice = async (
   flight: Flight,
-  apiKey: string
+  apiKey: string,
+  currency: string = 'USD'
 ): Promise<DataSourceResult> => {
   if (!apiKey) {
     console.error('[HasData] API key is missing or not configured.');
@@ -22,7 +23,7 @@ export const checkHasDataPrice = async (
     url.searchParams.append('arrivalId', flight.destination);
     url.searchParams.append('outboundDate', flight.departureDate);
     url.searchParams.append('type', 'oneWay');
-    url.searchParams.append('currency', 'USD');
+    url.searchParams.append('currency', currency || 'USD');
     url.searchParams.append('hl', 'en');
 
     const travelClassMap: Record<string, string> = {

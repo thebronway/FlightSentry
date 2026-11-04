@@ -1,33 +1,35 @@
 'use client';
 
 import { Settings } from '@/types';
+import { getCurrencySymbol } from '@/utils/format';
 
 interface Props {
   settings: Settings;
   onChange: (settings: Settings) => void;
-  savingChannel: string | null;
+  testingChannel: string | null;
   channelStatus: Record<string, { type: 'success' | 'error'; message: string } | null>;
-  onSaveAndTestChannel: (channelKey: 'discord' | 'slack' | 'generic' | 'smtp') => Promise<void>;
-  onSaveThresholds: () => Promise<void>;
-  savingThresholds: boolean;
-  thresholdsStatus: { type: 'success' | 'error'; message: string } | null;
+  onTestChannel: (channelKey: 'discord' | 'slack' | 'generic' | 'smtp') => Promise<void>;
+  onAutoSave?: (
+    updatedSettings: Settings,
+    statusKey: string,
+    pillMessage?: string,
+    toastMessage?: string
+  ) => Promise<void>;
 }
 
 export default function NotificationsTab({
   settings,
   onChange,
-  savingChannel,
+  testingChannel,
   channelStatus,
-  onSaveAndTestChannel,
-  onSaveThresholds,
-  savingThresholds,
-  thresholdsStatus,
+  onTestChannel,
+  onAutoSave,
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
         <p className="font-semibold text-slate-200 mb-0.5">Global Alert & Notification Defaults</p>
-        Configure notification channels and baseline price drop thresholds. Tracked flights inherit these dollar and percentage thresholds unless custom overrides are defined on a specific flight.
+        Configure notification channels, baseline price drop thresholds, and price surge defaults. Tracked flights inherit these thresholds unless custom overrides are defined on a specific flight.
       </div>
 
       {/* Master Enable and Thresholds Card */}
@@ -37,7 +39,12 @@ export default function NotificationsTab({
             type="checkbox"
             id="notificationsEnabled"
             checked={settings.notificationsEnabled === 1}
-            onChange={e => onChange({ ...settings, notificationsEnabled: e.target.checked ? 1 : 0 })}
+            onChange={e => {
+              const val = e.target.checked ? 1 : 0;
+              const updated = { ...settings, notificationsEnabled: val };
+              onChange(updated);
+              if (onAutoSave) onAutoSave(updated, 'notifications', undefined, `Notifications ${val ? 'enabled' : 'disabled'}`);
+            }}
             className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
           />
           <label htmlFor="notificationsEnabled" className="font-bold text-slate-200 text-sm cursor-pointer">
@@ -45,53 +52,96 @@ export default function NotificationsTab({
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Min $ Drop to Alert
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-gunmetal-muted text-xs">$</span>
-              <input
-                type="number"
-                value={settings.minDropDollar}
-                onChange={e => onChange({ ...settings, minDropDollar: Number(e.target.value) })}
-                className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-              />
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Price Drop Thresholds (Default)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                Min {getCurrencySymbol(settings.currency)} Drop to Alert
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(settings.currency)}</span>
+                <input
+                  type="number"
+                  value={settings.minDropDollar}
+                  onChange={e => onChange({ ...settings, minDropDollar: Number(e.target.value) })}
+                  onBlur={() => {
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Drop threshold ($) updated');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                  className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Min % Drop to Alert
-            </label>
-            <div className="flex items-center gap-2">
-              <span className="text-gunmetal-muted text-xs">%</span>
-              <input
-                type="number"
-                value={settings.minDropPercent}
-                onChange={e => onChange({ ...settings, minDropPercent: Number(e.target.value) })}
-                className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-              />
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                Min % Drop to Alert
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-gunmetal-muted text-xs">%</span>
+                <input
+                  type="number"
+                  value={settings.minDropPercent}
+                  onChange={e => onChange({ ...settings, minDropPercent: Number(e.target.value) })}
+                  onBlur={() => {
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Drop threshold (%) updated');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                  className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="pt-3 border-t border-gunmetal-border flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs">
-            {thresholdsStatus && (
-              <span className={thresholdsStatus.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                {thresholdsStatus.message}
-              </span>
-            )}
+        <div className="pt-2 border-t border-gunmetal-border/70">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Price Surge Thresholds (Default)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                Min {getCurrencySymbol(settings.currency)} Surge to Alert
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(settings.currency)}</span>
+                <input
+                  type="number"
+                  value={settings.minIncreaseDollar ?? 50}
+                  onChange={e => onChange({ ...settings, minIncreaseDollar: Number(e.target.value) })}
+                  onBlur={() => {
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Surge threshold ($) updated');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                  className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                Min % Surge to Alert
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-gunmetal-muted text-xs">%</span>
+                <input
+                  type="number"
+                  value={settings.minIncreasePercent ?? 10}
+                  onChange={e => onChange({ ...settings, minIncreasePercent: Number(e.target.value) })}
+                  onBlur={() => {
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Surge threshold (%) updated');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                  className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
+                />
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            disabled={savingThresholds}
-            onClick={onSaveThresholds}
-            className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-          >
-            {savingThresholds ? 'Saving...' : 'Save Alert Thresholds'}
-          </button>
         </div>
       </div>
 
@@ -109,7 +159,12 @@ export default function NotificationsTab({
                 <input
                   type="checkbox"
                   checked={settings.discordEnabled === 1}
-                  onChange={e => onChange({ ...settings, discordEnabled: e.target.checked ? 1 : 0 })}
+                  onChange={e => {
+                    const val = e.target.checked ? 1 : 0;
+                    const updated = { ...settings, discordEnabled: val };
+                    onChange(updated);
+                    if (onAutoSave) onAutoSave(updated, 'discord', undefined, `Discord ${val ? 'enabled' : 'disabled'}`);
+                  }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
                 <span>Discord Webhook</span>
@@ -127,6 +182,12 @@ export default function NotificationsTab({
                 disabled={settings.discordEnabled !== 1}
                 value={settings.discordWebhookUrl || ''}
                 onChange={e => onChange({ ...settings, discordWebhookUrl: e.target.value })}
+                onBlur={() => {
+                  if (onAutoSave) onAutoSave(settings, 'discord', undefined, 'Discord webhook saved');
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
                 placeholder="https://discord.com/api/webhooks/..."
                 className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
               />
@@ -142,11 +203,11 @@ export default function NotificationsTab({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={savingChannel === 'discord'}
-                  onClick={() => onSaveAndTestChannel('discord')}
+                  disabled={testingChannel === 'discord'}
+                  onClick={() => onTestChannel('discord')}
                   className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded transition-colors disabled:opacity-50"
                 >
-                  {savingChannel === 'discord' ? 'Testing...' : 'Save & Test'}
+                  {testingChannel === 'discord' ? 'Testing...' : 'Test'}
                 </button>
               </div>
             </div>
@@ -159,7 +220,12 @@ export default function NotificationsTab({
                 <input
                   type="checkbox"
                   checked={settings.slackEnabled === 1}
-                  onChange={e => onChange({ ...settings, slackEnabled: e.target.checked ? 1 : 0 })}
+                  onChange={e => {
+                    const val = e.target.checked ? 1 : 0;
+                    const updated = { ...settings, slackEnabled: val };
+                    onChange(updated);
+                    if (onAutoSave) onAutoSave(updated, 'slack', undefined, `Slack ${val ? 'enabled' : 'disabled'}`);
+                  }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
                 <span>Slack Webhook</span>
@@ -177,6 +243,12 @@ export default function NotificationsTab({
                 disabled={settings.slackEnabled !== 1}
                 value={settings.slackWebhookUrl || ''}
                 onChange={e => onChange({ ...settings, slackWebhookUrl: e.target.value })}
+                onBlur={() => {
+                  if (onAutoSave) onAutoSave(settings, 'slack', undefined, 'Slack webhook saved');
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
                 placeholder="https://hooks.slack.com/services/..."
                 className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
               />
@@ -192,11 +264,11 @@ export default function NotificationsTab({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={savingChannel === 'slack'}
-                  onClick={() => onSaveAndTestChannel('slack')}
+                  disabled={testingChannel === 'slack'}
+                  onClick={() => onTestChannel('slack')}
                   className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded transition-colors disabled:opacity-50"
                 >
-                  {savingChannel === 'slack' ? 'Testing...' : 'Save & Test'}
+                  {testingChannel === 'slack' ? 'Testing...' : 'Test'}
                 </button>
               </div>
             </div>
@@ -209,7 +281,12 @@ export default function NotificationsTab({
                 <input
                   type="checkbox"
                   checked={settings.genericWebhookEnabled === 1}
-                  onChange={e => onChange({ ...settings, genericWebhookEnabled: e.target.checked ? 1 : 0 })}
+                  onChange={e => {
+                    const val = e.target.checked ? 1 : 0;
+                    const updated = { ...settings, genericWebhookEnabled: val };
+                    onChange(updated);
+                    if (onAutoSave) onAutoSave(updated, 'generic', undefined, `Generic webhook ${val ? 'enabled' : 'disabled'}`);
+                  }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
                 <span>Generic Webhook (Custom / Apprise / Automation)</span>
@@ -227,6 +304,12 @@ export default function NotificationsTab({
                 disabled={settings.genericWebhookEnabled !== 1}
                 value={settings.genericWebhookUrl || settings.appriseUrl || ''}
                 onChange={e => onChange({ ...settings, genericWebhookUrl: e.target.value, appriseUrl: e.target.value })}
+                onBlur={() => {
+                  if (onAutoSave) onAutoSave(settings, 'generic', undefined, 'Generic webhook URL saved');
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
                 placeholder="https://webhook.site/... or https://apprise.local/notify/..."
                 className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
               />
@@ -242,11 +325,11 @@ export default function NotificationsTab({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={savingChannel === 'generic'}
-                  onClick={() => onSaveAndTestChannel('generic')}
+                  disabled={testingChannel === 'generic'}
+                  onClick={() => onTestChannel('generic')}
                   className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded transition-colors disabled:opacity-50"
                 >
-                  {savingChannel === 'generic' ? 'Testing...' : 'Save & Test'}
+                  {testingChannel === 'generic' ? 'Testing...' : 'Test'}
                 </button>
               </div>
             </div>
@@ -259,7 +342,12 @@ export default function NotificationsTab({
                 <input
                   type="checkbox"
                   checked={settings.smtpEnabled === 1}
-                  onChange={e => onChange({ ...settings, smtpEnabled: e.target.checked ? 1 : 0 })}
+                  onChange={e => {
+                    const val = e.target.checked ? 1 : 0;
+                    const updated = { ...settings, smtpEnabled: val };
+                    onChange(updated);
+                    if (onAutoSave) onAutoSave(updated, 'smtp', undefined, `SMTP ${val ? 'enabled' : 'disabled'}`);
+                  }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
                 <span>SMTP Email</span>
@@ -279,6 +367,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpHost || ''}
                     onChange={e => onChange({ ...settings, smtpHost: e.target.value })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP host saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                     placeholder="smtp.gmail.com"
                   />
@@ -290,6 +384,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpPort || ''}
                     onChange={e => onChange({ ...settings, smtpPort: e.target.value ? Number(e.target.value) : null })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP port saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                     placeholder="587"
                   />
@@ -303,6 +403,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpUser || ''}
                     onChange={e => onChange({ ...settings, smtpUser: e.target.value })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP credentials saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                   />
                 </div>
@@ -313,6 +419,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpPass || ''}
                     onChange={e => onChange({ ...settings, smtpPass: e.target.value })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP credentials saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                   />
                 </div>
@@ -325,6 +437,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpFrom || ''}
                     onChange={e => onChange({ ...settings, smtpFrom: e.target.value })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP from address saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                     placeholder="alerts@flightsentry.local"
                   />
@@ -336,6 +454,12 @@ export default function NotificationsTab({
                     disabled={settings.smtpEnabled !== 1}
                     value={settings.smtpTo || ''}
                     onChange={e => onChange({ ...settings, smtpTo: e.target.value })}
+                    onBlur={() => {
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP to address saved');
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
                     className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm disabled:opacity-50"
                     placeholder="you@email.com"
                   />
@@ -353,11 +477,11 @@ export default function NotificationsTab({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={savingChannel === 'smtp'}
-                  onClick={() => onSaveAndTestChannel('smtp')}
+                  disabled={testingChannel === 'smtp'}
+                  onClick={() => onTestChannel('smtp')}
                   className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded transition-colors disabled:opacity-50"
                 >
-                  {savingChannel === 'smtp' ? 'Testing...' : 'Save & Test'}
+                  {testingChannel === 'smtp' ? 'Testing...' : 'Test'}
                 </button>
               </div>
             </div>
