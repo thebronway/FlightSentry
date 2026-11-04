@@ -1,10 +1,12 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff, ShoppingBag } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag } from 'lucide-react';
+import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl, cleanDisplayTime } from '@/utils/airline';
+import { getGoogleFlightsUrl, cleanDisplayTime, getAirlineColor, getAirlineName } from '@/utils/airline';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
@@ -14,10 +16,12 @@ interface Props {
   onShowHistory: () => void;
   onEdit: (flight: Flight) => void;
   onConvertToBooked?: (flight: Flight) => void;
+  onDelete: (flight: Flight) => void;
 }
 
-export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked }: Props) {
-  const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
+export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked, onDelete }: Props) {
+  const { toggleStatus, checkNow } = useFlightActions(onRefresh);
+  const [isTopHovered, setIsTopHovered] = useState(false);
 
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
@@ -31,44 +35,101 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
     ? `${flight.airline} ${flight.flightNumber}`
     : `${flight.origin} → ${flight.destination}`;
 
-  let secondaryDetail = '';
-  if (isFlightNumMode) {
-    secondaryDetail = `${flight.origin} → ${flight.destination}`;
-  } else if (flight.airline) {
-    secondaryDetail = flight.airline;
-  } else if (flight.includedAirlines) {
-    secondaryDetail = `Airlines: ${flight.includedAirlines}`;
-  } else {
-    secondaryDetail = 'All Airlines';
-  }
+  const operatingAirlines = useMemo(() => {
+    if (isFlightNumMode) return [];
+    const set = new Set<string>();
+    if (flight.latestMetadata) {
+      try {
+        const parsed = JSON.parse(flight.latestMetadata);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((it: any) => {
+            if (it.airline) set.add(it.airline.toUpperCase());
+          });
+        }
+      } catch {
+        // Ignored
+      }
+    }
+    if (set.size === 0 && flight.includedAirlines) {
+      flight.includedAirlines.split(',').forEach(code => {
+        const clean = code.trim().toUpperCase();
+        if (clean) set.add(clean);
+      });
+    }
+    if (set.size === 0 && flight.airline) {
+      set.add(flight.airline.toUpperCase());
+    }
+    return Array.from(set).sort();
+  }, [flight.latestMetadata, flight.airline, flight.includedAirlines, isFlightNumMode]);
 
-  if (!isFlightNumMode && flight.excludedAirlines) {
-    secondaryDetail += ` (Excl: ${flight.excludedAirlines})`;
-  }
+  const secondaryDetail = isFlightNumMode ? `${flight.origin} → ${flight.destination}` : '';
 
   const isPast = flight.status === 'Past';
   const googleFlightsUrl = getGoogleFlightsUrl(flight);
 
   return (
-    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${isPast ? 'border-slate-800/80 bg-gunmetal-card/60 opacity-70' : 'border-gunmetal-border hover:border-slate-600'} p-5 flex flex-col justify-between transition-all group/card`}>
+    <div className={`bg-gunmetal-card rounded-lg shadow-sm border ${
+      isPast
+        ? 'border-slate-800/80 bg-gunmetal-card/60 opacity-70'
+        : isPurchased
+        ? 'border-gunmetal-border border-l-4 border-l-emerald-500 bg-gunmetal-card hover:border-emerald-600'
+        : 'border-gunmetal-border border-l-4 border-l-sky-500/70 bg-gunmetal-card hover:border-sky-600'
+    } p-5 flex flex-col justify-between transition-all group/card`}>
       {/* Top 2/3 Clickable Region -> Directly Opens History Modal */}
       <div
         onClick={onShowHistory}
+        onMouseEnter={() => setIsTopHovered(true)}
+        onMouseLeave={() => setIsTopHovered(false)}
         className="cursor-pointer select-none flex-1 flex flex-col justify-between"
-        title="Click to view flight price history, trend graph & carrier matrix"
+        aria-label="View flight price history, trend graph and carrier matrix"
       >
         <div>
           <div className="flex justify-between items-start mb-2">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
-                  {primaryHeadline}
-                </h3>
-                <Clock className="w-3.5 h-3.5 text-gunmetal-muted opacity-0 group-hover/card:opacity-75 transition-opacity" />
-              </div>
+              <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
+                {primaryHeadline}
+              </h3>
               <p className="text-sm font-medium text-slate-300 mt-0.5">
-                {flight.departureDate} <span className="text-gunmetal-muted font-normal">• {secondaryDetail}</span>
+                {flight.departureDate}
+                {secondaryDetail && (
+                  <span className="text-xs text-gunmetal-muted font-normal ml-1.5">
+                    • {secondaryDetail}
+                  </span>
+                )}
               </p>
+
+              {/* Dedicated Airlines Bubble Row (wraps naturally to next line if needed) */}
+              <div
+                onClick={e => e.stopPropagation()}
+                className="flex flex-wrap items-center gap-1.5 mt-2"
+              >
+                {isFlightNumMode ? (
+                  <span
+                    title={getAirlineName(flight.airline)}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold font-mono border bg-gunmetal-canvas text-slate-200 border-gunmetal-border shadow-sm cursor-default"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: getAirlineColor(flight.airline) }}
+                    />
+                    <span>{flight.airline} {flight.flightNumber}</span>
+                  </span>
+                ) : operatingAirlines.length > 0 ? (
+                  operatingAirlines.map(code => (
+                    <span
+                      key={code}
+                      title={getAirlineName(code)}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono border bg-gunmetal-canvas text-slate-200 border-gunmetal-border shadow-sm cursor-default"
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getAirlineColor(code) }}
+                      />
+                      <span>{code}</span>
+                    </span>
+                  ))
+                ) : null}
+              </div>
             </div>
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
               flight.status === 'Upcoming'
@@ -82,6 +143,15 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 my-2.5">
+            {isPurchased ? (
+              <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+              </span>
+            ) : (
+              <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <Tag className="w-3 h-3 text-sky-400" /> Watching
+              </span>
+            )}
             <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
               {CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
             </span>
@@ -221,17 +291,21 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
         className={`mt-auto grid ${!isPurchased && onConvertToBooked ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
         <button
-          title={isPast ? "Checks disabled for past flights" : "Check Price Now"}
+          title={isPast ? "Checks disabled for past flights" : "Check live price now"}
           onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
           disabled={isPast || flight.status === 'Paused'}
-          className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
+          className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
         <button
-          title="Price History & Graph"
+          title="View price history & trend graph"
           onClick={(e) => { e.stopPropagation(); onShowHistory(); }}
-          className="flex justify-center items-center p-2 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded-md transition-colors"
+          className={`flex justify-center items-center p-2 rounded-md transition-colors ${
+            isTopHovered
+              ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
+          }`}
         >
           <Clock className="w-4 h-4" />
         </button>
@@ -239,16 +313,16 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
           href={googleFlightsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          title="Search this route on Google Flights"
+          title="Search on Google Flights"
           onClick={(e) => e.stopPropagation()}
-          className="flex justify-center items-center p-2 text-slate-300 hover:text-sky-400 hover:bg-gunmetal-canvas rounded-md transition-colors"
+          className="flex justify-center items-center p-2 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded-md transition-colors"
         >
-          <ExternalLink className="w-4 h-4" />
+          <GoogleIcon className="w-4 h-4" />
         </a>
         <button
-          title="Edit Flight"
+          title="Edit flight details & preferences"
           onClick={(e) => { e.stopPropagation(); onEdit(flight); }}
-          className="flex justify-center items-center p-2 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded-md transition-colors"
+          className="flex justify-center items-center p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded-md transition-colors"
         >
           <Pencil className="w-4 h-4" />
         </button>
@@ -262,7 +336,7 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
           </button>
         )}
         <button
-          title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause Monitoring' : 'Resume Monitoring'}
+          title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
           onClick={(e) => { e.stopPropagation(); toggleStatus(flight); }}
           disabled={isPast}
           className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
@@ -270,9 +344,9 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
           {flight.status === 'Upcoming' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </button>
         <button
-          title="Delete Flight"
-          onClick={(e) => { e.stopPropagation(); deleteFlight(flight.id); }}
-          className="flex justify-center items-center p-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-md transition-colors"
+          title="Delete flight"
+          onClick={(e) => { e.stopPropagation(); onDelete(flight); }}
+          className="flex justify-center items-center p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-md transition-colors"
         >
           <Trash2 className="w-4 h-4" />
         </button>

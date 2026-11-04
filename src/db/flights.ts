@@ -6,7 +6,8 @@ export const flightDb = {
     return db.prepare(`
       SELECT f.*,
         (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeLow,
-        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh,
+        (SELECT metadata FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked') AND metadata IS NOT NULL ORDER BY checkedAt DESC LIMIT 1) as latestMetadata
       FROM flights f
       ORDER BY f.departureDate ASC
     `).all() as Flight[];
@@ -16,7 +17,8 @@ export const flightDb = {
     return db.prepare(`
       SELECT f.*,
         (SELECT MIN(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeLow,
-        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh
+        (SELECT MAX(price) FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked')) as allTimeHigh,
+        (SELECT metadata FROM price_history WHERE flightId = f.id AND status IN ('Success', 'Booked') AND metadata IS NOT NULL ORDER BY checkedAt DESC LIMIT 1) as latestMetadata
       FROM flights f
       WHERE f.id = ?
     `).get(id) as Flight | undefined;

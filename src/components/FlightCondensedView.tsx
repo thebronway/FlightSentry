@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, ExternalLink, Bell, BellOff, ShoppingBag } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag } from 'lucide-react';
+import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
@@ -13,10 +15,12 @@ interface Props {
   onShowHistory: (flight: Flight) => void;
   onEdit: (flight: Flight) => void;
   onConvertToBooked?: (flight: Flight) => void;
+  onDelete: (flight: Flight) => void;
 }
 
-export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked }: Props) {
-  const { toggleStatus, deleteFlight, checkNow } = useFlightActions(onRefresh);
+export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked, onDelete }: Props) {
+  const { toggleStatus, checkNow } = useFlightActions(onRefresh);
+  const [hoveredHistoryFlightId, setHoveredHistoryFlightId] = useState<number | null>(null);
 
   return (
     <div className="bg-gunmetal-card rounded-lg border border-gunmetal-border overflow-hidden shadow-sm">
@@ -24,7 +28,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gunmetal-border bg-gunmetal-canvas/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <th className="py-3 px-4">Flight / Route</th>
+              <th className="py-3 px-4 border-l-4 border-l-transparent">Flight / Route</th>
               <th className="py-3 px-4">Departure</th>
               <th className="py-3 px-4">Tier & Cabin</th>
               <th className="py-3 px-4">Current Price</th>
@@ -41,26 +45,44 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
               const delta = benchmarkPrice - flight.currentPrice;
               const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
               const googleFlightsUrl = getGoogleFlightsUrl(flight);
+              const isPast = flight.status === 'Past';
+              const isHistoryHovered = hoveredHistoryFlightId === flight.id;
               return (
-                <tr key={flight.id} className="hover:bg-gunmetal-canvas/40 transition-colors">
+                <tr
+                  key={flight.id}
+                  onClick={() => onShowHistory(flight)}
+                  onMouseEnter={() => setHoveredHistoryFlightId(flight.id)}
+                  onMouseLeave={() => setHoveredHistoryFlightId(null)}
+                  className={`hover:bg-gunmetal-canvas/40 transition-colors group/row hover:relative hover:z-10 hover:outline hover:outline-1 hover:-outline-offset-1 cursor-pointer ${
+                    isPast
+                      ? 'hover:outline-slate-700/60'
+                      : isPurchased
+                      ? 'hover:outline-emerald-600'
+                      : 'hover:outline-sky-600'
+                  }`}
+                >
+                  {/* Columns 1 through 6 are clickable through Status */}
                   <td 
-                    onClick={() => onShowHistory(flight)} 
-                    className="py-3 px-4 cursor-pointer group"
-                    title="Click to view price history"
+                    className={`py-3 px-4 border-l-4 transition-colors ${
+                      isPast
+                        ? 'border-l-slate-700/60'
+                        : isPurchased
+                        ? 'border-l-emerald-500 group-hover/row:border-l-emerald-600'
+                        : 'border-l-sky-500/70 group-hover/row:border-l-sky-600'
+                    }`}
                   >
-                    <div className="font-bold text-slate-100 font-sans group-hover:text-sky-400 transition-colors">
+                    <div className="font-bold text-slate-100 font-sans group-hover/row:text-sky-400 transition-colors">
                       {isFlightNumMode ? `${flight.airline} ${flight.flightNumber}` : `${flight.origin} → ${flight.destination}`}
                     </div>
                     <div className="text-xs text-gunmetal-muted">
                       {isFlightNumMode 
                         ? `${flight.origin} → ${flight.destination}` 
+                        : flight.includedAirlines 
+                        ? flight.includedAirlines 
                         : flight.airline 
                         ? flight.airline 
-                        : flight.includedAirlines 
-                        ? `Airlines: ${flight.includedAirlines}` 
                         : 'All Airlines'
                       }
-                      {!isFlightNumMode && flight.excludedAirlines && ` (Excl: ${flight.excludedAirlines})`}
                       {flight.pnr && ` • PNR: ${flight.pnr}`}
                     </div>
                   </td>
@@ -70,15 +92,38 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   </td>
 
                   <td className="py-3 px-4">
-                    <span className="text-xs text-slate-300 block font-medium">
-                      {CONDENSED_CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
-                    </span>
-                    <span className="text-[11px] text-gunmetal-muted block">
-                      {flight.fareTier}
-                      {flight.noRedeye === 1 && ' • No Redeye'}
-                      {(flight.earliestDeparture || flight.latestDeparture) &&
-                        ` • ${flight.earliestDeparture || '00:00'}–${flight.latestDeparture || '23:59'}`}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {isPurchased ? (
+                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-[11px] font-semibold inline-flex items-center gap-1">
+                          <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+                        </span>
+                      ) : (
+                        <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-[11px] font-semibold inline-flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-sky-400" /> Watching
+                        </span>
+                      )}
+                      <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-1.5 py-0.5 rounded text-[11px] font-medium">
+                        {CONDENSED_CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
+                      </span>
+                      <span className="bg-gunmetal-canvas text-gunmetal-muted border border-gunmetal-border px-1.5 py-0.5 rounded text-[11px] font-medium">
+                        {flight.fareTier}
+                      </span>
+                      {flight.noRedeye === 1 && (
+                        <span className="bg-gunmetal-canvas text-amber-400 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          No Redeye
+                        </span>
+                      )}
+                      {!isPurchased && flight.priceTrackingDirection === 'increase' && (
+                        <span className="bg-gunmetal-canvas text-rose-400 border border-rose-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          Surges Only
+                        </span>
+                      )}
+                      {!isPurchased && flight.priceTrackingDirection === 'both' && (
+                        <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          Drops & Surges
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
@@ -173,20 +218,29 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                  <td 
+                    onClick={e => e.stopPropagation()}
+                    onMouseEnter={() => setHoveredHistoryFlightId(null)}
+                    onMouseLeave={() => setHoveredHistoryFlightId(flight.id)}
+                    className="py-3 px-4 text-right whitespace-nowrap cursor-default"
+                  >
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        title={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check Price Now'}
+                        title={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check live price now'}
                         onClick={() => checkNow(flight.id)}
                         disabled={flight.status !== 'Upcoming'}
-                        className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                        className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        title="Price History & Graph"
+                        title="View price history & trend graph"
                         onClick={() => onShowHistory(flight)}
-                        className="p-1.5 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded transition-colors"
+                        className={`p-1.5 rounded transition-colors ${
+                          isHistoryHovered
+                            ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
+                            : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
+                        }`}
                       >
                         <Clock className="w-3.5 h-3.5" />
                       </button>
@@ -195,14 +249,14 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Search on Google Flights"
-                        className="p-1.5 text-slate-300 hover:text-sky-400 hover:bg-gunmetal-canvas rounded transition-colors"
+                        className="p-1.5 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded transition-colors"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <GoogleIcon className="w-3.5 h-3.5" />
                       </a>
                       <button
-                        title="Edit Flight"
+                        title="Edit flight details & preferences"
                         onClick={() => onEdit(flight)}
-                        className="p-1.5 text-slate-300 hover:text-white hover:bg-gunmetal-canvas rounded transition-colors"
+                        className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -216,7 +270,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         </button>
                       )}
                       <button
-                        title={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause' : 'Resume'}
+                        title={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
                         onClick={() => toggleStatus(flight)}
                         disabled={flight.status === 'Past'}
                         className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
@@ -224,9 +278,9 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         {flight.status === 'Upcoming' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       </button>
                       <button
-                        title="Delete"
-                        onClick={() => deleteFlight(flight.id)}
-                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded transition-colors"
+                        title="Delete flight"
+                        onClick={() => onDelete(flight)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

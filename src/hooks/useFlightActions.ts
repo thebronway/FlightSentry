@@ -47,7 +47,6 @@ export function useFlightActions(onRefresh: () => void) {
 
   const deleteFlight = useCallback(
     async (flightId: number) => {
-      if (!confirm('Are you sure you want to delete this tracked flight?')) return;
       try {
         setLoadingFlightId(flightId);
         const res = await fetch(`/api/flights/${flightId}`, { method: 'DELETE' });

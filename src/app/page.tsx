@@ -9,21 +9,25 @@ import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
 import ConvertFlightModal from '@/components/ConvertFlightModal';
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 
 type SortOption = 'departure-soonest' | 'departure-latest' | 'price-low' | 'price-high' | 'route-az';
 type ViewMode = 'cards' | 'condensed';
+type FilterOption = 'all' | 'watching' | 'booked';
 
 export default function Dashboard() {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [historyFlight, setHistoryFlight] = useState<Flight | null>(null);
   const [convertingFlight, setConvertingFlight] = useState<Flight | null>(null);
+  const [deletingFlight, setDeletingFlight] = useState<Flight | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [sortBy, setSortBy] = useState<SortOption>('departure-soonest');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [quotaRefreshTrigger, setQuotaRefreshTrigger] = useState(0);
   const [showPastFlights, setShowPastFlights] = useState(false);
 
@@ -119,13 +123,68 @@ export default function Dashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Tracking Goal Filter Toggle */}
+          {(() => {
+            const isBooked = (f: Flight) => Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
+            const activeOnly = flights.filter(f => f.status !== 'Past');
+            const watchingTotal = activeOnly.filter(f => !isBooked(f)).length;
+            const bookedTotal = activeOnly.filter(f => isBooked(f)).length;
+
+            return (
+              <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setFilterBy('all')}
+                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                    filterBy === 'all'
+                      ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
+                      : 'text-gunmetal-muted hover:text-slate-200'
+                  }`}
+                >
+                  <span>All</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-gunmetal-canvas text-slate-300 font-mono">
+                    {activeOnly.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterBy('watching')}
+                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                    filterBy === 'watching'
+                      ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
+                      : 'text-gunmetal-muted hover:text-slate-200'
+                  }`}
+                >
+                  <span>Watching</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-950/60 text-sky-300 border border-sky-800/40 font-mono">
+                    {watchingTotal}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterBy('booked')}
+                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                    filterBy === 'booked'
+                      ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
+                      : 'text-gunmetal-muted hover:text-slate-200'
+                  }`}
+                >
+                  <span>Booked</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 font-mono">
+                    {bookedTotal}
+                  </span>
+                </button>
+              </div>
+            );
+          })()}
+
           {/* Sorting Dropdown */}
-          <div className="flex items-center gap-1.5 bg-gunmetal-card border border-gunmetal-border rounded-md px-2.5 py-1.5 shadow-sm">
-            <ArrowDownUp className="w-3.5 h-3.5 text-gunmetal-muted" />
+          <div className="flex items-center h-[38px] gap-2 bg-gunmetal-card border border-gunmetal-border rounded-md px-3 shadow-sm">
+            <ArrowDownUp className="w-3.5 h-3.5 text-gunmetal-muted flex-shrink-0" />
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as SortOption)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent h-full text-xs text-slate-200 focus:outline-none cursor-pointer pr-1"
             >
               <option value="departure-soonest" className="bg-gunmetal-card text-slate-200">Soonest Flight (Default)</option>
               <option value="departure-latest" className="bg-gunmetal-card text-slate-200">Furthest Flight</option>
@@ -136,12 +195,12 @@ export default function Dashboard() {
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
+          <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
             <button
               type="button"
               onClick={() => setViewMode('cards')}
               title="Card View"
-              className={`p-1.5 rounded transition-colors ${
+              className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
                 viewMode === 'cards' 
                   ? 'bg-gunmetal-border text-slate-100 border border-slate-500' 
                   : 'text-gunmetal-muted hover:text-slate-200'
@@ -153,7 +212,7 @@ export default function Dashboard() {
               type="button"
               onClick={() => setViewMode('condensed')}
               title="Condensed Stacked View"
-              className={`p-1.5 rounded transition-colors ${
+              className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
                 viewMode === 'condensed' 
                   ? 'bg-gunmetal-border text-slate-100 border border-slate-500' 
                   : 'text-gunmetal-muted hover:text-slate-200'
@@ -167,7 +226,7 @@ export default function Dashboard() {
             onClick={handleAddNew}
             disabled={!dsStatus.available}
             title={!dsStatus.available ? dsStatus.reason : 'Track New Flight'}
-            className={`border shadow-sm px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
+            className={`h-[38px] border shadow-sm px-4 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
               !dsStatus.available
                 ? 'bg-gunmetal-card border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
                 : 'bg-gunmetal-border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400'
@@ -217,8 +276,21 @@ export default function Dashboard() {
       />
 
       {(() => {
-        const activeFlights = sortedFlights.filter(f => f.status !== 'Past');
-        const pastFlights = sortedFlights.filter(f => f.status === 'Past');
+        const isBooked = (f: Flight) => Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
+        const allActive = sortedFlights.filter(f => f.status !== 'Past');
+        const allPast = sortedFlights.filter(f => f.status === 'Past');
+
+        const activeFlights = allActive.filter(f => {
+          if (filterBy === 'watching') return !isBooked(f);
+          if (filterBy === 'booked') return isBooked(f);
+          return true;
+        });
+
+        const pastFlights = allPast.filter(f => {
+          if (filterBy === 'watching') return !isBooked(f);
+          if (filterBy === 'booked') return isBooked(f);
+          return true;
+        });
 
         return (
           <>
@@ -243,6 +315,7 @@ export default function Dashboard() {
                     onShowHistory={() => setHistoryFlight(f)} 
                     onEdit={handleEdit} 
                     onConvertToBooked={setConvertingFlight}
+                    onDelete={setDeletingFlight}
                   />
                 ))}
               </div>
@@ -254,6 +327,7 @@ export default function Dashboard() {
                 onShowHistory={f => setHistoryFlight(f)} 
                 onEdit={handleEdit} 
                 onConvertToBooked={setConvertingFlight}
+                onDelete={setDeletingFlight}
               />
             )}
 
@@ -283,6 +357,7 @@ export default function Dashboard() {
                           onRefresh={handleRefreshAll} 
                           onShowHistory={() => setHistoryFlight(f)} 
                           onEdit={handleEdit} 
+                          onDelete={setDeletingFlight}
                         />
                       ))}
                     </div>
@@ -293,6 +368,7 @@ export default function Dashboard() {
                       onRefresh={handleRefreshAll} 
                       onShowHistory={f => setHistoryFlight(f)} 
                       onEdit={handleEdit} 
+                      onDelete={setDeletingFlight}
                     />
                   )
                 )}
@@ -312,12 +388,20 @@ export default function Dashboard() {
          }} 
          onSuccess={handleRefreshAll} 
          initialFlight={editingFlight} 
+         settings={settings}
       />
 
       <ConvertFlightModal
         isOpen={Boolean(convertingFlight)}
         flight={convertingFlight}
         onClose={() => setConvertingFlight(null)}
+        onSuccess={handleRefreshAll}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={Boolean(deletingFlight)}
+        flight={deletingFlight}
+        onClose={() => setDeletingFlight(null)}
         onSuccess={handleRefreshAll}
       />
     </div>

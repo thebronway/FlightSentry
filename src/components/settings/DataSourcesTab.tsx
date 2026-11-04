@@ -34,14 +34,14 @@ export default function DataSourcesTab({
   strategyStatus,
   onAutoSave,
 }: Props) {
-  const allKeys = ['serpapi', 'searchapi', 'hasdata', 'fastflights'];
-  const currentOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata,fastflights')
+  const meteredKeys = ['serpapi', 'searchapi', 'hasdata'];
+  const meteredOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata')
     .split(',')
     .map(s => s.trim())
-    .filter(k => allKeys.includes(k));
+    .filter(k => meteredKeys.includes(k));
 
-  allKeys.forEach(k => {
-    if (!currentOrder.includes(k)) currentOrder.push(k);
+  meteredKeys.forEach(k => {
+    if (!meteredOrder.includes(k)) meteredOrder.push(k);
   });
 
   const nameMap: Record<string, string> = {
@@ -52,11 +52,13 @@ export default function DataSourcesTab({
   };
 
   const move = async (index: number, dir: number) => {
-    const newOrder = [...currentOrder];
+    const newOrder = [...meteredOrder];
     const temp = newOrder[index];
     newOrder[index] = newOrder[index + dir];
     newOrder[index + dir] = temp;
-    const updated = { ...settings, dataSourceStrategy: newOrder.join(',') };
+    // Programmatically keep fastflights pinned at the end of the strategy order
+    const updatedStrategy = [...newOrder, 'fastflights'].join(',');
+    const updated = { ...settings, dataSourceStrategy: updatedStrategy };
     onChange(updated);
     if (onAutoSave) {
       await onAutoSave(updated, '', '', 'Priority order updated');
@@ -147,24 +149,21 @@ export default function DataSourcesTab({
         </p>
       </div>
 
-      {/* Consolidated Reorderable Stack of Provider Cards */}
+      {/* Reorderable Metered API Provider Stack */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-200">Data Source Stack & Priority Order</h3>
+          <h3 className="text-sm font-bold text-slate-200">Metered API Priority Order</h3>
           <p className="text-xs text-gunmetal-muted">
-            Use the chevrons on each card to adjust priority rank. Inactive providers remain in their fixed rank position but are skipped at runtime.
+            Use the chevrons on each card to adjust priority rank across metered API providers. Inactive providers remain in their fixed rank position but are skipped at runtime.
           </p>
         </div>
 
-        {currentOrder.map((key, index) => {
-          const isMetered = key === 'serpapi' || key === 'searchapi' || key === 'hasdata';
+        {meteredOrder.map((key, index) => {
           const isEnabled = key === 'serpapi'
             ? settings.serpApiEnabled === 1
             : key === 'searchapi'
             ? settings.searchApiEnabled === 1
-            : key === 'hasdata'
-            ? settings.hasdataEnabled === 1
-            : settings.fastFlightsEnabled === 1;
+            : settings.hasdataEnabled === 1;
 
           return (
             <div
@@ -191,14 +190,8 @@ export default function DataSourcesTab({
                       {nameMap[key]}
                     </span>
                   </label>
-                  <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                      isMetered
-                        ? 'bg-sky-950/40 text-sky-400 border-sky-800/40'
-                        : 'bg-amber-950/40 text-amber-400 border-amber-800/40'
-                    }`}
-                  >
-                    {isMetered ? 'Metered API' : 'Unlimited Scraper'}
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-sky-950/40 text-sky-400 border-sky-800/40">
+                    Metered API
                   </span>
                   {!isEnabled && (
                     <span className="text-[10px] uppercase font-bold text-gunmetal-muted bg-gunmetal-canvas px-1.5 py-0.5 rounded border border-gunmetal-border">
@@ -240,7 +233,7 @@ export default function DataSourcesTab({
                     <button
                       type="button"
                       onClick={() => move(index, 1)}
-                      disabled={index === currentOrder.length - 1}
+                      disabled={index === meteredOrder.length - 1}
                       title="Move down in priority"
                       className="p-1.5 text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors rounded-md shadow-sm"
                     >
@@ -251,133 +244,195 @@ export default function DataSourcesTab({
               </div>
 
               <div className="p-4 space-y-3">
-                {isMetered ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-1">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                        API Key
-                      </label>
-                      <input
-                        type="password"
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                      API Key
+                    </label>
+                    <input
+                      type="password"
+                      disabled={!isEnabled}
+                      value={
+                        key === 'serpapi'
+                          ? settings.serpApiKey || ''
+                          : key === 'searchapi'
+                          ? settings.searchApiKey || ''
+                          : settings.hasdataApiKey || ''
+                      }
+                      onChange={e => {
+                        if (key === 'serpapi') onChange({ ...settings, serpApiKey: e.target.value });
+                        if (key === 'searchapi') onChange({ ...settings, searchApiKey: e.target.value });
+                        if (key === 'hasdata') onChange({ ...settings, hasdataApiKey: e.target.value });
+                      }}
+                      placeholder="Enter API Key"
+                      className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                      Monthly Quota (0 = Unlimited)
+                    </label>
+                    <input
+                      type="number"
+                      disabled={!isEnabled}
+                      value={
+                        key === 'serpapi'
+                          ? settings.serpApiQuota
+                          : key === 'searchapi'
+                          ? settings.searchApiQuota
+                          : settings.hasdataQuota
+                      }
+                      onChange={e => {
+                        const val = e.target.value === '' ? 0 : Number(e.target.value);
+                        if (key === 'serpapi') onChange({ ...settings, serpApiQuota: val });
+                        if (key === 'searchapi') onChange({ ...settings, searchApiQuota: val });
+                        if (key === 'hasdata') onChange({ ...settings, hasdataQuota: val });
+                      }}
+                      className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                      Monthly Reset Day
+                    </label>
+                    <div className="relative">
+                      <select
                         disabled={!isEnabled}
                         value={
-                          key === 'serpapi'
-                            ? settings.serpApiKey || ''
+                          (key === 'serpapi'
+                            ? settings.serpApiResetDay
                             : key === 'searchapi'
-                            ? settings.searchApiKey || ''
-                            : settings.hasdataApiKey || ''
+                            ? settings.searchApiResetDay
+                            : settings.hasdataResetDay) ?? 1
                         }
                         onChange={e => {
-                          if (key === 'serpapi') onChange({ ...settings, serpApiKey: e.target.value });
-                          if (key === 'searchapi') onChange({ ...settings, searchApiKey: e.target.value });
-                          if (key === 'hasdata') onChange({ ...settings, hasdataApiKey: e.target.value });
-                        }}
-                        placeholder="Enter API Key"
-                        className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                        Monthly Quota (0 = Unlimited)
-                      </label>
-                      <input
-                        type="number"
-                        disabled={!isEnabled}
-                        value={
-                          key === 'serpapi'
-                            ? settings.serpApiQuota
-                            : key === 'searchapi'
-                            ? settings.searchApiQuota
-                            : settings.hasdataQuota
-                        }
-                        onChange={e => {
-                          const val = e.target.value === '' ? 0 : Number(e.target.value);
-                          if (key === 'serpapi') onChange({ ...settings, serpApiQuota: val });
-                          if (key === 'searchapi') onChange({ ...settings, searchApiQuota: val });
-                          if (key === 'hasdata') onChange({ ...settings, hasdataQuota: val });
-                        }}
-                        className="w-full border border-gunmetal-border p-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                        Monthly Reset Day
-                      </label>
-                      <div className="relative">
-                        <select
-                          disabled={!isEnabled}
-                          value={
-                            (key === 'serpapi'
-                              ? settings.serpApiResetDay
-                              : key === 'searchapi'
-                              ? settings.searchApiResetDay
-                              : settings.hasdataResetDay) ?? 1
+                          const day = parseInt(e.target.value, 10);
+                          const nextReset = calculateNextResetDate(day, settings.timezone);
+                          if (key === 'serpapi') {
+                            onChange({ ...settings, serpApiResetDay: day, serpApiResetDate: nextReset });
+                          } else if (key === 'searchapi') {
+                            onChange({ ...settings, searchApiResetDay: day, searchApiResetDate: nextReset });
+                          } else if (key === 'hasdata') {
+                            onChange({ ...settings, hasdataResetDay: day, hasdataResetDate: nextReset });
                           }
-                          onChange={e => {
-                            const day = parseInt(e.target.value, 10);
-                            const nextReset = calculateNextResetDate(day, settings.timezone);
-                            if (key === 'serpapi') {
-                              onChange({ ...settings, serpApiResetDay: day, serpApiResetDate: nextReset });
-                            } else if (key === 'searchapi') {
-                              onChange({ ...settings, searchApiResetDay: day, searchApiResetDate: nextReset });
-                            } else if (key === 'hasdata') {
-                              onChange({ ...settings, hasdataResetDay: day, hasdataResetDate: nextReset });
-                            }
-                          }}
-                          className="w-full appearance-none border border-gunmetal-border p-2 pr-8 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm cursor-pointer"
-                        >
-                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                            <option key={day} value={day}>
-                              {formatOrdinalDay(day)} of every month
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
-                      </div>
-                      <span className="text-[11px] text-gunmetal-muted block mt-1 font-mono">
-                        Next reset:{' '}
-                        {(() => {
-                          const resetDate =
-                            key === 'serpapi'
-                              ? settings.serpApiResetDate
-                              : key === 'searchapi'
-                              ? settings.searchApiResetDate
-                              : settings.hasdataResetDate;
-                          return resetDate || calculateNextResetDate(1, settings.timezone);
-                        })()}
-                      </span>
+                        }}
+                        className="w-full appearance-none border border-gunmetal-border p-2 pr-8 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm cursor-pointer"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                          <option key={day} value={day}>
+                            {formatOrdinalDay(day)} of every month
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
                     </div>
+                    <span className="text-[11px] text-gunmetal-muted block mt-1 font-mono">
+                      Next reset:{' '}
+                      {(() => {
+                        const resetDate =
+                          key === 'serpapi'
+                            ? settings.serpApiResetDate
+                            : key === 'searchapi'
+                            ? settings.searchApiResetDate
+                            : settings.hasdataResetDate;
+                        return resetDate || calculateNextResetDate(1, settings.timezone);
+                      })()}
+                    </span>
                   </div>
-                ) : (
-                  <div className="bg-amber-950/20 border border-amber-900/40 rounded-md p-3.5 space-y-1.5 text-xs text-amber-300">
-                    <p className="font-semibold text-amber-200 flex items-center gap-1.5">
-                      Unlimited Datasource Notice & Disclaimer
-                    </p>
-                    <p>
-                      <strong>Priority:</strong> When enabled, this data source bypasses metered quotas and is executed first before any API-key data sources regardless of the configured Query Routing Strategy.
-                    </p>
-                    <p>
-                      <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query. Pairing with at least one official API provider is highly recommended, as it will probably fail frequently.
-                    </p>
-                  </div>
-                )}
+                </div>
 
-                {isMetered && (
-                  <div className="mt-4 pt-3 border-t border-gunmetal-border/70 flex justify-end">
-                    <button
-                      type="button"
-                      disabled={savingProvider === key}
-                      onClick={() => onSaveProvider(key)}
-                      className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
-                    >
-                      {savingProvider === key ? 'Saving...' : `Save ${nameMap[key] || 'Provider'}`}
-                    </button>
-                  </div>
-                )}
+                <div className="mt-4 pt-3 border-t border-gunmetal-border/70 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={savingProvider === key}
+                    onClick={() => onSaveProvider(key)}
+                    className="text-xs font-semibold px-3 py-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border rounded transition-colors disabled:opacity-50"
+                  >
+                    {savingProvider === key ? 'Saving...' : `Save ${nameMap[key] || 'Provider'}`}
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Unmetered Scraper Tier - Permanent Bottom Position */}
+      <div className="pt-6 border-t border-gunmetal-border/80 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-slate-200">Unmetered Web Scraper</h3>
+          <p className="text-xs text-gunmetal-muted">
+            Fast-Flights operates without an API key.
+          </p>
+        </div>
+
+        <div
+          className={`border rounded-lg transition-all ${
+            settings.fastFlightsEnabled === 1
+              ? 'bg-gunmetal-canvas/60 border-gunmetal-border shadow-sm'
+              : 'bg-gunmetal-canvas/30 border-gunmetal-border/50 opacity-60'
+          }`}
+        >
+          <div className="p-4 border-b border-gunmetal-border/70 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={settings.fastFlightsEnabled === 1}
+                  onChange={e => toggleEnabled('fastflights', e.target.checked)}
+                  className="w-4 h-4 accent-slate-500 rounded"
+                />
+                <span className={`font-bold text-sm ${settings.fastFlightsEnabled === 1 ? 'text-slate-100' : 'text-gunmetal-muted'}`}>
+                  {nameMap['fastflights']}
+                </span>
+              </label>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-amber-950/40 text-amber-400 border-amber-800/40">
+                Unlimited Scraper
+              </span>
+              {settings.fastFlightsEnabled !== 1 && (
+                <span className="text-[10px] uppercase font-bold text-gunmetal-muted bg-gunmetal-canvas px-1.5 py-0.5 rounded border border-gunmetal-border">
+                  Disabled
+                </span>
+              )}
+              {providerStatus['fastflights'] && (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    providerStatus['fastflights']?.type === 'success'
+                      ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                      : 'bg-red-950/60 text-red-400 border-red-800/60'
+                  }`}
+                >
+                  {providerStatus['fastflights']?.message}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedLogsProvider('fastflights')}
+                title={`View recent query logs for ${nameMap['fastflights']}`}
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-slate-300 hover:text-white hover:bg-gunmetal-border rounded-md shadow-sm transition-colors cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                <span>Logs</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-3">
+            <div className="bg-amber-950/20 border border-amber-900/40 rounded-md p-3.5 space-y-1.5 text-xs text-amber-300">
+              <p className="font-semibold text-amber-200 flex items-center gap-1.5">
+                Unlimited Datasource Notice & Disclaimer
+              </p>
+              <p>
+                <strong>Priority:</strong> When enabled, this data source bypasses metered quotas and is executed first before any API-key data sources regardless of the configured Query Routing Strategy.
+              </p>
+              <p>
+                <strong>Volatility:</strong> This scraper reverse-engineers public RPC endpoints without an API key. It is volatile and may encounter CAPTCHAs or bot blocks. Automatic jitter delays (2.0s – 4.5s) are applied to each query. Pairing with at least one official API provider is highly recommended, as it will most likely fail frequently.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <DataSourceLogsModal

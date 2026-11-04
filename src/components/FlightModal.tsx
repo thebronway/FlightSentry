@@ -16,6 +16,7 @@ interface Props {
   onClose: () => void;
   onSuccess: () => void;
   initialFlight?: Flight | null;
+  settings?: Settings | null;
 }
 
 const DEFAULT_STATE = {
@@ -49,9 +50,9 @@ const DEFAULT_STATE = {
   minIncreasePercent: '',
 };
 
-export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight }: Props) {
+export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight, settings }: Props) {
   const [formData, setFormData] = useState(DEFAULT_STATE);
-  const [defaultSettings, setDefaultSettings] = useState<Settings | null>(null);
+  const [defaultSettings, setDefaultSettings] = useState<Settings | null>(settings || null);
   const [loading, setLoading] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +78,15 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight 
   });
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
-      .then(data => setDefaultSettings(data))
-      .catch(err => console.error('Failed to load global settings in modal:', err));
-  }, []);
+    if (settings) {
+      setDefaultSettings(settings);
+    } else {
+      fetch('/api/settings')
+        .then(res => res.json())
+        .then(data => setDefaultSettings(data))
+        .catch(err => console.error('Failed to load global settings in modal:', err));
+    }
+  }, [settings, isOpen]);
 
   useEffect(() => {
     if (isOpen) {

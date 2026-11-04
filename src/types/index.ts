@@ -32,6 +32,7 @@ export interface Flight {
   updatedAt: string;
   allTimeLow?: number | null;
   allTimeHigh?: number | null;
+  latestMetadata?: string | null;
   earliestDeparture?: string | null; // HH:MM
   latestDeparture?: string | null; // HH:MM
   noRedeye?: number; // 0 (false) or 1 (true)

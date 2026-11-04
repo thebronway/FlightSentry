@@ -1,9 +1,24 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-03*  
-*Current Version: v0.6.0*
+*Last updated: 2026-11-04*  
+*Current Version: v0.6.2*
 
 ## Changelog
+
+### Release v0.6.2
+- Redesigned Quota Ribbon into a collapsible 2-column grid with single-line provider entries and odd-item spanning.
+- Added combined metered and unlimited query tallies to the collapsed Quota Ribbon header.
+- Added dashboard filter toggles for All, Watching, and Booked flights with count badges.
+- Standardized dashboard toolbar element heights.
+- Applied distinct border accents and badges for Watching vs. Booked flights across card and condensed views.
+- Ported cabin class, fare tier, redeye, and tracking direction badges to the condensed view.
+- Added row click navigation to price history on condensed view rows through the status column.
+- Replaced native browser confirm alerts with an in-app deletion confirmation modal.
+- Assigned unique colors and descriptive tooltips to card action buttons.
+- Replaced external link icon with the Google Flights logo across flight cards, condensed view, and history modal.
+- Replaced single cheapest airline text on route cards with colored carrier bubble pills for operating airlines.
+- Positioned Fast-Flights permanently at the bottom in a dedicated unmetered section and removed priority rank and reorder controls.
+- Fixed Track Flight button remaining disabled after clicking Unpause All until manual page refresh.
 
 ### Release v0.6.0
 - Added recurring monthly quota reset day selector (1st–31st) with automatic date calculation and shorter month clamping.
