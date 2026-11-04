@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { FareTier, CabinClass, SearchMode, PriceTrackingDirection, Flight, Settings } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
-import { getDataSourceStatus } from '@/utils/airline';
+import { getDataSourceStatus, normalizeAirlineCode } from '@/utils/airline';
 import { getTodayDateString } from '@/utils/date';
 import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
 import SearchPreferencesSection from './flightModal/SearchPreferencesSection';
+import AirlineTagInput from './common/AirlineTagInput';
 
 interface Props {
   isOpen: boolean;
@@ -45,6 +46,7 @@ const DEFAULT_STATE = {
   earliestDeparture: '',
   latestDeparture: '',
   noRedeye: false,
+  maxStops: null as number | null,
   priceTrackingDirection: 'drop' as PriceTrackingDirection,
   minIncreaseDollar: '',
   minIncreasePercent: '',
@@ -133,6 +135,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           earliestDeparture: initialFlight.earliestDeparture || '',
           latestDeparture: initialFlight.latestDeparture || '',
           noRedeye: initialFlight.noRedeye === 1,
+          maxStops: (initialFlight.maxStops !== null && initialFlight.maxStops !== undefined) ? initialFlight.maxStops : null,
           priceTrackingDirection: initialFlight.priceTrackingDirection || 'drop',
           minIncreaseDollar: (initialFlight.minIncreaseDollar !== null && initialFlight.minIncreaseDollar !== undefined) ? String(initialFlight.minIncreaseDollar) : '',
           minIncreasePercent: (initialFlight.minIncreasePercent !== null && initialFlight.minIncreasePercent !== undefined) ? String(initialFlight.minIncreasePercent) : '',
@@ -186,6 +189,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
         })
       : null;
 
+    if (formData.trackingGoal === 'booked' && !formData.flightNumber.trim()) {
+      setError('Flight number is required for already booked flights.');
+      return;
+    }
+
     const parsedPurchase = formData.purchasePrice ? parseFloat(formData.purchasePrice) : null;
     let parsedBaseline = formData.baselinePrice ? parseFloat(formData.baselinePrice) : null;
 
@@ -194,12 +202,15 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       parsedBaseline = parsedPurchase;
     }
 
+    const effectiveSearchMode: SearchMode =
+      formData.flightNumber && formData.flightNumber.trim() ? 'FlightNumber' : formData.searchMode;
+
     const payload = {
-      searchMode: formData.searchMode,
+      searchMode: effectiveSearchMode,
       origin: formData.origin.trim().toUpperCase(),
       destination: formData.destination.trim().toUpperCase(),
       airline: formData.airline ? formData.airline.trim().toUpperCase() : '',
-      flightNumber: formData.searchMode === 'FlightNumber' && formData.flightNumber ? formData.flightNumber.trim() : null,
+      flightNumber: formData.flightNumber && formData.flightNumber.trim() ? formData.flightNumber.trim() : null,
       includedAirlines: formData.includedAirlines ? formData.includedAirlines.trim().toUpperCase() : null,
       excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,
       departureDate: formData.departureDate,
@@ -217,6 +228,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       earliestDeparture: formData.earliestDeparture ? formData.earliestDeparture.trim() : null,
       latestDeparture: formData.latestDeparture ? formData.latestDeparture.trim() : null,
       noRedeye: formData.noRedeye ? 1 : 0,
+      maxStops: formData.maxStops !== null && formData.maxStops !== undefined ? formData.maxStops : null,
       priceTrackingDirection: formData.trackingGoal === 'booked' ? 'drop' : formData.priceTrackingDirection,
       minIncreaseDollar: formData.minIncreaseDollar ? parseFloat(formData.minIncreaseDollar) : null,
       minIncreasePercent: formData.minIncreasePercent ? parseFloat(formData.minIncreasePercent) : null,
@@ -287,7 +299,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             </div>
           )}
 
-          {/* Search Mode Selection (Hidden & Locked when editing existing flight) */}
+          {/* Search Mode Selection (Hidden when booked or when editing existing flight) */}
           {initialFlight ? (
             <div className="flex items-center p-3 rounded-lg border border-gunmetal-border bg-gunmetal-canvas/40">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
@@ -297,7 +309,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
                 </span>
               </div>
             </div>
-          ) : (
+          ) : formData.trackingGoal === 'booked' ? null : (
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -337,32 +349,41 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             trackingGoal={formData.trackingGoal}
             purchasePrice={formData.purchasePrice}
             pnr={formData.pnr}
-            onGoalChange={goal => setFormData({ ...formData, trackingGoal: goal })}
+            onGoalChange={goal => setFormData(prev => ({ ...prev, trackingGoal: goal, searchMode: goal === 'booked' ? 'FlightNumber' : prev.searchMode }))}
             onPurchaseChange={val => setFormData({ ...formData, purchasePrice: val })}
             onPnrChange={val => setFormData({ ...formData, pnr: val })}
           />
 
-          {/* Flight Number Inputs (Presented First in FlightNumber Mode to Feed Detection) */}
-          {formData.searchMode === 'FlightNumber' && (
+          {/* Flight Number Inputs (Presented in FlightNumber Mode or when Already Booked) */}
+          {(formData.searchMode === 'FlightNumber' || formData.trackingGoal === 'booked') && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Carrier Code
+                    Carrier Code {formData.trackingGoal === 'booked' && '*'}
                   </label>
                   <input
-                    required
-                    placeholder="e.g. AS or AA"
-                    maxLength={3}
+                    required={formData.searchMode === 'FlightNumber' || formData.trackingGoal === 'booked'}
+                    placeholder="e.g. AS, AA, or Delta"
+                    maxLength={15}
                     value={formData.airline}
                     onChange={e => setFormData({ ...formData, airline: e.target.value.toUpperCase() })}
+                    onBlur={e => {
+                      const val = e.target.value.trim();
+                      if (val) {
+                        const normalized = normalizeAirlineCode(val);
+                        if (normalized && normalized !== 'UN') {
+                          setFormData(prev => ({ ...prev, airline: normalized }));
+                        }
+                      }
+                    }}
                     className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
                   />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Flight Number
+                      Flight Number *
                     </label>
                     {routeLookupLoading && (
                       <span className="flex items-center gap-1 text-[11px] text-sky-400 font-normal">
@@ -373,7 +394,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
                   <input
                     required
                     pattern="\d+"
-                    placeholder="e.g. 6 or 1"
+                    placeholder="e.g. 6 or 523"
                     value={formData.flightNumber}
                     onChange={e => setFormData({ ...formData, flightNumber: e.target.value })}
                     className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
@@ -450,28 +471,26 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           </div>
 
           {/* Route Mode Airline Inclusions & Exclusions */}
-          {formData.searchMode === 'Route' && (
-            <div className="grid grid-cols-2 gap-4">
+          {formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                   Airline Inclusions (Optional)
                 </label>
-                <input
-                  placeholder="DL, AA"
+                <AirlineTagInput
                   value={formData.includedAirlines}
-                  onChange={e => setFormData({ ...formData, includedAirlines: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                  onChange={val => handleFieldChange({ includedAirlines: val })}
+                  placeholder="e.g. DL, AA (type & press space or comma)"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                   Airline Exclusions (Optional)
                 </label>
-                <input
-                  placeholder="NK, F9"
+                <AirlineTagInput
                   value={formData.excludedAirlines}
-                  onChange={e => setFormData({ ...formData, excludedAirlines: e.target.value })}
-                  className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                  onChange={val => handleFieldChange({ excludedAirlines: val })}
+                  placeholder="e.g. NK, F9 (type & press space or comma)"
                 />
               </div>
             </div>
@@ -531,15 +550,19 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             </div>
           </div>
 
-          {/* Search Preferences: Time of Day and No Redeye */}
-          <SearchPreferencesSection
-            earliestDeparture={formData.earliestDeparture}
-            latestDeparture={formData.latestDeparture}
-            noRedeye={formData.noRedeye}
-            onEarliestChange={val => setFormData({ ...formData, earliestDeparture: val })}
-            onLatestChange={val => setFormData({ ...formData, latestDeparture: val })}
-            onNoRedeyeChange={val => setFormData({ ...formData, noRedeye: val })}
-          />
+          {/* Search Preferences: Stops, Time of Day, and No Redeye (Only for unbooked watching flights) */}
+          {formData.trackingGoal !== 'booked' && (
+            <SearchPreferencesSection
+              earliestDeparture={formData.earliestDeparture}
+              latestDeparture={formData.latestDeparture}
+              noRedeye={formData.noRedeye}
+              maxStops={formData.maxStops}
+              onEarliestChange={val => setFormData({ ...formData, earliestDeparture: val })}
+              onLatestChange={val => setFormData({ ...formData, latestDeparture: val })}
+              onNoRedeyeChange={val => setFormData({ ...formData, noRedeye: val })}
+              onMaxStopsChange={val => setFormData({ ...formData, maxStops: val })}
+            />
+          )}
 
           {/* Alert Thresholds and Mute/Pause Toggles */}
           <AlertThresholdsSection

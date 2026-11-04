@@ -7,6 +7,7 @@ import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
+import AirlineBadge from './common/AirlineBadge';
 
 interface Props {
   flights: Flight[];
@@ -74,16 +75,24 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     <div className="font-bold text-slate-100 font-sans group-hover/row:text-sky-400 transition-colors">
                       {isFlightNumMode ? `${flight.airline} ${flight.flightNumber}` : `${flight.origin} → ${flight.destination}`}
                     </div>
-                    <div className="text-xs text-gunmetal-muted">
-                      {isFlightNumMode 
-                        ? `${flight.origin} → ${flight.destination}` 
-                        : flight.includedAirlines 
-                        ? flight.includedAirlines 
-                        : flight.airline 
-                        ? flight.airline 
-                        : 'All Airlines'
-                      }
-                      {flight.pnr && ` • PNR: ${flight.pnr}`}
+                    <div className="text-xs text-gunmetal-muted flex items-center gap-1.5 mt-0.5">
+                      {isFlightNumMode ? (
+                        <>
+                          <span>{flight.origin} → {flight.destination}</span>
+                          {flight.pnr && <span>• PNR: {flight.pnr}</span>}
+                        </>
+                      ) : (
+                        <>
+                          {flight.airline ? (
+                            <AirlineBadge code={flight.airline} size="xs" showFlightNumber={false} />
+                          ) : flight.includedAirlines ? (
+                            <span>{flight.includedAirlines}</span>
+                          ) : (
+                            <span>All Airlines</span>
+                          )}
+                          {flight.pnr && <span>• PNR: {flight.pnr}</span>}
+                        </>
+                      )}
                     </div>
                   </td>
 
@@ -111,6 +120,21 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       {flight.noRedeye === 1 && (
                         <span className="bg-gunmetal-canvas text-amber-400 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
                           No Redeye
+                        </span>
+                      )}
+                      {flight.maxStops === 0 && (
+                        <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          Nonstop
+                        </span>
+                      )}
+                      {flight.maxStops === 1 && (
+                        <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          ≤ 1 Stop
+                        </span>
+                      )}
+                      {flight.maxStops === 2 && (
+                        <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-1.5 py-0.5 rounded text-[10px] font-medium">
+                          ≤ 2 Stops
                         </span>
                       )}
                       {!isPurchased && flight.priceTrackingDirection === 'increase' && (

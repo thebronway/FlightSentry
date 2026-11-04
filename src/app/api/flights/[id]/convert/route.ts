@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       airline: cleanAirline,
       flightNumber: cleanFlightNumber,
       metadata: JSON.stringify({ milestone: 'Purchased Flight', pnr: cleanPnr }),
-      sourceUsed: 'manual',
+      sourceUsed: 'Price Paid',
     });
 
     // Recalculate schedule queue

@@ -36,6 +36,14 @@ export const checkFlightPrice = async (
     };
     url.searchParams.append('travel_class', serpCabinMap[flight.cabinClass || 'economy'] || '1');
 
+    if (flight.maxStops !== undefined && flight.maxStops !== null) {
+      // SerpAPI stops: 1 = Nonstop only, 2 = 1 stop or fewer, 3 = 2 stops or fewer
+      const serpStopsMap: Record<number, string> = { 0: '1', 1: '2', 2: '3' };
+      if (serpStopsMap[flight.maxStops]) {
+        url.searchParams.append('stops', serpStopsMap[flight.maxStops]);
+      }
+    }
+
     if (flight.includedAirlines) {
       url.searchParams.append('include_airlines', flight.includedAirlines.replace(/\s+/g, ''));
     }

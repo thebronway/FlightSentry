@@ -7,6 +7,7 @@ import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl, cleanDisplayTime, getAirlineColor, getAirlineName } from '@/utils/airline';
+import AirlineBadge from './common/AirlineBadge';
 import RouteCorridorSummary from './RouteCorridorSummary';
 
 interface Props {
@@ -99,34 +100,21 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
               </p>
 
               {/* Dedicated Airlines Bubble Row (wraps naturally to next line if needed) */}
-              <div
-                onClick={e => e.stopPropagation()}
-                className="flex flex-wrap items-center gap-1.5 mt-2"
-              >
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 {isFlightNumMode ? (
-                  <span
-                    title={getAirlineName(flight.airline)}
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold font-mono border bg-gunmetal-canvas text-slate-200 border-gunmetal-border shadow-sm cursor-default"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: getAirlineColor(flight.airline) }}
-                    />
-                    <span>{flight.airline} {flight.flightNumber}</span>
-                  </span>
+                  <AirlineBadge
+                    code={flight.airline}
+                    flightNumber={flight.flightNumber}
+                    size="sm"
+                  />
                 ) : operatingAirlines.length > 0 ? (
                   operatingAirlines.map(code => (
-                    <span
+                    <AirlineBadge
                       key={code}
-                      title={getAirlineName(code)}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono border bg-gunmetal-canvas text-slate-200 border-gunmetal-border shadow-sm cursor-default"
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: getAirlineColor(code) }}
-                      />
-                      <span>{code}</span>
-                    </span>
+                      code={code}
+                      size="xs"
+                      showFlightNumber={false}
+                    />
                   ))
                 ) : null}
               </div>
@@ -144,9 +132,16 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
 
           <div className="flex flex-wrap items-center gap-1.5 my-2.5">
             {isPurchased ? (
-              <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
-              </span>
+              <>
+                <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                  <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+                </span>
+                {flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (
+                  <span className="bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded text-xs font-semibold">
+                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!)} Credit Claimed
+                  </span>
+                )}
+              </>
             ) : (
               <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                 <Tag className="w-3 h-3 text-sky-400" /> Watching
@@ -161,6 +156,21 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
             {flight.noRedeye === 1 && (
               <span className="bg-gunmetal-canvas text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-medium">
                 No Redeye
+              </span>
+            )}
+            {flight.maxStops === 0 && (
+              <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-2 py-0.5 rounded text-xs font-medium">
+                Nonstop
+              </span>
+            )}
+            {flight.maxStops === 1 && (
+              <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
+                ≤ 1 Stop
+              </span>
+            )}
+            {flight.maxStops === 2 && (
+              <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
+                ≤ 2 Stops
               </span>
             )}
             {!isPurchased && flight.priceTrackingDirection === 'increase' && (

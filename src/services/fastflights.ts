@@ -63,6 +63,7 @@ export const checkFastFlightsPrice = async (flight: Flight): Promise<DataSourceR
       seat,
       trip: 'one-way',
       passengers: new Passengers({ adults: 1 }),
+      max_stops: flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
     });
 
     const results = await getFlights(query);

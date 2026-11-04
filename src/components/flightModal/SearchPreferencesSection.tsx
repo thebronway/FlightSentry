@@ -6,25 +6,32 @@ interface Props {
   earliestDeparture: string;
   latestDeparture: string;
   noRedeye: boolean;
+  maxStops: number | null;
   onEarliestChange: (val: string) => void;
   onLatestChange: (val: string) => void;
   onNoRedeyeChange: (val: boolean) => void;
+  onMaxStopsChange: (val: number | null) => void;
 }
 
 export default function SearchPreferencesSection({
   earliestDeparture,
   latestDeparture,
   noRedeye,
+  maxStops,
   onEarliestChange,
   onLatestChange,
   onNoRedeyeChange,
+  onMaxStopsChange,
 }: Props) {
-  const hasActiveFilters = Boolean(earliestDeparture || latestDeparture || noRedeye);
+  const hasActiveFilters = Boolean(
+    earliestDeparture || latestDeparture || noRedeye || (maxStops !== null && maxStops !== undefined)
+  );
 
   const clearFilters = () => {
     onEarliestChange('');
     onLatestChange('');
     onNoRedeyeChange(false);
+    onMaxStopsChange(null);
   };
 
   return (
@@ -46,10 +53,26 @@ export default function SearchPreferencesSection({
       </div>
 
       <p className="text-[11px] text-gunmetal-muted">
-        Narrow monitored itineraries to your preferred departure window or eliminate overnight flights.
+        Narrow monitored itineraries by number of stops, departure window, or eliminate overnight flights.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+        <div>
+          <label className="block text-xs font-medium text-slate-300 mb-1">
+            Flight Stops
+          </label>
+          <select
+            value={maxStops !== null && maxStops !== undefined ? String(maxStops) : ''}
+            onChange={e => onMaxStopsChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+            className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none cursor-pointer"
+          >
+            <option value="">Any</option>
+            <option value="0">Nonstop</option>
+            <option value="1">1 stop or fewer</option>
+            <option value="2">2+ stops or fewer</option>
+          </select>
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">
             Depart After (Earliest)

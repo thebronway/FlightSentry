@@ -4,6 +4,7 @@ export interface SearchPreferenceOptions {
   earliestDeparture?: string | null;
   latestDeparture?: string | null;
   noRedeye?: number | boolean | null;
+  maxStops?: number | null;
 }
 
 export function parseTimeMinutes(timeStr?: string | null): number | null {
@@ -53,17 +54,25 @@ export function filterItinerariesBySearchPreferences(
   itineraries: RouteItinerary[],
   preferences: SearchPreferenceOptions
 ): RouteItinerary[] {
-  const { earliestDeparture, latestDeparture, noRedeye } = preferences;
+  const { earliestDeparture, latestDeparture, noRedeye, maxStops } = preferences;
 
   const earliestMins = earliestDeparture ? parseTimeMinutes(earliestDeparture) : null;
   const latestMins = latestDeparture ? parseTimeMinutes(latestDeparture) : null;
   const shouldFilterRedeye = noRedeye === 1 || noRedeye === true;
+  const hasStopsFilter = maxStops !== undefined && maxStops !== null;
 
-  if (earliestMins === null && latestMins === null && !shouldFilterRedeye) {
+  if (earliestMins === null && latestMins === null && !shouldFilterRedeye && !hasStopsFilter) {
     return itineraries;
   }
 
   return itineraries.filter(it => {
+    if (hasStopsFilter) {
+      const stops = it.stops !== undefined ? it.stops : (it.isNonstop ? 0 : 0);
+      if (stops > (maxStops as number)) {
+        return false;
+      }
+    }
+
     const depMins = parseTimeMinutes(it.departureTime);
 
     // If departure time is absent from raw itinerary, keep it to prevent accidental false exclusions

@@ -1,26 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-04*  
-*Current Version: v0.6.2*
+*Current Version: v0.6.3*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.6.3
-- Flight Stops Search Option
-	- Add a stops selection input to the flight modal (Any, Nonstop, 1 stop or fewer, 2+ stops or fewer)
-	- Pass stops parameters to search providers and enforce post-query itinerary filtering
-- Interactive Airline Tagging
-	- Replace comma-separated airline text inputs with interactive chip/bubble tag inputs
-	- Automatically match typed carrier codes on space or comma, display the airline name, and apply brand colors
-        - Use current airline brand color schemes on the history page, make a global airline theme file maybe?. 
-- Flight Modal
-    - Bugfix: Already booked is broken, cant add the flight number anymore (also does the other free data source still search the route correctly?) Also it doesnt search on adding which may be bacause I am assuming that I cant currently add a flight number.  
-- History Modal
-    - When buying a flight should be like Price Paid or something as the source
-- Hover takes a few seconds on first airline load on flight card and on actions like search and history, like hovering over AA, it takes 5 seconds for American to show up, but if you move away and come back it loads instantly. Need a better implementation strategy.
 
 ### Release v0.6.4
 - Universal Settings Autosave
@@ -38,19 +24,27 @@ This document tracks planned improvements, enhancements, and technical debt for 
     - Show configured tz and time on new general page
     - Show app version from package on new page
     - Show support links on new page (from footer)
+- Data Sources
+    - when you type in a flight number on an already purchased flight, it does a free look up against some sort of API make sure the route is correct. I wanna add that log to the data sources page so we can see what's going on. If it fails, if it passes whatever, similar to that, just put it at the bottom of the page
+
+### Release v0.6.5
+- Flight Card
+    - Remove Market Corridor from card, keepin history
 - Save State
     - when you filter sort or view, and then you go to say settings, and then you come back to dashboard, it resets. I would like it to save the view in the session that you are in, or whatever best practices are
+- Flight Modal, swap PNR and Deapture date postions
+    - The free lookup for flight route based on number is not doing it on add. but if I go back to edit that flight, it does the validation. im guessing is beacuase there isnt a date yet?
 
-### Release v0.6.5:
-- Add a manual mode (no datasources), need to consider ui, dont want clutter, if i need to delete db, lets do it
+### Release v0.6.6:
+- Add a manual mode (no datasources), need to consider ui, dont want clutter
     - Points (as a currency)
         - Add the ability to add points currencies on the general page (like AAvantage miles and trueblue points)
     - when manual mode (no tracking), can also track in any currency $, pound, etc. 
 
-### Release v0.6.6: Mobile Optimization
+### Release v0.6.7: Mobile Optimization
 - Moible Optimization
 
-### Release v0.6.7a: Research Only, Security and Best Practices Audit
+### Release v0.6.8a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
 - Look for monolthic files
@@ -58,18 +52,18 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Look for things that do not follow best practices 
 - Look for missing/deprecated imports
 - Look for duplicate components that should be reused instead
+- Look for inconsistent theming or elements
 - Old flights cleanup worth it? maybe keep 1 year, but user changeable in settings? performance implications? 
 - Every item should be its own phase, and then when developing a plan, reference previous findings
-
-- Make a plan for another ai for v0.6.7 for fixes, no fixes today. Be clear and concise.
+- Make a plan for another ai for v0.6.8 for fixes, no fixes today. Be clear and concise.
     - Double check results
 
-
-### Release v0.6.7: Security and Best Practices Application
+### Release v0.6.8: Security and Best Practices Application
 - Security and Best Practices Application
 
-### Release v0.6.8a: Separate playwright container scraper plan
+### Release v0.6.9a: Separate playwright container scraper plan
 - Playwright for optional hosted scrapper, seperate container.
+    - the goal here is to make a plan for a separate container called FlightSentry-Scrapper. Which eventually will be a data source. But this optional container will, you know, be a hefty guy because it would have to like load playwright and chromium and everything in between to go to the Google flights page and scrape it. That's why I want it separate from this container/build.
 
-### Release v0.6.8: Separate playwright container scraper implementation
-- Playwright for optional hosted scrapper, seperate container.
+### Release v0.7.0: Separate playwright container scraper implementation
+- API Playwright optional hosted scrapper integration.

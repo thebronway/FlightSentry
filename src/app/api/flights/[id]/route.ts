@@ -28,6 +28,34 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ? 'Past'
       : existing.status;
 
+    const newPurchasePrice = parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice;
+    const isRebooked =
+      existing.purchasePrice !== null &&
+      existing.purchasePrice !== undefined &&
+      newPurchasePrice !== null &&
+      newPurchasePrice !== undefined &&
+      newPurchasePrice !== existing.purchasePrice;
+
+    // Preserve the very first price paid as baselinePrice
+    const originalPaidPrice = existing.baselinePrice > 0 ? existing.baselinePrice : (existing.purchasePrice || newPurchasePrice || 0);
+
+    // If rebooked at a lower or updated price, record milestone in price_history
+    if (isRebooked && newPurchasePrice !== null) {
+      const creditClaimed = Math.max(0, existing.purchasePrice! - newPurchasePrice);
+      historyDb.insert(id, newPurchasePrice, 'Booked', {
+        airline: parsed.airline || existing.airline,
+        flightNumber: parsed.flightNumber || existing.flightNumber,
+        metadata: JSON.stringify({
+          milestone: 'Rebooked Flight',
+          previousPrice: existing.purchasePrice,
+          newPrice: newPurchasePrice,
+          creditClaimed,
+        }),
+        sourceUsed: 'Price Paid',
+      });
+      flightDb.updatePrice(id, newPurchasePrice);
+    }
+
     flightDb.update(id, {
       ...parsed,
       origin: parsed.origin ?? existing.origin,
@@ -37,8 +65,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       includedAirlines: parsed.includedAirlines ?? null,
       excludedAirlines: parsed.excludedAirlines ?? null,
       pnr: parsed.pnr ?? null,
-      baselinePrice: parsed.baselinePrice ?? existing.baselinePrice,
-      purchasePrice: parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice,
+      baselinePrice: originalPaidPrice,
+      purchasePrice: newPurchasePrice,
       minDropDollar: parsed.minDropDollar !== undefined ? parsed.minDropDollar : existing.minDropDollar,
       minDropPercent: parsed.minDropPercent !== undefined ? parsed.minDropPercent : existing.minDropPercent,
       cabinClass: parsed.cabinClass,

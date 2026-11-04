@@ -2,6 +2,7 @@
 
 import { Flight } from '@/types';
 import { X, Calendar, ExternalLink } from 'lucide-react';
+import AirlineBadge from '../common/AirlineBadge';
 
 interface Props {
   flight: Flight;
@@ -37,6 +38,13 @@ export default function HistoryModalHeader({
           <h2 className="text-2xl font-black text-slate-100 font-sans tracking-tight">
             {primaryTitle}
           </h2>
+          {flight.airline && (
+            <AirlineBadge
+              code={flight.airline}
+              flightNumber={isFlightNumMode ? flight.flightNumber : null}
+              size="sm"
+            />
+          )}
           {isFlightNumMode && (
             <span className="text-sm font-semibold text-slate-300">
               {flight.origin} → {flight.destination}

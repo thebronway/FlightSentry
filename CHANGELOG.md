@@ -1,9 +1,22 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-04*  
-*Current Version: v0.6.2*
+*Current Version: v0.6.3*
 
 ## Changelog
+
+### Release v0.6.3
+- Added flight stops search preference dropdown (Any, Nonstop, 1 stop or fewer, 2+ stops or fewer) with database migration and provider parameter passing.
+- Enforced post-query itinerary filtering by maximum stops across SerpAPI, SearchApi.io, HasData, and Fast-Flights.
+- Added stops indicator badges (Nonstop, ≤ 1 Stop, ≤ 2 Stops) to dashboard flight cards and condensed rows.
+- Replaced comma-separated airline text inputs with interactive chip tag input supporting space, comma, and Enter triggers.
+- Created centralized airline theme system (src/utils/airlineThemes.ts) with brand colors, names, and catchall aliases (e.g. SW, JB, Delta).
+- Replaced native OS delay tooltips with instant (<150ms) CSS hover tooltips across flight cards, condensed view, and history modal.
+- Fixed missing flight number input on booked flights and enforced required flight number validation.
+- Hid irrelevant route search preferences (departure times, redeye, stops) and airline inclusion/exclusion filters when tracking goal is Booked.
+- Fixed initial live price search skipping on booked flight creation.
+- Added "Price Paid" source label for booking milestones and convert-to-booked history entries.
+- Added in-place rebooking credit tracking, recording rebook milestones in price history and displaying credit claimed badges on cards and history logs.
 
 ### Release v0.6.2
 - Redesigned Quota Ribbon into a collapsible 2-column grid with single-line provider entries and odd-item spanning.

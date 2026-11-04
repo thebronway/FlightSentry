@@ -4,12 +4,15 @@ import { Flight, PriceHistory } from '@/types';
 import { DayGroup } from './types';
 import { formatCurrency } from '@/utils/format';
 import { TrendingDown, TrendingUp, ExternalLink } from 'lucide-react';
+import AirlineBadge from '../common/AirlineBadge';
 
 const SOURCE_LABEL_MAP: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
   hasdata: 'HasData',
   fastflights: 'Fast-Flights',
+  'Price Paid': 'Price Paid',
+  manual: 'Price Paid',
 };
 
 interface Props {
@@ -98,6 +101,13 @@ export default function HistoryIntradayLog({
                         <span className="text-gunmetal-muted font-mono w-20">
                           {checkTime}
                         </span>
+                        {record.airline && (
+                          <AirlineBadge
+                            code={record.airline}
+                            flightNumber={record.flightNumber}
+                            size="xs"
+                          />
+                        )}
                         <span className="font-bold text-sm text-slate-100">
                           {formatCurrency(record.price)}
                         </span>
@@ -114,21 +124,49 @@ export default function HistoryIntradayLog({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-                            record.status === 'Success'
-                              ? 'bg-green-900/30 text-green-400 border-green-800/40'
-                              : record.status === 'Booked'
-                              ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/60'
-                              : 'bg-red-900/30 text-red-400 border-red-800/40'
-                          }`}
-                        >
-                          {record.status === 'Booked' ? 'Booked Fare' : record.status}
-                        </span>
+                        {(() => {
+                          let isRebooked = false;
+                          let creditClaimed = 0;
+                          if (record.status === 'Booked' && record.metadata) {
+                            try {
+                              const meta = JSON.parse(record.metadata);
+                              if (meta.milestone === 'Rebooked Flight') {
+                                isRebooked = true;
+                                creditClaimed = Number(meta.creditClaimed || 0);
+                              }
+                            } catch {
+                              // Ignored
+                            }
+                          }
+
+                          return (
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
+                                record.status === 'Success'
+                                  ? 'bg-green-900/30 text-green-400 border-green-800/40'
+                                  : isRebooked
+                                  ? 'bg-emerald-900/50 text-emerald-300 border-emerald-600/70'
+                                  : record.status === 'Booked'
+                                  ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/60'
+                                  : 'bg-red-900/30 text-red-400 border-red-800/40'
+                              }`}
+                            >
+                              {isRebooked
+                                ? creditClaimed > 0
+                                  ? `Rebooked (+${formatCurrency(creditClaimed)} Credit)`
+                                  : 'Rebooked Fare'
+                                : record.status === 'Booked'
+                                ? 'Initial Booking'
+                                : record.status}
+                            </span>
+                          );
+                        })()}
                         {record.sourceUsed && (
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-                              record.sourceUsed === 'fastflights'
+                              record.sourceUsed === 'Price Paid' || record.sourceUsed === 'manual'
+                                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/70 shadow-sm'
+                                : record.sourceUsed === 'fastflights'
                                 ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
                                 : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
                             }`}

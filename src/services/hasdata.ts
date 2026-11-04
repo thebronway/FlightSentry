@@ -33,6 +33,18 @@ export const checkHasDataPrice = async (
     };
     url.searchParams.append('travelClass', travelClassMap[flight.cabinClass || 'economy'] || 'economy');
 
+    if (flight.maxStops !== undefined && flight.maxStops !== null) {
+      // HasData stops: nonStop, oneStopOrFewer, twoStopsOrFewer
+      const hasDataStopsMap: Record<number, string> = {
+        0: 'nonStop',
+        1: 'oneStopOrFewer',
+        2: 'twoStopsOrFewer',
+      };
+      if (hasDataStopsMap[flight.maxStops]) {
+        url.searchParams.append('stops', hasDataStopsMap[flight.maxStops]);
+      }
+    }
+
     if (flight.includedAirlines) {
       url.searchParams.append('includeAirlines', flight.includedAirlines.replace(/\s+/g, ''));
     } else if (flight.excludedAirlines) {

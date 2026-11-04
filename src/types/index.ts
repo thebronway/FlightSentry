@@ -39,6 +39,7 @@ export interface Flight {
   priceTrackingDirection: PriceTrackingDirection; // 'drop' | 'increase' | 'both'
   minIncreaseDollar?: number | null;
   minIncreasePercent?: number | null;
+  maxStops?: number | null;
 }
 
 export interface RouteItinerary {

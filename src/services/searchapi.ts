@@ -31,6 +31,18 @@ export const checkSearchApiPrice = async (
     };
     url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || 'economy');
 
+    if (flight.maxStops !== undefined && flight.maxStops !== null) {
+      // SearchApi.io stops: nonstop, one_stop_or_fewer, two_stops_or_fewer
+      const searchApiStopsMap: Record<number, string> = {
+        0: 'nonstop',
+        1: 'one_stop_or_fewer',
+        2: 'two_stops_or_fewer',
+      };
+      if (searchApiStopsMap[flight.maxStops]) {
+        url.searchParams.append('stops', searchApiStopsMap[flight.maxStops]);
+      }
+    }
+
     if (flight.fareTier === 'Standard') {
       url.searchParams.append('exclude_basic_economy', 'true');
     }

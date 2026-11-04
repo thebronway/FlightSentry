@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS flights (
     priceTrackingDirection TEXT NOT NULL DEFAULT 'drop',
     minIncreaseDollar REAL,
     minIncreasePercent REAL,
+    maxStops INTEGER,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
 );

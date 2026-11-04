@@ -39,6 +39,7 @@ export function initDb() {
         "ALTER TABLE flights ADD COLUMN priceTrackingDirection TEXT NOT NULL DEFAULT 'drop'",
         "ALTER TABLE flights ADD COLUMN minIncreaseDollar REAL",
         "ALTER TABLE flights ADD COLUMN minIncreasePercent REAL",
+        "ALTER TABLE flights ADD COLUMN maxStops INTEGER",
         "ALTER TABLE settings ADD COLUMN quotaResetDay INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN serpApiResetDay INTEGER DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN searchApiResetDay INTEGER DEFAULT 1",

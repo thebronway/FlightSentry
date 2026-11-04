@@ -48,64 +48,77 @@ export async function POST(req: NextRequest) {
     let initialFlightNumber = parsed.flightNumber || null;
     let initialMetadata: string | null = null;
     let initialSourceUsed: string | null = null;
+    let liveSearchResultPrice: number | null = null;
 
-    // If initial price is still not provided, trigger a live search immediately
-    if (!baselinePrice || baselinePrice <= 0) {
-      settings = checkAndResetQuota(settings);
+    const isBooked = Boolean(parsed.purchasePrice && parsed.purchasePrice > 0);
 
-      const probeFlight = {
-        id: 0,
-        searchMode: parsed.searchMode,
-        origin: parsed.origin,
-        destination: parsed.destination,
-        departureDate: parsed.departureDate,
-        airline: parsed.airline || '',
-        flightNumber: parsed.flightNumber || null,
-        includedAirlines: parsed.includedAirlines || null,
-        excludedAirlines: parsed.excludedAirlines || null,
-        fareTier: parsed.fareTier,
-        cabinClass: parsed.cabinClass,
-        baselinePrice: 0,
-        purchasePrice: parsed.purchasePrice ?? null,
-        targetPrice: parsed.targetPrice ?? null,
-        currentPrice: 0,
-        minDropDollar: parsed.minDropDollar ?? null,
-        minDropPercent: parsed.minDropPercent ?? null,
-        status: initialStatus,
-        earliestDeparture: parsed.earliestDeparture || null,
-        latestDeparture: parsed.latestDeparture || null,
-        noRedeye: parsed.noRedeye ?? 0,
-        priceTrackingDirection: parsed.priceTrackingDirection || 'drop',
-        minIncreaseDollar: parsed.minIncreaseDollar ?? null,
-        minIncreasePercent: parsed.minIncreasePercent ?? null,
-        nextCheckAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        disableNotifications: parsed.disableNotifications ?? 0
-      };
+    // Trigger a live search on add for all flights to discover current market fare
+    settings = checkAndResetQuota(settings);
 
-      const searchResult = await executeSearchStrategy(probeFlight as Flight, settings);
+    const probeFlight = {
+      id: 0,
+      searchMode: parsed.searchMode,
+      origin: parsed.origin,
+      destination: parsed.destination,
+      departureDate: parsed.departureDate,
+      airline: parsed.airline || '',
+      flightNumber: parsed.flightNumber || null,
+      includedAirlines: parsed.includedAirlines || null,
+      excludedAirlines: parsed.excludedAirlines || null,
+      fareTier: parsed.fareTier,
+      cabinClass: parsed.cabinClass,
+      baselinePrice: 0,
+      purchasePrice: parsed.purchasePrice ?? null,
+      targetPrice: parsed.targetPrice ?? null,
+      currentPrice: 0,
+      minDropDollar: parsed.minDropDollar ?? null,
+      minDropPercent: parsed.minDropPercent ?? null,
+      status: initialStatus,
+      earliestDeparture: parsed.earliestDeparture || null,
+      latestDeparture: parsed.latestDeparture || null,
+      noRedeye: parsed.noRedeye ?? 0,
+      priceTrackingDirection: parsed.priceTrackingDirection || 'drop',
+      minIncreaseDollar: parsed.minIncreaseDollar ?? null,
+      minIncreasePercent: parsed.minIncreasePercent ?? null,
+      maxStops: parsed.maxStops ?? null,
+      nextCheckAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      disableNotifications: parsed.disableNotifications ?? 0,
+    };
 
-      if (searchResult.status === 'Success' && searchResult.price !== null) {
-        baselinePrice = searchResult.price;
-        initialAirline = searchResult.leadingAirline || initialAirline;
-        initialFlightNumber = searchResult.leadingFlightNumber || initialFlightNumber;
-        initialMetadata = searchResult.itineraries ? JSON.stringify(searchResult.itineraries) : null;
-        initialSourceUsed = searchResult.sourceUsed || null;
+    const searchResult = await executeSearchStrategy(probeFlight as Flight, settings);
 
-        if (searchResult.sourceUsed) {
-          settingsDb.incrementApiUsage(searchResult.sourceUsed);
-        }
-      } else {
-        const errorMsg = searchResult.status === 'SoldOut'
-          ? 'No flights found for this route and date across active data sources. Please verify airport codes or try another date.'
-          : searchResult.status === 'RateLimited'
-          ? 'Active data sources are currently rate-limited. Please wait a few moments or configure an alternative provider in Settings.'
-          : `Live fare lookup failed across all active data sources (${searchResult.status}). Please verify the route, carrier, and date, or check provider credentials in Settings.`;
+    if (searchResult.status === 'Success' && searchResult.price !== null) {
+      liveSearchResultPrice = searchResult.price;
+      if (!baselinePrice || baselinePrice <= 0) {
+        baselinePrice = isBooked ? parsed.purchasePrice! : searchResult.price;
+      }
+      initialAirline = searchResult.leadingAirline || initialAirline;
+      initialFlightNumber = searchResult.leadingFlightNumber || initialFlightNumber;
+      initialMetadata = searchResult.itineraries ? JSON.stringify(searchResult.itineraries) : null;
+      initialSourceUsed = searchResult.sourceUsed || null;
 
-        return NextResponse.json({ error: errorMsg }, { status: 400 });
+      if (searchResult.sourceUsed) {
+        settingsDb.incrementApiUsage(searchResult.sourceUsed);
+      }
+    } else if (!isBooked) {
+      // For unbooked flights, require a successful fare lookup to establish baseline
+      const errorMsg = searchResult.status === 'SoldOut'
+        ? 'No flights found for this route and date across active data sources. Please verify airport codes or try another date.'
+        : searchResult.status === 'RateLimited'
+        ? 'Active data sources are currently rate-limited. Please wait a few moments or configure an alternative provider in Settings.'
+        : `Live fare lookup failed across all active data sources (${searchResult.status}). Please verify the route, carrier, and date, or check provider credentials in Settings.`;
+
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    } else {
+      // For booked flights, fallback to purchasePrice if initial search fails or rate limits
+      if (!baselinePrice || baselinePrice <= 0) {
+        baselinePrice = parsed.purchasePrice!;
       }
     }
+
+    const currentPrice = liveSearchResultPrice ?? baselinePrice;
 
     settings = settingsDb.get();
     const nextCheckAt = calculateNextCheck({
@@ -114,7 +127,7 @@ export async function POST(req: NextRequest) {
       baselinePrice,
       purchasePrice: parsed.purchasePrice ?? null,
       targetPrice: parsed.targetPrice ?? null,
-      currentPrice: baselinePrice,
+      currentPrice,
       airline: parsed.airline || initialAirline || '',
       status: initialStatus,
       createdAt: new Date().toISOString(),
@@ -126,24 +139,45 @@ export async function POST(req: NextRequest) {
     const newFlightId = flightDb.create({ 
       ...parsed, 
       airline: parsed.airline || initialAirline || '',
+      flightNumber: parsed.flightNumber || initialFlightNumber,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       baselinePrice,
       purchasePrice: parsed.purchasePrice ?? null,
       minDropDollar: parsed.minDropDollar ?? null,
       minDropPercent: parsed.minDropPercent ?? null,
-      currentPrice: baselinePrice,
+      maxStops: parsed.maxStops ?? null,
+      currentPrice,
       status: initialStatus, 
       nextCheckAt 
     });
 
-    // Record initial price check in history with route metadata
-    historyDb.insert(newFlightId, baselinePrice, 'Success', {
-      airline: initialAirline,
-      flightNumber: initialFlightNumber,
-      metadata: initialMetadata,
-      sourceUsed: initialSourceUsed,
-    });
+    // 1. For booked flights, log the purchase milestone with 'Price Paid' source
+    if (isBooked && parsed.purchasePrice && parsed.purchasePrice > 0) {
+      historyDb.insert(newFlightId, parsed.purchasePrice, 'Booked', {
+        airline: parsed.airline || initialAirline,
+        flightNumber: parsed.flightNumber || initialFlightNumber,
+        metadata: JSON.stringify({ milestone: 'Purchased Flight', pnr: parsed.pnr || null }),
+        sourceUsed: 'Price Paid',
+      });
+    }
+
+    // 2. Log the live fare check result if search succeeded
+    if (liveSearchResultPrice !== null) {
+      historyDb.insert(newFlightId, liveSearchResultPrice, 'Success', {
+        airline: initialAirline,
+        flightNumber: initialFlightNumber,
+        metadata: initialMetadata,
+        sourceUsed: initialSourceUsed,
+      });
+    } else if (!isBooked) {
+      historyDb.insert(newFlightId, baselinePrice, 'Success', {
+        airline: initialAirline,
+        flightNumber: initialFlightNumber,
+        metadata: initialMetadata,
+        sourceUsed: initialSourceUsed,
+      });
+    }
 
     const newFlight = flightDb.getById(newFlightId);
     return NextResponse.json(newFlight, { status: 201 });

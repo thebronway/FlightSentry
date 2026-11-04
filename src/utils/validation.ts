@@ -26,6 +26,7 @@ export const flightSchema = z.object({
   priceTrackingDirection: z.enum(['drop', 'increase', 'both']).default('drop'),
   minIncreaseDollar: z.number().nonnegative().optional().nullable(),
   minIncreasePercent: z.number().nonnegative().optional().nullable(),
+  maxStops: z.number().int().min(0).max(2).optional().nullable(),
 });
 
 export const flightStatusSchema = z.object({
