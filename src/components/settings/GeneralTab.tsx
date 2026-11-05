@@ -216,7 +216,7 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
 
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
-            Support & Community Links
+            Support & Project Links
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <a
