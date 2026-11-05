@@ -22,6 +22,9 @@ export default function ConvertFlightModal({
   const [airline, setAirline] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
   const [pnr, setPnr] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [pointsCurrencies, setPointsCurrencies] = useState<string[]>([]);
+  const [fiatCurrency, setFiatCurrency] = useState('USD');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +34,27 @@ export default function ConvertFlightModal({
       setAirline(flight.airline || '');
       setFlightNumber(flight.flightNumber || '');
       setPnr(flight.pnr || '');
+      setCurrency(flight.currency || 'USD');
       setError(null);
+
+      fetch('/api/settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data.currency) setFiatCurrency(data.currency);
+          if (data.pointsCurrencies) {
+            try {
+              const parsed = typeof data.pointsCurrencies === 'string'
+                ? JSON.parse(data.pointsCurrencies)
+                : data.pointsCurrencies;
+              if (Array.isArray(parsed)) setPointsCurrencies(parsed);
+            } catch {}
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen, flight]);
+
+  const isPoints = pointsCurrencies.includes(currency);
 
   if (!isOpen || !flight) return null;
 
@@ -64,6 +85,7 @@ export default function ConvertFlightModal({
           airline: airline.trim().toUpperCase(),
           flightNumber: flightNumber.trim() || null,
           pnr: pnr.trim().toUpperCase() || null,
+          currency: currency || fiatCurrency,
         }),
       });
 
@@ -126,25 +148,51 @@ export default function ConvertFlightModal({
             </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Purchase Price (Amount Paid) *
-            </label>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                {isPoints ? 'Points Redeemed *' : 'Purchase Price (Amount Paid) *'}
+              </label>
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="convertCurrencySelect" className="text-[11px] font-semibold text-gunmetal-muted uppercase tracking-wider">
+                  Currency:
+                </label>
+                <select
+                  id="convertCurrencySelect"
+                  value={currency}
+                  onChange={e => setCurrency(e.target.value)}
+                  className="text-xs font-semibold rounded bg-gunmetal-card text-slate-200 border border-gunmetal-border px-2 py-1 focus:border-slate-500 focus:outline-none cursor-pointer"
+                >
+                  <option value={fiatCurrency}>
+                    {fiatCurrency} ({getCurrencySymbol(fiatCurrency)})
+                  </option>
+                  {pointsCurrencies.map(p => (
+                    <option key={p} value={p}>
+                      {p} (Points)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-gunmetal-muted font-mono text-sm">{getCurrencySymbol()}</span>
+              <span className="text-gunmetal-muted font-mono text-sm">
+                {isPoints ? 'pts' : getCurrencySymbol(currency || fiatCurrency)}
+              </span>
               <input
                 required
                 type="number"
-                step="0.01"
+                step={isPoints ? "1" : "0.01"}
                 min="1"
-                placeholder={flight.currentPrice ? String(flight.currentPrice) : '349.00'}
+                placeholder={flight.currentPrice ? String(flight.currentPrice) : (isPoints ? '35000' : '349.00')}
                 value={purchasePrice}
                 onChange={e => setPurchasePrice(e.target.value)}
                 className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
             </div>
-            <p className="text-[11px] text-gunmetal-muted mt-1">
-              Fares dropping below this price will trigger drop alerts.
+            <p className="text-[11px] text-gunmetal-muted">
+              {isPoints
+                ? 'Recorded points paid for this booking.'
+                : 'Fares dropping below this price will trigger drop alerts.'}
             </p>
           </div>
 

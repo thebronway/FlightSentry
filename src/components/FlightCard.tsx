@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
-import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
+import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
@@ -169,13 +169,18 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                 </span>
                 {flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (
                   <span className="bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded text-xs font-semibold">
-                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!)} Rebook Savings
+                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!, flight.currency)} Rebook Savings
                   </span>
                 )}
               </>
             ) : (
               <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                 <Tag className="w-3 h-3 text-sky-400" /> Watching
+              </span>
+            )}
+            {flight.currency && isPointsCurrency(flight.currency) && (
+              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
               </span>
             )}
             <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
@@ -259,7 +264,7 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                 <div>
                 <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</span>
+                  <span className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice, flight.currency)}</span>
                   {!isPurchased && currentPriceAirline && (
                     <AirlineBadge
                       code={currentPriceAirline.code}
@@ -271,10 +276,10 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                 </div>
               </div>
                 <div className="text-right">
-                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
+                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice, flight.currency)}</p>
                   {delta !== 0 && (
                     <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
-                      {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta))}
+                      {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
                     </div>
                   )}
                   {!isPast && (
@@ -288,10 +293,10 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                         flight.disableNotifications === 1
                           ? 'Notifications muted for this flight'
                           : dir === 'both'
-                          ? `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}, surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          ? `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}, surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
                           : dir === 'increase'
-                          ? `Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
-                          : `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`
+                          ? `Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
+                          : `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`
                       }
                     >
                       {flight.disableNotifications === 1 ? (
@@ -303,10 +308,10 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                         {flight.disableNotifications === 1
                           ? 'Muted'
                           : dir === 'both'
-                          ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                          ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
                           : dir === 'increase'
-                          ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
-                          : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`}
+                          ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
+                          : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
                       </span>
                     </p>
                   )}
@@ -323,13 +328,13 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
         className={`mt-auto grid ${!isPurchased && onConvertToBooked ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
         <Tooltip
-          content={isPast ? "Checks disabled for past flights" : "Check live price now"}
+          content={isPast ? "Checks disabled for past flights" : isPointsCurrency(flight.currency) ? "Automated checks disabled for points flights" : "Check live price now"}
           align="left"
           className="w-full"
         >
           <button
             onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
-            disabled={isPast || flight.status === 'Paused'}
+            disabled={isPast || flight.status === 'Paused' || isPointsCurrency(flight.currency)}
             className="w-full flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
           >
             <RefreshCw className="w-4 h-4" />

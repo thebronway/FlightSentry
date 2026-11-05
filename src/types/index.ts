@@ -40,6 +40,7 @@ export interface Flight {
   minIncreaseDollar?: number | null;
   minIncreasePercent?: number | null;
   maxStops?: number | null;
+  currency?: string | null;
 }
 
 export interface RouteItinerary {
@@ -128,5 +129,6 @@ export interface Settings {
   serpApiResetDay?: number | null; // Day of the month (1-31)
   searchApiResetDay?: number | null; // Day of the month (1-31)
   hasdataResetDay?: number | null; // Day of the month (1-31)
+  pointsCurrencies?: string | null;
   globalPause: number; // 0 (false) or 1 (true)
 }

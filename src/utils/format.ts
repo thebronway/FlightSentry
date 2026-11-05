@@ -21,8 +21,28 @@ export const getActiveCurrency = (): string => {
   return activeAppCurrency;
 };
 
+export const isPointsCurrency = (currencyCode?: string | null): boolean => {
+  if (!currencyCode) return false;
+  const trimmed = currencyCode.trim();
+  if (!trimmed) return false;
+  if (trimmed.toUpperCase() === 'PTS') return true;
+  if (!/^[A-Za-z]{3}$/.test(trimmed)) return true;
+  try {
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: trimmed.toUpperCase() });
+    return false;
+  } catch {
+    return true;
+  }
+};
+
 export const formatCurrency = (amount: number, currencyCode?: string | null): string => {
   const code = currencyCode || getActiveCurrency();
+  if (isPointsCurrency(code)) {
+    const formattedNum = new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+    }).format(Math.round(amount || 0));
+    return `${formattedNum} pts`;
+  }
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -42,6 +62,9 @@ export const formatCurrency = (amount: number, currencyCode?: string | null): st
 
 export const getCurrencySymbol = (currencyCode?: string | null): string => {
   const code = currencyCode || getActiveCurrency();
+  if (isPointsCurrency(code)) {
+    return 'pts';
+  }
   try {
     const parts = new Intl.NumberFormat('en-US', {
       style: 'currency',

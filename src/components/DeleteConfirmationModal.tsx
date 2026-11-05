@@ -104,7 +104,7 @@ export default function DeleteConfirmationModal({
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-slate-100 font-sans">{headline}</span>
               <span className="font-mono text-sm font-bold text-slate-200">
-                {formatCurrency(flight.currentPrice)}
+                {formatCurrency(flight.currentPrice, flight.currency)}
               </span>
             </div>
             <div className="text-xs text-gunmetal-muted flex items-center gap-2">

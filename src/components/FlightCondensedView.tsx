@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
-import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
+import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
@@ -112,6 +112,11 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                           <Tag className="w-3 h-3 text-sky-400" /> Watching
                         </span>
                       )}
+                      {flight.currency && isPointsCurrency(flight.currency) && (
+                        <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1">
+                          <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+                        </span>
+                      )}
                       <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-1.5 py-0.5 rounded text-[11px] font-medium">
                         {CONDENSED_CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
                       </span>
@@ -153,11 +158,11 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
 
                   <td className="py-3 px-4 whitespace-nowrap">
                     <span className="font-black text-slate-100 block">
-                      {formatCurrency(flight.currentPrice)}
+                      {formatCurrency(flight.currentPrice, flight.currency)}
                     </span>
                     {delta !== 0 && (
                       <span className={`text-xs font-semibold ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
-                        {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta))}
+                        {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta), flight.currency)}
                       </span>
                     )}
                     {(() => {
@@ -203,10 +208,10 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                             flight.disableNotifications === 1
                               ? 'Muted'
                               : dir === 'both'
-                              ? `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} or ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              ? `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} or ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
                               : dir === 'increase'
-                              ? `Alerts at ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
-                              : `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`
+                              ? `Alerts at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
+                              : `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`
                           }
                         >
                           {flight.disableNotifications === 1 ? (
@@ -216,10 +221,10 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                           )}
                           <span>
                             {dir === 'both'
-                              ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
+                              ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
                               : dir === 'increase'
-                              ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0)}`
-                              : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0)}`}
+                              ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
+                              : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
                           </span>
                         </span>
                       );
@@ -227,7 +232,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   </td>
 
                   <td className="py-3 px-4 text-gunmetal-muted whitespace-nowrap">
-                    <span className="text-slate-200 font-medium block">{formatCurrency(benchmarkPrice)}</span>
+                    <span className="text-slate-200 font-medium block">{formatCurrency(benchmarkPrice, flight.currency)}</span>
                     <span className="text-[10px] text-gunmetal-muted block">{isPurchased ? 'Paid' : 'Initial'}</span>
                   </td>
 
@@ -251,12 +256,12 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   >
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip
-                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check live price now'}
+                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : isPointsCurrency(flight.currency) ? 'Automated checks disabled for points flights' : 'Check live price now'}
                         align="right"
                       >
                         <button
                           onClick={() => checkNow(flight.id)}
-                          disabled={flight.status !== 'Upcoming'}
+                          disabled={flight.status !== 'Upcoming' || isPointsCurrency(flight.currency)}
                           className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />

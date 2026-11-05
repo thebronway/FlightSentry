@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS flights (
     minIncreaseDollar REAL,
     minIncreasePercent REAL,
     maxStops INTEGER,
+    currency TEXT,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
 );
@@ -122,6 +123,7 @@ CREATE TABLE IF NOT EXISTS settings (
     serpApiResetDay INTEGER DEFAULT 1,
     searchApiResetDay INTEGER DEFAULT 1,
     hasdataResetDay INTEGER DEFAULT 1,
+    pointsCurrencies TEXT NOT NULL DEFAULT '[]',
     globalPause INTEGER NOT NULL DEFAULT 0
 );
 `;

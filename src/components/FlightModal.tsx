@@ -36,6 +36,7 @@ const DEFAULT_STATE = {
   cabinClass: 'economy' as CabinClass,
   baselinePrice: '',
   purchasePrice: '',
+  currency: '',
   minDropDollar: '',
   minDropPercent: '',
   notes: '',
@@ -61,6 +62,22 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
   const [error, setError] = useState<string | null>(null);
 
   const dsStatus = useMemo(() => getDataSourceStatus(defaultSettings), [defaultSettings]);
+
+  const pointsList: string[] = useMemo(() => {
+    if (!defaultSettings?.pointsCurrencies) return [];
+    try {
+      const parsed = typeof defaultSettings.pointsCurrencies === 'string'
+        ? JSON.parse(defaultSettings.pointsCurrencies)
+        : defaultSettings.pointsCurrencies;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [defaultSettings?.pointsCurrencies]);
+
+  const isPointsFlight = useMemo(() => {
+    return Boolean(formData.currency && pointsList.includes(formData.currency));
+  }, [formData.currency, pointsList]);
 
   const {
     detectedRoute,
@@ -126,6 +143,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           cabinClass: initialFlight.cabinClass || 'economy',
           baselinePrice: initialFlight.baselinePrice ? String(initialFlight.baselinePrice) : '',
           purchasePrice: initialFlight.purchasePrice ? String(initialFlight.purchasePrice) : '',
+          currency: initialFlight.currency || defaultSettings?.currency || 'USD',
           minDropDollar: (initialFlight.minDropDollar !== null && initialFlight.minDropDollar !== undefined) ? String(initialFlight.minDropDollar) : '',
           minDropPercent: (initialFlight.minDropPercent !== null && initialFlight.minDropPercent !== undefined) ? String(initialFlight.minDropPercent) : '',
           notes: initialFlight.notes || '',
@@ -143,11 +161,14 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           minIncreasePercent: (initialFlight.minIncreasePercent !== null && initialFlight.minIncreasePercent !== undefined) ? String(initialFlight.minIncreasePercent) : '',
         });
       } else {
-        setFormData(DEFAULT_STATE);
+        setFormData({
+          ...DEFAULT_STATE,
+          currency: defaultSettings?.currency || 'USD',
+        });
       }
       setError(null);
     }
-  }, [isOpen, initialFlight]);
+  }, [isOpen, initialFlight, defaultSettings?.currency]);
 
   if (!isOpen) return null;
 
@@ -157,6 +178,15 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
     setError(null);
     setLookupFailed(false);
     onClose();
+  };
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    const isPoints = pointsList.includes(newCurrency);
+    setFormData(prev => ({
+      ...prev,
+      currency: newCurrency,
+      pauseTracking: isPoints ? true : prev.pauseTracking,
+    }));
   };
 
   const handleFieldChange = (updates: Partial<typeof formData>) => {
@@ -170,7 +200,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
     setError(null);
     setLookupFailed(false);
 
-    if (!initialFlight && !dsStatus.available && formData.trackingGoal === 'watching') {
+    if (!initialFlight && !dsStatus.available && formData.trackingGoal === 'watching' && !isPointsFlight) {
       setError(dsStatus.reason || 'No active data sources available. Please visit Settings.');
       return;
     }
@@ -220,6 +250,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       cabinClass: formData.cabinClass,
       baselinePrice: parsedBaseline,
       purchasePrice: parsedPurchase,
+      currency: formData.currency || defaultSettings?.currency || 'USD',
       minDropDollar: formData.minDropDollar ? parseFloat(formData.minDropDollar) : null,
       minDropPercent: formData.minDropPercent ? parseFloat(formData.minDropPercent) : null,
       pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,
@@ -350,10 +381,16 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           <TrackingGoalSection
             trackingGoal={formData.trackingGoal}
             purchasePrice={formData.purchasePrice}
+            baselinePrice={formData.baselinePrice}
             departureDate={formData.departureDate}
+            currency={formData.currency || defaultSettings?.currency || 'USD'}
+            pointsCurrencies={pointsList}
+            fiatCurrency={defaultSettings?.currency || 'USD'}
             minDepartureDate={getTodayDateString(defaultSettings?.timezone)}
             onGoalChange={goal => setFormData(prev => ({ ...prev, trackingGoal: goal, searchMode: goal === 'booked' ? 'FlightNumber' : prev.searchMode }))}
             onPurchaseChange={val => setFormData({ ...formData, purchasePrice: val })}
+            onBaselinePriceChange={val => setFormData({ ...formData, baselinePrice: val })}
+            onCurrencyChange={handleCurrencyChange}
             onDepartureDateChange={val => {
               const today = getTodayDateString(defaultSettings?.timezone);
               if (val && val < today) {
@@ -659,6 +696,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             minIncreaseDollar={formData.minIncreaseDollar}
             minIncreasePercent={formData.minIncreasePercent}
             isBooked={formData.trackingGoal === 'booked'}
+            isPoints={isPointsFlight}
             pauseTracking={formData.pauseTracking}
             disableNotifications={formData.disableNotifications}
             defaultSettings={defaultSettings}

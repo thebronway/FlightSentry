@@ -12,6 +12,7 @@ const convertSchema = z.object({
   airline: z.string().min(2, 'Airline carrier code is required').max(3),
   flightNumber: z.string().regex(/^\d+$/, 'Flight number must be numbers only').optional().nullable().or(z.literal('')),
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
+  currency: z.string().max(50).optional().nullable().or(z.literal('')),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       flightNumber: cleanFlightNumber,
       pnr: cleanPnr,
       searchMode,
+      currency: parsed.currency || existing.currency,
     });
 
     // Record milestone entry in price_history

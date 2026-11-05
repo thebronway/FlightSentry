@@ -14,6 +14,7 @@ interface Props {
   isMultiAirlineMode: boolean;
   activeSummaries: CarrierCheckSummary[];
   chartWidth: number;
+  currency?: string | null;
 }
 
 export default function ChartScrubberTooltip({
@@ -25,6 +26,7 @@ export default function ChartScrubberTooltip({
   isMultiAirlineMode,
   activeSummaries,
   chartWidth,
+  currency,
 }: Props) {
   return (
     <div
@@ -93,7 +95,7 @@ export default function ChartScrubberTooltip({
                   </div>
                   <div className="flex items-center gap-1.5 font-mono">
                     <span className={isFloor ? 'text-green-300' : 'text-slate-200'}>
-                      {formatCurrency(s.price)}
+                      {formatCurrency(s.price, currency)}
                     </span>
                     {isFloor && (
                       <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-green-900/70 text-green-300 font-bold">
@@ -108,16 +110,16 @@ export default function ChartScrubberTooltip({
       ) : (
         <div className="space-y-1">
           <div className="font-bold text-slate-100 flex items-center justify-between gap-3 text-sm">
-            <span>{formatCurrency(activeRecord.price)}</span>
+            <span>{formatCurrency(activeRecord.price, currency)}</span>
             <span
               className={`text-[10px] font-semibold ${
                 activeDelta > 0 ? 'text-green-400' : activeDelta < 0 ? 'text-red-400' : 'text-slate-400'
               }`}
             >
               {activeDelta > 0
-                ? `-${formatCurrency(activeDelta)}`
+                ? `-${formatCurrency(activeDelta, currency)}`
                 : activeDelta < 0
-                ? `+${formatCurrency(Math.abs(activeDelta))}`
+                ? `+${formatCurrency(Math.abs(activeDelta), currency)}`
                 : benchmarkLabel}
             </span>
           </div>

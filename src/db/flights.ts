@@ -44,14 +44,14 @@ export const flightDb = {
         purchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
         earliestDeparture, latestDeparture, noRedeye, priceTrackingDirection,
-        minIncreaseDollar, minIncreasePercent, maxStops, createdAt, updatedAt
+        minIncreaseDollar, minIncreasePercent, maxStops, currency, createdAt, updatedAt
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
         @purchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
         @earliestDeparture, @latestDeparture, @noRedeye, @priceTrackingDirection,
-        @minIncreaseDollar, @minIncreasePercent, @maxStops, @now, @now
+        @minIncreaseDollar, @minIncreasePercent, @maxStops, @currency, @now, @now
       )
     `);
     
@@ -69,6 +69,7 @@ export const flightDb = {
     const minIncreaseDollar = flight.minIncreaseDollar ?? null;
     const minIncreasePercent = flight.minIncreasePercent ?? null;
     const maxStops = flight.maxStops ?? null;
+    const currency = flight.currency || null;
 
     const result = stmt.run({
       ...flight, 
@@ -85,6 +86,7 @@ export const flightDb = {
       minIncreaseDollar,
       minIncreasePercent,
       maxStops,
+      currency,
       now 
     });
     return result.lastInsertRowid as number;
@@ -122,6 +124,7 @@ export const flightDb = {
         minIncreaseDollar = @minIncreaseDollar,
         minIncreasePercent = @minIncreasePercent,
         maxStops = @maxStops,
+        currency = @currency,
         updatedAt = @updatedAt
       WHERE id = @id
     `);

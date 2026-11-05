@@ -52,6 +52,60 @@ export async function POST(req: NextRequest) {
 
     const isBooked = Boolean(parsed.purchasePrice && parsed.purchasePrice > 0);
 
+    // Check if flight is tracking award points currency
+    let pointsList: string[] = [];
+    if (settings.pointsCurrencies) {
+      try {
+        const p = typeof settings.pointsCurrencies === 'string'
+          ? JSON.parse(settings.pointsCurrencies)
+          : settings.pointsCurrencies;
+        if (Array.isArray(p)) pointsList = p;
+      } catch {}
+    }
+    const isPointsFlight = Boolean(parsed.currency && pointsList.includes(parsed.currency));
+
+    // For points flights, automated searches are bypassed
+    if (isPointsFlight) {
+      const pointsAmount = isBooked ? (parsed.purchasePrice || 0) : (baselinePrice || 0);
+      const pointsNextCheckAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
+
+      const newFlightId = flightDb.create({
+        ...parsed,
+        airline: parsed.airline || 'POINTS',
+        flightNumber: parsed.flightNumber || null,
+        cabinClass: parsed.cabinClass,
+        fareTier: parsed.fareTier,
+        baselinePrice: pointsAmount,
+        purchasePrice: parsed.purchasePrice ?? null,
+        minDropDollar: parsed.minDropDollar ?? null,
+        minDropPercent: parsed.minDropPercent ?? null,
+        maxStops: parsed.maxStops ?? null,
+        currentPrice: pointsAmount,
+        currency: parsed.currency,
+        status: 'Paused',
+        nextCheckAt: pointsNextCheckAt,
+      });
+
+      if (isBooked && parsed.purchasePrice && parsed.purchasePrice > 0) {
+        historyDb.insert(newFlightId, parsed.purchasePrice, 'Booked', {
+          airline: parsed.airline || null,
+          flightNumber: parsed.flightNumber || null,
+          metadata: JSON.stringify({ milestone: 'Purchased Flight (Points)', pnr: parsed.pnr || null }),
+          sourceUsed: 'Price Paid',
+        });
+      } else {
+        historyDb.insert(newFlightId, pointsAmount, 'Success', {
+          airline: parsed.airline || null,
+          flightNumber: parsed.flightNumber || null,
+          metadata: JSON.stringify({ milestone: 'Initial Baseline (Points)' }),
+          sourceUsed: 'manual',
+        });
+      }
+
+      const newFlight = flightDb.getById(newFlightId);
+      return NextResponse.json(newFlight, { status: 201 });
+    }
+
     // Trigger a live search on add for all flights to discover current market fare
     settings = checkAndResetQuota(settings);
 

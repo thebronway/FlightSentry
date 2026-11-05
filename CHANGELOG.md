@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.8*
+*Current Version: v0.6.9*
 
 ## Changelog
+
+### Release v0.6.9
+- Added points and award mileage currency tracking (e.g., AAvantage miles, TrueBlue points) for watched and booked flights.
+- Added points currencies management on the General settings tab with quick-add presets and autosave.
+- Filtered flight creation, editing, and convert-to-booked currency dropdowns to configured points currencies.
+- Automatically disabled automated search checks for points flights to prevent unnecessary queries and conserve API quotas.
+- Added integer points formatting (`pts`), coin badges, and disabled check states across dashboard cards, condensed view, and price history modals.
 
 ### Release v0.6.8
 - Added support for IATA Metropolitan Area Codes (WAS, NYC, CHI, LON, PAR, TYO, etc.) and regional clusters (DFW/DAL, MIA/FLL/PBI/DJT, LAX basin, SFO bay).

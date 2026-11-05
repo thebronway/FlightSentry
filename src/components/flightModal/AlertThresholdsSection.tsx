@@ -11,6 +11,7 @@ interface Props {
   minIncreaseDollar: string;
   minIncreasePercent: string;
   isBooked: boolean;
+  isPoints?: boolean;
   pauseTracking: boolean;
   disableNotifications: boolean;
   defaultSettings: Settings | null;
@@ -31,6 +32,7 @@ export default function AlertThresholdsSection({
   minIncreaseDollar,
   minIncreasePercent,
   isBooked,
+  isPoints = false,
   pauseTracking,
   disableNotifications,
   defaultSettings,
@@ -287,8 +289,12 @@ export default function AlertThresholdsSection({
             className="w-4 h-4 mt-0.5 accent-slate-500 rounded"
           />
           <div>
-            <span>Pause price checks</span>
-            <span className="block text-xs text-gunmetal-muted">Stops all automated API polling for this flight.</span>
+            <span>Disable flight price checks</span>
+            <span className="block text-xs text-gunmetal-muted">
+              {isPoints
+                ? 'Automated checks are disabled for points flights because search engines do not support award programs.'
+                : 'Stops all automated API polling for this flight.'}
+            </span>
           </div>
         </label>
         <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer">

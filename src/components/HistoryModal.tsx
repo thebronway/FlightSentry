@@ -165,6 +165,7 @@ export default function HistoryModal({ flight, onClose }: Props) {
               baselinePrice={flight.baselinePrice}
               purchasePrice={flight.purchasePrice}
               searchMode={flight.searchMode}
+              currency={flight.currency}
             />
           </div>
 

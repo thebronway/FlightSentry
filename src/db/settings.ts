@@ -74,6 +74,7 @@ export const settingsDb = {
         currency = @currency,
         minIncreaseDollar = @minIncreaseDollar,
         minIncreasePercent = @minIncreasePercent,
+        pointsCurrencies = @pointsCurrencies,
         globalPause = @globalPause
       WHERE id = 1
     `);

@@ -23,7 +23,7 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
           Current Fare
         </span>
         <span className="text-xl font-black text-slate-100 block mt-0.5">
-          {formatCurrency(flight.currentPrice)}
+          {formatCurrency(flight.currentPrice, flight.currency)}
         </span>
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
@@ -31,11 +31,11 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
           {isRebooked ? 'Active Benchmark' : isBooked ? 'Price Paid' : 'Initial Baseline'}
         </span>
         <span className="text-xl font-bold text-slate-200 block mt-0.5">
-          {formatCurrency(benchmarkPrice)}
+          {formatCurrency(benchmarkPrice, flight.currency)}
         </span>
         {isRebooked && (
           <span className="text-[10px] text-gunmetal-muted block mt-0.5">
-            Original: {formatCurrency(originalPaid)}
+            Original: {formatCurrency(originalPaid, flight.currency)}
           </span>
         )}
       </div>
@@ -44,11 +44,11 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
           {isRebooked ? 'Rebook Savings' : 'All-Time Low'}
         </span>
         <span className={`text-xl font-bold block mt-0.5 ${isRebooked ? 'text-emerald-400' : 'text-green-400'}`}>
-          {isRebooked ? `+${formatCurrency(lifetimeCredits)}` : formatCurrency(allTimeLow)}
+          {isRebooked ? `+${formatCurrency(lifetimeCredits, flight.currency)}` : formatCurrency(allTimeLow, flight.currency)}
         </span>
         {isRebooked && (
           <span className="text-[10px] text-gunmetal-muted block mt-0.5">
-            Low: {formatCurrency(allTimeLow)}
+            Low: {formatCurrency(allTimeLow, flight.currency)}
           </span>
         )}
       </div>

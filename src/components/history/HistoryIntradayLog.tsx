@@ -64,16 +64,16 @@ export default function HistoryIntradayLog({
                     {group.intradayDelta < 0 ? (
                       <span className="text-green-400 font-semibold flex items-center gap-1 bg-green-950/40 px-2 py-0.5 rounded border border-green-800/40">
                         <TrendingDown className="w-3.5 h-3.5" />
-                        Intraday Drop: {formatCurrency(Math.abs(group.intradayDelta))}
+                        Intraday Drop: {formatCurrency(Math.abs(group.intradayDelta), flight.currency)}
                       </span>
                     ) : group.intradayDelta > 0 ? (
                       <span className="text-red-400 font-semibold flex items-center gap-1 bg-red-950/40 px-2 py-0.5 rounded border border-red-800/40">
                         <TrendingUp className="w-3.5 h-3.5" />
-                        Intraday Rise: +{formatCurrency(group.intradayDelta)}
+                        Intraday Rise: +{formatCurrency(group.intradayDelta, flight.currency)}
                       </span>
                     ) : (
                       <span className="text-slate-300 font-medium bg-gunmetal-canvas px-2 py-0.5 rounded border border-gunmetal-border text-[11px]">
-                        Day Spread: {formatCurrency(group.dayLow)} – {formatCurrency(group.dayHigh)}
+                        Day Spread: {formatCurrency(group.dayLow, flight.currency)} – {formatCurrency(group.dayHigh, flight.currency)}
                       </span>
                     )}
                   </div>
@@ -133,16 +133,16 @@ export default function HistoryIntradayLog({
                           </span>
                         )}
                         <span className="font-bold text-sm text-slate-100">
-                          {formatCurrency(record.price)}
+                          {formatCurrency(record.price, flight.currency)}
                         </span>
                         {dropFromBenchmark > 0 && (
                           <span className="text-green-400 font-semibold text-[11px]">
-                            (-{formatCurrency(dropFromBenchmark)})
+                            (-{formatCurrency(dropFromBenchmark, flight.currency)})
                           </span>
                         )}
                         {dropFromBenchmark < 0 && (
                           <span className="text-red-400 font-semibold text-[11px]">
-                            (+{formatCurrency(Math.abs(dropFromBenchmark))})
+                            (+{formatCurrency(Math.abs(dropFromBenchmark), flight.currency)})
                           </span>
                         )}
                       </div>
@@ -171,13 +171,13 @@ export default function HistoryIntradayLog({
                                   : isRebooked
                                   ? 'bg-emerald-900/50 text-emerald-300 border-emerald-600/70'
                                   : record.status === 'Booked'
-                                  ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/60'
+                                  ? 'Initial Booking'
                                   : 'bg-red-900/30 text-red-400 border-red-800/40'
                               }`}
                             >
                               {isRebooked
                                 ? creditClaimed > 0
-                                  ? `Rebooked (+${formatCurrency(creditClaimed)} Savings)`
+                                  ? `Rebooked (+${formatCurrency(creditClaimed, flight.currency)} Savings)`
                                   : 'Rebooked Fare'
                                 : record.status === 'Booked'
                                 ? 'Initial Booking'

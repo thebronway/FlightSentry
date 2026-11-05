@@ -37,6 +37,7 @@ export const flightSchema = z.object({
   minIncreaseDollar: z.number().nonnegative().optional().nullable(),
   minIncreasePercent: z.number().nonnegative().optional().nullable(),
   maxStops: z.number().int().min(0).max(2).optional().nullable(),
+  currency: z.string().max(50).optional().nullable(),
 });
 
 export const flightStatusSchema = z.object({
@@ -83,6 +84,10 @@ export const settingsSchema = z.object({
   currency: z.string().min(1).max(5).optional(),
   minIncreaseDollar: z.number().nonnegative().optional(),
   minIncreasePercent: z.number().nonnegative().optional(),
+  pointsCurrencies: z.union([
+    z.string(),
+    z.array(z.string()).transform(val => JSON.stringify(val))
+  ]).optional().nullable(),
   fallbackStrategyMode: z.enum(['sequential-query', 'balanced-usage', 'exhaust-quota']).optional(),
   roundRobinIndex: z.number().int().nonnegative().optional(),
   serpApiEnabled: z.number().min(0).max(1).optional(),

@@ -5,6 +5,7 @@ export interface PriceChartProps {
   baselinePrice: number;
   purchasePrice?: number | null;
   searchMode?: SearchMode;
+  currency?: string | null;
 }
 
 export interface CarrierCheckSummary {

@@ -47,6 +47,8 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'",
         "ALTER TABLE settings ADD COLUMN minIncreaseDollar REAL NOT NULL DEFAULT 50.0",
         "ALTER TABLE settings ADD COLUMN minIncreasePercent REAL NOT NULL DEFAULT 10.0",
+        "ALTER TABLE flights ADD COLUMN currency TEXT",
+        "ALTER TABLE settings ADD COLUMN pointsCurrencies TEXT NOT NULL DEFAULT '[]'",
     ];
     for (const migration of migrations) {
         try {
@@ -155,13 +157,14 @@ export function initDb() {
                 fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled, hasdataEnabled,
                 fastFlightsEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
                 fastFlightsQuota, notificationsEnabled, discordEnabled, slackEnabled,
-                genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent
+                genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
+                pointsCurrencies
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
                 'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0,
-                'USD', 50.0, 10.0
+                'USD', 50.0, 10.0, '[]'
             )
         `);
         insertSettings.run();

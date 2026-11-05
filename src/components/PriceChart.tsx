@@ -11,6 +11,7 @@ export default function PriceChart({
   baselinePrice,
   purchasePrice,
   searchMode = 'Route',
+  currency,
 }: PriceChartProps) {
   const {
     sorted,
@@ -103,7 +104,7 @@ export default function PriceChart({
                   textAnchor="end"
                   fontFamily="sans-serif"
                 >
-                  {formatCurrency(val)}
+                  {formatCurrency(val, currency)}
                 </text>
               </g>
             );
@@ -130,7 +131,7 @@ export default function PriceChart({
                 fontWeight="600"
                 fontFamily="sans-serif"
               >
-                {benchmarkLabel}: {formatCurrency(benchmarkPrice)}
+                {benchmarkLabel}: {formatCurrency(benchmarkPrice, currency)}
               </text>
             </g>
           )}
@@ -249,6 +250,7 @@ export default function PriceChart({
             isMultiAirlineMode={isMultiAirlineMode}
             activeSummaries={activeSummaries}
             chartWidth={width}
+            currency={currency}
           />
         )}
       </div>

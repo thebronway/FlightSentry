@@ -71,6 +71,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       minDropPercent: parsed.minDropPercent !== undefined ? parsed.minDropPercent : existing.minDropPercent,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
+      currency: parsed.currency !== undefined ? parsed.currency : existing.currency,
       scheduleOverride: parsed.scheduleOverride ?? null,
       notes: parsed.notes ?? null,
       disableNotifications: parsed.disableNotifications ?? 0,
