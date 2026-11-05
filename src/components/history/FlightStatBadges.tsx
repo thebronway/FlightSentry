@@ -41,7 +41,7 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
-          {isRebooked ? 'Credits Claimed' : 'All-Time Low'}
+          {isRebooked ? 'Rebook Savings' : 'All-Time Low'}
         </span>
         <span className={`text-xl font-bold block mt-0.5 ${isRebooked ? 'text-emerald-400' : 'text-green-400'}`}>
           {isRebooked ? `+${formatCurrency(lifetimeCredits)}` : formatCurrency(allTimeLow)}

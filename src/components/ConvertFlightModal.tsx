@@ -119,10 +119,10 @@ export default function ConvertFlightModal({
 
           <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 text-xs text-slate-300 space-y-1">
             <span className="font-semibold text-emerald-300 block">
-              Transition to Rebooking Credit Monitoring
+              Transition to Rebooking Savings Monitoring
             </span>
             <p className="text-gunmetal-muted leading-relaxed">
-              Converting records what you paid and locks tracking strictly to price drop alerts. If fares drop below your purchase price, FlightSentry will alert you to claim an airline credit. All previous price history remains intact.
+              Converting records what you paid and locks tracking strictly to price drop alerts. If fares drop below your purchase price, FlightSentry will alert you to rebook and secure airline savings. All previous price history remains intact.
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export default function ConvertFlightModal({
               Purchase Price (Amount Paid) *
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-gunmetal-muted font-mono text-sm">{getCurrencySymbol(flight.baselinePrice ? undefined : undefined)}</span>
+              <span className="text-gunmetal-muted font-mono text-sm">{getCurrencySymbol()}</span>
               <input
                 required
                 type="number"

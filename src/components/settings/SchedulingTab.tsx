@@ -118,7 +118,7 @@ export default function SchedulingTab({
             value={startTime}
             onChange={e => onChange({ ...settings, checkStartTime: e.target.value })}
             onBlur={() => {
-              if (onAutoSave) onAutoSave(settings, 'schedule', undefined, 'Check start time updated');
+              if (onAutoSave) onAutoSave(settings, 'schedule', undefined, 'Daily check start time updated');
             }}
             onKeyDown={e => {
               if (e.key === 'Enter') e.currentTarget.blur();
@@ -146,7 +146,7 @@ export default function SchedulingTab({
                   const val = Number(e.target.value);
                   const updated = { ...settings, scheduleFarOut: val };
                   onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Far out cadence updated');
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Far out (>90d) check cadence updated');
                 }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
@@ -189,7 +189,7 @@ export default function SchedulingTab({
                   const val = Number(e.target.value);
                   const updated = { ...settings, scheduleStandard: val };
                   onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Standard cadence updated');
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Standard (14–90d) check cadence updated');
                 }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
@@ -232,7 +232,7 @@ export default function SchedulingTab({
                   const val = Number(e.target.value);
                   const updated = { ...settings, scheduleFinalStretch: val };
                   onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Final stretch cadence updated');
+                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Final stretch (<14d) check cadence updated');
                 }}
                 className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >

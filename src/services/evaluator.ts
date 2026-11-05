@@ -60,7 +60,7 @@ export const evaluatePrice = async (
     const hitsTargetPrice = flight.targetPrice ? newPrice <= flight.targetPrice : false;
 
     if (isLowerThanPrevious && isLowerThanBenchmark && (hitsDollarThreshold || hitsPercentThreshold || hitsTargetPrice)) {
-      console.log(`[Alert] Drop alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minDropDollar}, Min%: ${minDropPercent})`);
+      console.log(`[Alert] Drop alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, MinAmount: ${minDropDollar}, Min%: ${minDropPercent})`);
       await sendPriceDropAlert(settings, flight, newPrice, details);
     }
   }
@@ -89,7 +89,7 @@ export const evaluatePrice = async (
     const hitsIncreasePercentThreshold = hasIncreasePercentRule ? surgePercentFromBenchmark >= minIncreasePercent : false;
 
     if (isHigherThanPrevious && isHigherThanBenchmark && (hitsIncreaseDollarThreshold || hitsIncreasePercentThreshold)) {
-      console.log(`[Alert] Surge alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, Min$: ${minIncreaseDollar}, Min%: ${minIncreasePercent})`);
+      console.log(`[Alert] Surge alert triggered for Flight ID: ${flight.id} at ${newPrice} (Benchmark: ${benchmarkPrice}, MinAmount: ${minIncreaseDollar}, Min%: ${minIncreasePercent})`);
       await sendPriceIncreaseAlert(settings, flight, newPrice, details);
     }
   }

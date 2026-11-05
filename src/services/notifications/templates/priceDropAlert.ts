@@ -23,7 +23,7 @@ export function formatPriceDropAlert(
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
   const benchmarkLabel = isPurchased ? 'Purchase Price' : 'Initial Baseline';
-  const alertType = isPurchased ? 'Rebooking Credit Drop Alert' : 'Price Drop Alert';
+  const alertType = isPurchased ? 'Rebooking Savings Drop Alert' : 'Price Drop Alert';
   const savingsAmount = benchmarkPrice - newPrice;
   const savingsPercent = benchmarkPrice > 0 ? (savingsAmount / benchmarkPrice) * 100 : 0;
 

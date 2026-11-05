@@ -52,7 +52,7 @@ export default function DataSourcesTab({
     const updated = { ...settings, dataSourceStrategy: updatedStrategy };
     onChange(updated);
     if (onAutoSave) {
-      await onAutoSave(updated, '', '', 'Priority order updated');
+      await onAutoSave(updated, '', '', 'Metered API priority order updated');
     }
   };
 
@@ -289,7 +289,7 @@ export default function DataSourcesTab({
                       }}
                       onBlur={() => {
                         if (onAutoSave) {
-                          onAutoSave(settings, key, 'Saved!', `${nameMap[key]} quota updated`);
+                          onAutoSave(settings, key, 'Saved!', `${nameMap[key]} monthly quota updated`);
                         }
                       }}
                       onKeyDown={e => {
@@ -325,7 +325,7 @@ export default function DataSourcesTab({
                           }
                           onChange(updated);
                           if (onAutoSave) {
-                            await onAutoSave(updated, key, 'Saved!', `${nameMap[key]} reset day updated`);
+                            await onAutoSave(updated, key, 'Saved!', `${nameMap[key]} monthly reset day updated`);
                           }
                         }}
                         className="w-full appearance-none border border-gunmetal-border p-2 pr-8 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm cursor-pointer"

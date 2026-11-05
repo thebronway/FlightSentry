@@ -130,7 +130,7 @@ export default function AlertThresholdsSection({
 
         {isBooked && (
           <p className="text-[11px] text-gunmetal-muted italic">
-            Already booked flights exclusively monitor price drops for rebooking credits.
+            Already booked flights exclusively monitor price drops for rebooking savings.
           </p>
         )}
       </div>

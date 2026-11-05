@@ -69,16 +69,19 @@ export default function TrackingGoalSection({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
               Purchase Price (Amount Paid)
             </label>
-            <input
-              required={trackingGoal === 'booked'}
-              type="number"
-              step="0.01"
-              min="1"
-              placeholder="e.g. 349.00"
-              value={purchasePrice}
-              onChange={e => onPurchaseChange(e.target.value)}
-              className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-            />
+            <div className="flex items-center gap-2">
+              <span className="text-gunmetal-muted font-mono text-sm">{getCurrencySymbol()}</span>
+              <input
+                required={trackingGoal === 'booked'}
+                type="number"
+                step="0.01"
+                min="1"
+                placeholder="e.g. 349.00"
+                value={purchasePrice}
+                onChange={e => onPurchaseChange(e.target.value)}
+                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
+              />
+            </div>
             <p className="text-[11px] text-gunmetal-muted mt-1">
               Alerts trigger when fares drop below what you paid.
             </p>

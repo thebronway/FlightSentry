@@ -43,7 +43,7 @@ export default function NotificationsTab({
               const val = e.target.checked ? 1 : 0;
               const updated = { ...settings, notificationsEnabled: val };
               onChange(updated);
-              if (onAutoSave) onAutoSave(updated, 'notifications', undefined, `Notifications ${val ? 'enabled' : 'disabled'}`);
+              if (onAutoSave) onAutoSave(updated, 'notifications', undefined, `Global notifications ${val ? 'enabled' : 'disabled'}`);
             }}
             className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
           />
@@ -66,7 +66,7 @@ export default function NotificationsTab({
                   value={settings.minDropDollar}
                   onChange={e => onChange({ ...settings, minDropDollar: Number(e.target.value) })}
                   onBlur={() => {
-                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Drop threshold ($) updated');
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, `Minimum price drop threshold (${getCurrencySymbol(settings.currency)}) updated`);
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') e.currentTarget.blur();
@@ -86,7 +86,7 @@ export default function NotificationsTab({
                   value={settings.minDropPercent}
                   onChange={e => onChange({ ...settings, minDropPercent: Number(e.target.value) })}
                   onBlur={() => {
-                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Drop threshold (%) updated');
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Minimum price drop percentage updated');
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') e.currentTarget.blur();
@@ -112,7 +112,7 @@ export default function NotificationsTab({
                   value={settings.minIncreaseDollar ?? 50}
                   onChange={e => onChange({ ...settings, minIncreaseDollar: Number(e.target.value) })}
                   onBlur={() => {
-                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Surge threshold ($) updated');
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, `Minimum price surge threshold (${getCurrencySymbol(settings.currency)}) updated`);
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') e.currentTarget.blur();
@@ -132,7 +132,7 @@ export default function NotificationsTab({
                   value={settings.minIncreasePercent ?? 10}
                   onChange={e => onChange({ ...settings, minIncreasePercent: Number(e.target.value) })}
                   onBlur={() => {
-                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Surge threshold (%) updated');
+                    if (onAutoSave) onAutoSave(settings, 'thresholds', undefined, 'Minimum price surge percentage updated');
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter') e.currentTarget.blur();
@@ -163,7 +163,7 @@ export default function NotificationsTab({
                     const val = e.target.checked ? 1 : 0;
                     const updated = { ...settings, discordEnabled: val };
                     onChange(updated);
-                    if (onAutoSave) onAutoSave(updated, 'discord', undefined, `Discord ${val ? 'enabled' : 'disabled'}`);
+                    if (onAutoSave) onAutoSave(updated, 'discord', undefined, `Discord channel ${val ? 'enabled' : 'disabled'}`);
                   }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
@@ -183,7 +183,7 @@ export default function NotificationsTab({
                 value={settings.discordWebhookUrl || ''}
                 onChange={e => onChange({ ...settings, discordWebhookUrl: e.target.value })}
                 onBlur={() => {
-                  if (onAutoSave) onAutoSave(settings, 'discord', undefined, 'Discord webhook saved');
+                  if (onAutoSave) onAutoSave(settings, 'discord', undefined, 'Discord webhook URL saved');
                 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') e.currentTarget.blur();
@@ -224,7 +224,7 @@ export default function NotificationsTab({
                     const val = e.target.checked ? 1 : 0;
                     const updated = { ...settings, slackEnabled: val };
                     onChange(updated);
-                    if (onAutoSave) onAutoSave(updated, 'slack', undefined, `Slack ${val ? 'enabled' : 'disabled'}`);
+                    if (onAutoSave) onAutoSave(updated, 'slack', undefined, `Slack channel ${val ? 'enabled' : 'disabled'}`);
                   }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
@@ -244,7 +244,7 @@ export default function NotificationsTab({
                 value={settings.slackWebhookUrl || ''}
                 onChange={e => onChange({ ...settings, slackWebhookUrl: e.target.value })}
                 onBlur={() => {
-                  if (onAutoSave) onAutoSave(settings, 'slack', undefined, 'Slack webhook saved');
+                  if (onAutoSave) onAutoSave(settings, 'slack', undefined, 'Slack webhook URL saved');
                 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') e.currentTarget.blur();
@@ -285,7 +285,7 @@ export default function NotificationsTab({
                     const val = e.target.checked ? 1 : 0;
                     const updated = { ...settings, genericWebhookEnabled: val };
                     onChange(updated);
-                    if (onAutoSave) onAutoSave(updated, 'generic', undefined, `Generic webhook ${val ? 'enabled' : 'disabled'}`);
+                    if (onAutoSave) onAutoSave(updated, 'generic', undefined, `Generic webhook channel ${val ? 'enabled' : 'disabled'}`);
                   }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
@@ -346,7 +346,7 @@ export default function NotificationsTab({
                     const val = e.target.checked ? 1 : 0;
                     const updated = { ...settings, smtpEnabled: val };
                     onChange(updated);
-                    if (onAutoSave) onAutoSave(updated, 'smtp', undefined, `SMTP ${val ? 'enabled' : 'disabled'}`);
+                    if (onAutoSave) onAutoSave(updated, 'smtp', undefined, `SMTP email channel ${val ? 'enabled' : 'disabled'}`);
                   }}
                   className="w-4 h-4 accent-slate-500 rounded"
                 />
@@ -404,7 +404,7 @@ export default function NotificationsTab({
                     value={settings.smtpUser || ''}
                     onChange={e => onChange({ ...settings, smtpUser: e.target.value })}
                     onBlur={() => {
-                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP credentials saved');
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP username saved');
                     }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') e.currentTarget.blur();
@@ -420,7 +420,7 @@ export default function NotificationsTab({
                     value={settings.smtpPass || ''}
                     onChange={e => onChange({ ...settings, smtpPass: e.target.value })}
                     onBlur={() => {
-                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP credentials saved');
+                      if (onAutoSave) onAutoSave(settings, 'smtp', undefined, 'SMTP password saved');
                     }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') e.currentTarget.blur();

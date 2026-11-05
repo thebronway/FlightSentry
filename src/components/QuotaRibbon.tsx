@@ -13,6 +13,25 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('flightsentry_quota_ribbon_collapsed');
+      if (stored !== null) {
+        setIsCollapsed(stored === 'true');
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('flightsentry_quota_ribbon_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const fetchSettings = async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     if (res.ok) {
@@ -192,7 +211,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
           {sources.length > 0 && (
             <button
               type="button"
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={handleToggleCollapse}
               title={isCollapsed ? 'Expand ribbon' : 'Collapse ribbon'}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card border border-gunmetal-border text-gunmetal-muted hover:text-slate-200 hover:border-slate-500 transition-colors shadow-sm"
             >

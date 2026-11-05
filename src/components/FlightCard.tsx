@@ -169,7 +169,7 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                 </span>
                 {flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (
                   <span className="bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded text-xs font-semibold">
-                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!)} Credit Claimed
+                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!)} Rebook Savings
                   </span>
                 )}
               </>

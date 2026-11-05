@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Settings as SettingsType } from '@/types';
 import GeneralTab from './settings/GeneralTab';
 import DataSourcesTab from './settings/DataSourcesTab';
@@ -209,12 +210,17 @@ export default function SettingsForm() {
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border shadow-xl text-xs font-semibold ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl shadow-black/80 backdrop-blur-md text-sm font-semibold ${
               toast.type === 'success'
-                ? 'bg-gunmetal-card border-green-800/80 text-green-300'
-                : 'bg-gunmetal-card border-red-800/80 text-red-300'
+                ? 'bg-gunmetal-card/95 border-emerald-500/80 text-slate-100 ring-1 ring-emerald-500/40'
+                : 'bg-gunmetal-card/95 border-rose-500/80 text-slate-100 ring-1 ring-rose-500/40'
             }`}
           >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+            )}
             <span>{toast.message}</span>
           </div>
         </div>

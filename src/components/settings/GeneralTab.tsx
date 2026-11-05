@@ -82,7 +82,7 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
     const updated = { ...settings, currency: newCurrency };
     onChange(updated);
     if (onAutoSave) {
-      await onAutoSave(updated, 'general', undefined, `Currency updated to ${newCurrency}`);
+      await onAutoSave(updated, 'general', undefined, `Display currency updated to ${newCurrency}`);
     }
   };
 

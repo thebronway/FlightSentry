@@ -153,7 +153,7 @@ export default function HistoryIntradayLog({
                             >
                               {isRebooked
                                 ? creditClaimed > 0
-                                  ? `Rebooked (+${formatCurrency(creditClaimed)} Credit)`
+                                  ? `Rebooked (+${formatCurrency(creditClaimed)} Savings)`
                                   : 'Rebooked Fare'
                                 : record.status === 'Booked'
                                 ? 'Initial Booking'

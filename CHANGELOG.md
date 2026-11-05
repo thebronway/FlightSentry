@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.6*
+*Current Version: v0.6.7*
 
 ## Changelog
+
+### Release v0.6.7
+- Enlarged settings autosave toast notification with status icons and enhanced visibility.
+- Replaced generic autosave toasts with specific field and action messages across all settings tabs.
+- Replaced hardcoded dollar symbols with active configured currency in alerts, modals, and toasts.
+- Preserved dashboard filter, sort, and view layout in session storage across page navigation.
+- Preserved Quota Ribbon collapsed state across visits via local storage.
+- Replaced "Credit Claimed" phraseology with "Rebook Savings" across cards, modals, history logs, and alerts.
 
 ### Release v0.6.6
 - Swapped PNR and departure date positions on booked flight modal.

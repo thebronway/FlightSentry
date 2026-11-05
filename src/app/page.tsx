@@ -58,6 +58,22 @@ export default function Dashboard() {
     fetchFlights();
     fetchSettings();
 
+    // Hydrate persisted session view preferences
+    try {
+      const savedFilter = sessionStorage.getItem('flightsentry_dashboard_filter') as FilterOption | null;
+      if (savedFilter && ['all', 'watching', 'booked'].includes(savedFilter)) {
+        setFilterBy(savedFilter);
+      }
+      const savedSort = sessionStorage.getItem('flightsentry_dashboard_sort') as SortOption | null;
+      if (savedSort && ['departure-soonest', 'departure-latest', 'price-low', 'price-high', 'route-az'].includes(savedSort)) {
+        setSortBy(savedSort);
+      }
+      const savedView = sessionStorage.getItem('flightsentry_dashboard_view') as ViewMode | null;
+      if (savedView && ['cards', 'condensed'].includes(savedView)) {
+        setViewMode(savedView);
+      }
+    } catch {}
+
     // Re-check settings when returning to the tab or dashboard
     const handleFocus = () => {
       fetchSettings();
@@ -67,6 +83,27 @@ export default function Dashboard() {
   }, []);
 
   const dsStatus = useMemo(() => getDataSourceStatus(settings), [settings]);
+
+  const handleFilterChange = (filter: FilterOption) => {
+    setFilterBy(filter);
+    try {
+      sessionStorage.setItem('flightsentry_dashboard_filter', filter);
+    } catch {}
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    setSortBy(sort);
+    try {
+      sessionStorage.setItem('flightsentry_dashboard_sort', sort);
+    } catch {}
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      sessionStorage.setItem('flightsentry_dashboard_view', mode);
+    } catch {}
+  };
 
   const handleEdit = (flight: Flight) => {
     setEditingFlight(flight);
@@ -141,7 +178,7 @@ export default function Dashboard() {
               <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
                 <button
                   type="button"
-                  onClick={() => setFilterBy('all')}
+                  onClick={() => handleFilterChange('all')}
                   className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                     filterBy === 'all'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
@@ -155,7 +192,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilterBy('watching')}
+                  onClick={() => handleFilterChange('watching')}
                   className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                     filterBy === 'watching'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
@@ -169,7 +206,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilterBy('booked')}
+                  onClick={() => handleFilterChange('booked')}
                   className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                     filterBy === 'booked'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
@@ -190,7 +227,7 @@ export default function Dashboard() {
             <ArrowDownUp className="w-3.5 h-3.5 text-gunmetal-muted flex-shrink-0" />
             <select
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as SortOption)}
+              onChange={e => handleSortChange(e.target.value as SortOption)}
               className="bg-transparent h-full text-xs text-slate-200 focus:outline-none cursor-pointer pr-1"
             >
               <option value="departure-soonest" className="bg-gunmetal-card text-slate-200">Soonest Flight (Default)</option>
@@ -205,7 +242,7 @@ export default function Dashboard() {
           <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
             <button
               type="button"
-              onClick={() => setViewMode('cards')}
+              onClick={() => handleViewModeChange('cards')}
               title="Card View"
               className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
                 viewMode === 'cards' 
@@ -217,7 +254,7 @@ export default function Dashboard() {
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('condensed')}
+              onClick={() => handleViewModeChange('condensed')}
               title="Condensed Stacked View"
               className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
                 viewMode === 'condensed' 
