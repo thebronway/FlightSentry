@@ -29,7 +29,8 @@ const IATA_TO_ICAO: Record<string, string> = {
 
 export const lookupFlightRoute = async (
   airline: string,
-  flightNumber: string
+  flightNumber: string,
+  departureDate?: string | null
 ): Promise<RouteLookupResult> => {
   const cleanAirline = airline.trim().toUpperCase();
   const cleanFlightNumber = flightNumber.trim().replace(/\D/g, '');
@@ -112,7 +113,8 @@ export const lookupFlightRoute = async (
 
   // 3. Zero-Quota Public Web Search Scraper (DuckDuckGo HTML)
   try {
-    const ddgQuery = `flight ${cleanAirline} ${cleanFlightNumber} route departure arrival`;
+    const dateQueryPart = departureDate ? ` ${departureDate}` : '';
+    const ddgQuery = `flight ${cleanAirline} ${cleanFlightNumber}${dateQueryPart} route departure arrival`;
     const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(ddgQuery)}`;
     console.log(`[FlightLookup] Querying DuckDuckGo HTML: ${ddgUrl}`);
     const ddgRes = await fetch(ddgUrl, {

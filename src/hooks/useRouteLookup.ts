@@ -14,6 +14,7 @@ interface UseRouteLookupParams {
   searchMode: SearchMode;
   airline: string;
   flightNumber: string;
+  departureDate?: string;
   origin: string;
   destination: string;
   onAutoPopulate: (origin: string, destination: string) => void;
@@ -24,6 +25,7 @@ export function useRouteLookup({
   searchMode,
   airline,
   flightNumber,
+  departureDate,
   origin,
   destination,
   onAutoPopulate,
@@ -59,7 +61,11 @@ export function useRouteLookup({
         const res = await fetch('/api/flights/lookup-route', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ airline: cleanAirline, flightNumber: cleanFlightNum }),
+          body: JSON.stringify({
+            airline: cleanAirline,
+            flightNumber: cleanFlightNum,
+            departureDate: departureDate?.trim() || undefined,
+          }),
         });
 
         const data = await res.json();
@@ -96,7 +102,7 @@ export function useRouteLookup({
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [airline, flightNumber, searchMode, isOpen]);
+  }, [airline, flightNumber, departureDate, searchMode, isOpen]);
 
   useEffect(() => {
     if (searchMode === 'FlightNumber' && detectedRoute) {

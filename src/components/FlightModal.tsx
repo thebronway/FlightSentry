@@ -72,6 +72,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
     searchMode: formData.searchMode,
     airline: formData.airline,
     flightNumber: formData.flightNumber,
+    departureDate: formData.departureDate,
     origin: formData.origin,
     destination: formData.destination,
     onAutoPopulate: (origin, destination) => {
@@ -348,16 +349,49 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           <TrackingGoalSection
             trackingGoal={formData.trackingGoal}
             purchasePrice={formData.purchasePrice}
-            pnr={formData.pnr}
+            departureDate={formData.departureDate}
+            minDepartureDate={getTodayDateString(defaultSettings?.timezone)}
             onGoalChange={goal => setFormData(prev => ({ ...prev, trackingGoal: goal, searchMode: goal === 'booked' ? 'FlightNumber' : prev.searchMode }))}
             onPurchaseChange={val => setFormData({ ...formData, purchasePrice: val })}
-            onPnrChange={val => setFormData({ ...formData, pnr: val })}
+            onDepartureDateChange={val => {
+              const today = getTodayDateString(defaultSettings?.timezone);
+              if (val && val < today) {
+                setError('Departure date cannot be in the past. Please select today or a future date.');
+              } else if (error && error.includes('in the past')) {
+                setError(null);
+              }
+              setFormData(prev => ({ ...prev, departureDate: val }));
+            }}
           />
 
           {/* Flight Number Inputs (Presented in FlightNumber Mode or when Already Booked) */}
           {(formData.searchMode === 'FlightNumber' || formData.trackingGoal === 'booked') && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid ${formData.trackingGoal === 'watching' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-2'} gap-4`}>
+                {formData.trackingGoal === 'watching' && (
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Departure Date
+                    </label>
+                    <input
+                      required
+                      type="date"
+                      min={getTodayDateString(defaultSettings?.timezone)}
+                      value={formData.departureDate}
+                      onChange={e => {
+                        const selected = e.target.value;
+                        const today = getTodayDateString(defaultSettings?.timezone);
+                        if (selected && selected < today) {
+                          setError('Departure date cannot be in the past. Please select today or a future date.');
+                        } else if (error && error.includes('in the past')) {
+                          setError(null);
+                        }
+                        setFormData(prev => ({ ...prev, departureDate: selected }));
+                      }}
+                      className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                     Carrier Code {formData.trackingGoal === 'booked' && '*'}
@@ -441,7 +475,31 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           )}
 
           {/* Origin and Destination (Required and Editable for All Modes) */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-2'} gap-4`}>
+            {formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' && (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Departure Date
+                </label>
+                <input
+                  required
+                  type="date"
+                  min={getTodayDateString(defaultSettings?.timezone)}
+                  value={formData.departureDate}
+                  onChange={e => {
+                    const selected = e.target.value;
+                    const today = getTodayDateString(defaultSettings?.timezone);
+                    if (selected && selected < today) {
+                      setError('Departure date cannot be in the past. Please select today or a future date.');
+                    } else if (error && error.includes('in the past')) {
+                      setError(null);
+                    }
+                    setFormData(prev => ({ ...prev, departureDate: selected }));
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Origin Airport (IATA)
@@ -496,30 +554,22 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             </div>
           )}
 
-          {/* Flight Parameters Row: Departure Date, Fare Restrictions & Cabin Class */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Departure Date
-              </label>
-              <input
-                required
-                type="date"
-                min={getTodayDateString(defaultSettings?.timezone)}
-                value={formData.departureDate}
-                onChange={e => {
-                  const selected = e.target.value;
-                  const today = getTodayDateString(defaultSettings?.timezone);
-                  if (selected && selected < today) {
-                    setError('Departure date cannot be in the past. Please select today or a future date.');
-                  } else if (error && error.includes('in the past')) {
-                    setError(null);
-                  }
-                  setFormData(prev => ({ ...prev, departureDate: selected }));
-                }}
-                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
-              />
-            </div>
+          {/* Flight Parameters Row: Fare Restrictions & Cabin Class (Plus PNR for Booked) */}
+          <div className={`grid ${formData.trackingGoal === 'booked' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
+            {formData.trackingGoal === 'booked' && (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  PNR / Confirmation Code
+                </label>
+                <input
+                  maxLength={10}
+                  placeholder="e.g. K9XZ4B"
+                  value={formData.pnr}
+                  onChange={e => setFormData({ ...formData, pnr: e.target.value.toUpperCase() })}
+                  className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Fare Restrictions
@@ -529,8 +579,8 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
                 onChange={e => setFormData({ ...formData, fareTier: e.target.value as FareTier })}
                 className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none"
               >
-                <option value="Standard">Standard Fare (Exclude Basic)</option>
-                <option value="Basic Economy">Basic Economy (Restricted)</option>
+                <option value="Standard">Standard (No Basic)</option>
+                <option value="Basic Economy">Basic / Unbundled</option>
               </select>
             </div>
             <div>

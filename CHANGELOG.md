@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.5*
+*Current Version: v0.6.6*
 
 ## Changelog
+
+### Release v0.6.6
+- Swapped PNR and departure date positions on booked flight modal.
+- Moved departure date to top section of flight modal across all search modes.
+- Added departure date parameter to route lookup telemetry and schedule auto-detection.
+- Shortened fare restriction dropdown labels to "Standard (No Basic)" and "Basic / Unbundled".
+- Adjusted fare restriction and cabin class container widths to prevent label clipping.
 
 ### Release v0.6.5
 - Removed Market Corridor gauge from dashboard flight cards (retained in price history modal).

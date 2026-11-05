@@ -8,11 +8,13 @@ export async function POST(req: NextRequest) {
   const startTime = Date.now();
   let airline: string | undefined;
   let flightNumber: string | undefined;
+  let departureDate: string | undefined;
 
   try {
     const body = await req.json();
     airline = body.airline?.trim();
     flightNumber = body.flightNumber?.trim();
+    departureDate = body.departureDate?.trim();
 
     console.log(`[RouteLookup API] Received request for Carrier: "${airline}", Flight#: "${flightNumber}"`);
 
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await lookupFlightRoute(airline, flightNumber);
+    const result = await lookupFlightRoute(airline, flightNumber, departureDate);
     const durationMs = Date.now() - startTime;
     console.log(`[RouteLookup API] Result for ${airline} ${flightNumber}:`, JSON.stringify(result));
 
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
         provider: 'flight-route-lookup',
         route: result.success && result.origin && result.destination ? `${result.origin} → ${result.destination}` : null,
         flightNumber: `${airline} ${flightNumber}`,
-        departureDate: null,
+        departureDate: departureDate || null,
         status: result.success ? 'Success' : 'Error',
         statusCode: result.success ? 200 : 404,
         errorMessage: result.error || (result.success ? `Source: ${result.source || 'aviation-db'}` : 'Route not found'),
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
         provider: 'flight-route-lookup',
         route: null,
         flightNumber: airline && flightNumber ? `${airline} ${flightNumber}` : null,
-        departureDate: null,
+        departureDate: departureDate || null,
         status: 'Error',
         statusCode: 500,
         errorMessage: error.message || 'Route lookup failed',

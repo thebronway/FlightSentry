@@ -8,19 +8,21 @@ export type TrackingGoal = 'watching' | 'booked';
 interface Props {
   trackingGoal: TrackingGoal;
   purchasePrice: string;
-  pnr: string;
+  departureDate: string;
+  minDepartureDate?: string;
   onGoalChange: (goal: TrackingGoal) => void;
   onPurchaseChange: (val: string) => void;
-  onPnrChange: (val: string) => void;
+  onDepartureDateChange: (val: string) => void;
 }
 
 export default function TrackingGoalSection({
   trackingGoal,
   purchasePrice,
-  pnr,
+  departureDate,
+  minDepartureDate,
   onGoalChange,
   onPurchaseChange,
-  onPnrChange,
+  onDepartureDateChange,
 }: Props) {
   return (
     <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-4 space-y-3">
@@ -83,17 +85,18 @@ export default function TrackingGoalSection({
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              PNR / Confirmation Code
+              Departure Date
             </label>
             <input
-              maxLength={8}
-              placeholder="e.g. K9XZ4B"
-              value={pnr}
-              onChange={e => onPnrChange(e.target.value)}
-              className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+              required={trackingGoal === 'booked'}
+              type="date"
+              min={minDepartureDate}
+              value={departureDate}
+              onChange={e => onDepartureDateChange(e.target.value)}
+              className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
             />
             <p className="text-[11px] text-gunmetal-muted mt-1">
-              Airline booking confirmation reference.
+              Flight departure calendar date.
             </p>
           </div>
         </div>

@@ -1,17 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.5*
+*Current Version: v0.6.6*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.6.6
-- Flight Modal
-    - Booked: swap PNR and Deapture date postions. If possible use the date + flight number to look up the route. Also move the date up form on all modals. rearrange where needed. 
-    - All: Fare restriction: Standard fare (exclude basic) does not fit in the drop down. We need to shorten it somehow. Basic economy (restricted) barely fits. need ui tweaks here. Also, they have like basic first class now, so calling it basic economy is silly. I guess we need to make sure the API search for things like basic premium economy and basic first class in addition to basic economy.
 
 ### Release v0.6.7
 - Settings autosave message, make the text larger
@@ -30,7 +25,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v0.7.0
 - How to handle continuing monitoring route if flight already purchased
-    - For example, I buy an American Airlines flight for 6 PM for $300, and I log that as booked. And  I am fine departing anywhere after 4 PM on a non stop, those re my preferences. A week or two later, there's another American Airlines flight at 4 PM for $250 and an United flight for $200. I should also get those notifications. How can we handle that without mucking up the UI. It should still be able to monitor that route if it's within the specs of the flight profile. In addition, it should support co-locations, even if the purchased flight  is only to one location or from one location in that co-location. This will only be if you do route monitoring, but like, I feel like you should be able to add route monitoring to a purchased flight
+    - For example, I buy an American Airlines flight for 6 PM for $300, and I log that as booked. And  I am fine departing anywhere after 4 PM on a non stop, those re my preferences. A week or two later, there's another American Airlines flight at 4 PM for $250 and an United flight for $200. I should also get those notifications. How can we handle that without mucking up the UI. It should still be able to monitor that route if it's within the specs of the flight profile. In addition, it should support co-locations, even if the purchased flight  is only to one location or from one location in that co-location. This will only be if you do route monitoring, but like, I feel like you should be able to add route monitoring to a purchased flight. We need a way to set preferences. I know the flight is already monitored. it monitors that route, but I don't care about nonstop flights on frontier. I want direct flights, not redeyes on Delta or American, sort of thing after 4pm sort of thing.
 
 ### Release v0.7.1: Mobile Optimization
 - Moible Optimization
@@ -39,7 +34,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 ### Release v0.7.2a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
-- Look for monolthic files
+- Look for monolthic files / lack of folder organization
 - Look for security issues
 - Look for things that do not follow best practices 
 - Look for missing/deprecated imports
