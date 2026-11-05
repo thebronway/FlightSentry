@@ -3,6 +3,7 @@
 import { Flight } from '@/types';
 import { X, Calendar, ExternalLink } from 'lucide-react';
 import AirlineBadge from '../common/AirlineBadge';
+import { getCoLocationInfo } from '@/utils/coLocations';
 
 interface Props {
   flight: Flight;
@@ -34,9 +35,13 @@ export default function HistoryModalHeader({
   return (
     <div className="px-6 py-4 border-b border-gunmetal-border flex justify-between items-center bg-gunmetal-card z-10">
       <div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-2xl font-black text-slate-100 font-sans tracking-tight">
-            {primaryTitle}
+            {isFlightNumMode ? (
+              <span>{flight.airline} {flight.flightNumber}</span>
+            ) : (
+              <span>{flight.origin} → {flight.destination}</span>
+            )}
           </h2>
           {flight.airline && (
             <AirlineBadge
@@ -45,12 +50,31 @@ export default function HistoryModalHeader({
               size="sm"
             />
           )}
-          {isFlightNumMode && (
-            <span className="text-sm font-semibold text-slate-300">
+          {isFlightNumMode && flight.origin && flight.destination && (
+            <span className="text-base font-bold text-sky-400 font-mono px-2.5 py-0.5 rounded bg-sky-950/40 border border-sky-800/40">
               {flight.origin} → {flight.destination}
             </span>
           )}
         </div>
+        {(() => {
+          const originInfo = getCoLocationInfo(flight.origin);
+          const destInfo = getCoLocationInfo(flight.destination);
+          if (!originInfo && !destInfo) return null;
+          return (
+            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
+              {originInfo && (
+                <span className="px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-800/50 font-sans">
+                  Origin: {originInfo.description}
+                </span>
+              )}
+              {destInfo && (
+                <span className="px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-800/50 font-sans">
+                  Dest: {destInfo.description}
+                </span>
+              )}
+            </div>
+          );
+        })()}
         <div className="flex items-center gap-3 text-xs text-gunmetal-muted mt-1 font-medium">
           <span className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />

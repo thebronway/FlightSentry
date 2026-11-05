@@ -46,6 +46,8 @@ export interface RouteItinerary {
   airline: string;
   airlineName?: string;
   flightNumber?: string;
+  origin?: string;
+  destination?: string;
   price: number;
   departureTime?: string;
   arrivalTime?: string;

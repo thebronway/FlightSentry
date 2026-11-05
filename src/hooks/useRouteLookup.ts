@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { SearchMode } from '@/types';
+import { matchesAirportOrMetro } from '@/utils/coLocations';
 
 interface DetectedRoute {
   origin: string;
@@ -81,8 +82,8 @@ export function useRouteLookup({
             onAutoPopulate(detected.origin, detected.destination);
             setRouteAlert('confirmed');
           } else if (
-            origin.toUpperCase() !== detected.origin ||
-            destination.toUpperCase() !== detected.destination
+            !matchesAirportOrMetro(origin, detected.origin) ||
+            !matchesAirportOrMetro(destination, detected.destination)
           ) {
             setRouteAlert('mismatch');
           } else {
@@ -109,7 +110,7 @@ export function useRouteLookup({
       const currentOrigin = origin.trim().toUpperCase();
       const currentDest = destination.trim().toUpperCase();
       if (currentOrigin && currentDest) {
-        if (currentOrigin !== detectedRoute.origin || currentDest !== detectedRoute.destination) {
+        if (!matchesAirportOrMetro(currentOrigin, detectedRoute.origin) || !matchesAirportOrMetro(currentDest, detectedRoute.destination)) {
           setRouteAlert('mismatch');
         } else {
           setRouteAlert('confirmed');

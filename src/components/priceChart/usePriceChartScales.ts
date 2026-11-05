@@ -86,6 +86,8 @@ export function usePriceChartScales({
               airline: code,
               price: it.price,
               flightNumber: it.flightNumber || undefined,
+              origin: it.origin || undefined,
+              destination: it.destination || undefined,
               departureTime: it.departureTime || undefined,
               flightCount: 1,
             };
@@ -94,6 +96,8 @@ export function usePriceChartScales({
             if (it.price < carrierMap[code].price) {
               carrierMap[code].price = it.price;
               carrierMap[code].flightNumber = it.flightNumber || carrierMap[code].flightNumber;
+              carrierMap[code].origin = it.origin || carrierMap[code].origin;
+              carrierMap[code].destination = it.destination || carrierMap[code].destination;
               carrierMap[code].departureTime = it.departureTime || carrierMap[code].departureTime;
             }
           }

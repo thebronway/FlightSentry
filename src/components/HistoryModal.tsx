@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Flight, PriceHistory } from '@/types';
 import PriceChart from './PriceChart';
 import RouteCorridorSummary from './RouteCorridorSummary';
@@ -20,23 +20,57 @@ export default function HistoryModal({ flight, onClose }: Props) {
   const [history, setHistory] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const loadHistory = useCallback((flightId: number, silent = false) => {
+    if (!silent) setLoading(true);
+    fetch(`/api/history/${flightId}`)
+      .then(res => res.json())
+      .then(data => {
+        setHistory(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        console.error('Failed to load history:', err);
+      })
+      .finally(() => {
+        if (!silent) setLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     if (flight?.id) {
-      setLoading(true);
-      fetch(`/api/history/${flight.id}`)
-        .then(res => res.json())
-        .then(data => {
-          setHistory(Array.isArray(data) ? data : []);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('Failed to load history:', err);
-          setLoading(false);
-        });
+      loadHistory(flight.id, false);
+
+      const handleVisibilityOrFocus = () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          loadHistory(flight.id, true);
+        }
+      };
+
+      window.addEventListener('focus', handleVisibilityOrFocus);
+      document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+      // Silent background polling every 30s while modal is open
+      const pollInterval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          loadHistory(flight.id, true);
+        }
+      }, 30000);
+
+      return () => {
+        window.removeEventListener('focus', handleVisibilityOrFocus);
+        document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+        clearInterval(pollInterval);
+      };
     } else {
       setHistory([]);
     }
-  }, [flight]);
+  }, [flight?.id, loadHistory]);
+
+  // Silently reload history points whenever the parent flight price updates
+  useEffect(() => {
+    if (flight?.id) {
+      loadHistory(flight.id, true);
+    }
+  }, [flight?.currentPrice, flight?.updatedAt, flight?.id, loadHistory]);
 
   const dayGroups: DayGroup[] = useMemo(() => {
     const groups: Record<string, PriceHistory[]> = {};
@@ -98,7 +132,7 @@ export default function HistoryModal({ flight, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6 transition-all">
-      <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+      <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[88vh] flex flex-col overflow-hidden">
         <HistoryModalHeader
           flight={flight}
           isFlightNumMode={Boolean(isFlightNumMode)}
@@ -134,7 +168,7 @@ export default function HistoryModal({ flight, onClose }: Props) {
             />
           </div>
 
-          {isRouteMode && <CarrierBreakdownTable history={history} />}
+          {isRouteMode && <CarrierBreakdownTable history={history} flight={flight} />}
 
           <HistoryIntradayLog
             dayGroups={dayGroups}

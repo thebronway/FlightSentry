@@ -3,6 +3,9 @@ export interface CarrierMatrixRow {
   airlineName: string;
   color: string;
   bestFlightDetail: string; // e.g. "B6 523 · Nonstop · 8:30 AM"
+  flightIdentifier?: string; // e.g. "WN 43"
+  route?: string; // e.g. "DCA → DAL"
+  scheduleDetail?: string; // e.g. "Nonstop · 1:55 PM"
   currentLowestPrice: number;
   allTimeLow: number;
   allTimeHigh: number;

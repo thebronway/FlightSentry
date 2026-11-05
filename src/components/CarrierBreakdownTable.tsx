@@ -1,17 +1,19 @@
 'use client';
 
 import { useMemo } from 'react';
-import { PriceHistory } from '@/types';
+import { PriceHistory, Flight } from '@/types';
 import { computeCarrierMatrix, CarrierMatrixRow } from '@/utils/routeIntelligence';
 import { formatCurrency } from '@/utils/format';
 import { TrendingDown, TrendingUp, Minus, Award } from 'lucide-react';
 
 interface Props {
   history: PriceHistory[];
+  flight?: Flight | null;
 }
 
-export default function CarrierBreakdownTable({ history }: Props) {
-  const rows = useMemo(() => computeCarrierMatrix(history), [history]);
+export default function CarrierBreakdownTable({ history, flight }: Props) {
+  const defaultRoute = flight?.origin && flight?.destination ? `${flight.origin} → ${flight.destination}` : undefined;
+  const rows = useMemo(() => computeCarrierMatrix(history, defaultRoute), [history, defaultRoute]);
 
   if (rows.length === 0) return null;
 
@@ -64,9 +66,23 @@ export default function CarrierBreakdownTable({ history }: Props) {
                     </div>
                   </td>
 
-                  {/* Best Flight Itinerary */}
-                  <td className="py-3 px-3.5 text-slate-300 font-medium whitespace-nowrap">
-                    {row.bestFlightDetail}
+                  {/* Best Flight & Schedule (2-Line Stack) */}
+                  <td className="py-2.5 px-3.5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="font-bold text-slate-100 font-mono">
+                        {row.flightIdentifier || row.airline}
+                      </span>
+                      {row.route && (
+                        <span className="text-[11px] font-mono text-sky-400 bg-sky-950/40 border border-sky-800/40 px-1.5 py-0.5 rounded font-medium">
+                          {row.route}
+                        </span>
+                      )}
+                    </div>
+                    {row.scheduleDetail && (
+                      <div className="text-[11px] text-gunmetal-muted mt-0.5 whitespace-nowrap">
+                        {row.scheduleDetail}
+                      </div>
+                    )}
                   </td>
 
                   {/* Current Lowest Price */}

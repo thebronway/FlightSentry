@@ -75,6 +75,11 @@ export default function ChartScrubberTooltip({
                         #{s.flightNumber}
                       </span>
                     )}
+                    {s.origin && s.destination && (
+                      <span className="text-[10px] text-sky-400 font-mono font-medium">
+                        {s.origin}→{s.destination}
+                      </span>
+                    )}
                     {formattedTime && (
                       <span className="text-[10px] text-gunmetal-muted">
                         {formattedTime}

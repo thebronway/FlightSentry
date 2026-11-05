@@ -140,7 +140,14 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
     for (const scraper of unmeteredExecutionList) {
       const result = await executeProvider(scraper);
-      if (result.status === 'Success' || result.status === 'SoldOut') {
+      if (result.status === 'Success') {
+        return result;
+      }
+      if (result.status === 'SoldOut') {
+        if (activeMetered.length > 0) {
+          console.warn(`[Router] Unmetered provider ${scraper} reported SoldOut. Verifying with metered provider failover.`);
+          break;
+        }
         return result;
       }
       if (result.status === 'RateLimited') {

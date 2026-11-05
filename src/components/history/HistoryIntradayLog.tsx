@@ -92,13 +92,32 @@ export default function HistoryIntradayLog({
                     : flight.baselinePrice;
                   const dropFromBenchmark = activeBenchmark - record.price;
 
+                  // Resolve route for this check record
+                  let checkRoute = flight.origin && flight.destination ? `${flight.origin} → ${flight.destination}` : null;
+                  if (record.metadata) {
+                    try {
+                      const meta = JSON.parse(record.metadata);
+                      if (Array.isArray(meta) && meta.length > 0) {
+                        const matchingIt = meta.find((it: any) =>
+                          it.origin && it.destination &&
+                          (it.price === record.price || (record.airline && it.airline === record.airline))
+                        ) || meta[0];
+                        if (matchingIt?.origin && matchingIt?.destination) {
+                          checkRoute = `${matchingIt.origin} → ${matchingIt.destination}`;
+                        }
+                      }
+                    } catch {
+                      // Ignored
+                    }
+                  }
+
                   return (
                     <div
                       key={record.id}
                       className="px-4 py-2.5 flex justify-between items-center hover:bg-gunmetal-canvas/70 transition-colors text-xs"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-gunmetal-muted font-mono w-20">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-gunmetal-muted font-mono w-20 flex-shrink-0">
                           {checkTime}
                         </span>
                         {record.airline && (
@@ -107,6 +126,11 @@ export default function HistoryIntradayLog({
                             flightNumber={record.flightNumber}
                             size="xs"
                           />
+                        )}
+                        {checkRoute && (
+                          <span className="text-[11px] font-mono text-slate-300 font-semibold px-2 py-0.5 rounded bg-gunmetal-card border border-gunmetal-border whitespace-nowrap">
+                            {checkRoute}
+                          </span>
                         )}
                         <span className="font-bold text-sm text-slate-100">
                           {formatCurrency(record.price)}

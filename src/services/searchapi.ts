@@ -2,6 +2,7 @@ import { DataSourceResult } from './datasource';
 import { Flight, RouteItinerary } from '../types';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
+import { resolveToApiAirportCodes } from '../utils/coLocations';
 
 export const checkSearchApiPrice = async (
   flight: Flight,
@@ -16,8 +17,11 @@ export const checkSearchApiPrice = async (
       return { price: null, status: 'Error' };
     }
 
-    url.searchParams.append('departure_id', flight.origin);
-    url.searchParams.append('arrival_id', flight.destination);
+    const departureId = resolveToApiAirportCodes(flight.origin);
+    const arrivalId = resolveToApiAirportCodes(flight.destination);
+
+    url.searchParams.append('departure_id', departureId);
+    url.searchParams.append('arrival_id', arrivalId);
     url.searchParams.append('outbound_date', flight.departureDate);
     url.searchParams.append('flight_type', 'one_way'); // SearchApi.io documented parameter
     url.searchParams.append('currency', currency || 'USD');
@@ -104,10 +108,17 @@ export const checkSearchApiPrice = async (
         const flightNum = cleanFlightNumber(rawFlightNum, code);
         const stops = Math.max(0, (f.flights?.length || 1) - 1);
 
+        const rawDep = firstLeg.departure_airport?.id || firstLeg.departure_airport?.code;
+        const rawArr = lastLeg.arrival_airport?.id || lastLeg.arrival_airport?.code;
+        const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
+        const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
+
         return {
           airline: code,
           airlineName: firstLeg.airline || getAirlineName(code),
           flightNumber: flightNum,
+          origin: legOrigin,
+          destination: legDestination,
           price: f.price,
           departureTime: firstLeg.departure_airport?.time,
           arrivalTime: lastLeg.arrival_airport?.time,

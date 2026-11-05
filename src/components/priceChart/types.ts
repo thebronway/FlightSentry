@@ -11,6 +11,8 @@ export interface CarrierCheckSummary {
   airline: string;
   price: number;
   flightNumber?: string;
+  origin?: string;
+  destination?: string;
   departureTime?: string;
   flightCount: number;
 }

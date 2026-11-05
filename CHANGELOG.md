@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.7*
+*Current Version: v0.6.8*
 
 ## Changelog
+
+### Release v0.6.8
+- Added support for IATA Metropolitan Area Codes (WAS, NYC, CHI, LON, PAR, TYO, etc.) and regional clusters (DFW/DAL, MIA/FLL/PBI/DJT, LAX basin, SFO bay).
+- Added explicit opt-in buttons in the flight modal to switch to metro codes or include regional sister airports.
+- Automatically expanded metro codes to constituent physical airport codes for upstream search providers (HasData, SerpApi, SearchApi, Fast-Flights).
+- Captured physical leg origin and destination across search providers, displaying exact routes on the Carrier Breakdown Matrix, check logs, and chart tooltips.
+- Converted Best Flight & Schedule in the Carrier Breakdown Matrix to a stacked 2-line layout to prevent column clipping.
+- Expanded Flight Modal and History Modal maximum widths to 6xl on desktop displays.
+- Added visibility-aware background polling and tab-focus synchronization across dashboard cards, quotas, and the History Modal.
 
 ### Release v0.6.7
 - Enlarged settings autosave toast notification with status icons and enhanced visibility.

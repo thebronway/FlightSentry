@@ -1,28 +1,27 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.6*
+*Current Version: v0.6.8*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.6.8
-- Co-locations
-    - Co-locations like (WAS for DCA,IAD,BWI and NYC for JFK,LGA,EWR) Need to be supported, as google flight supports them. make sure the apis do too. look how how this can get done. co-locations shouldnt change, so should we maintain a list of co locations? or just use googles code for co-locations. Lets slow down adn think this through.
-- What happens with a flight card or history modal if the price check happens automatticaly, will it update? or do you need to refersh. 
-
-### Release v0.6.9:
+### Release v0.6.9: Points
 - Points (as a currency) for watched and booked
-    - Add the ability to add points currencies on the general page (like AAvantage miles and trueblue points). Only the configured points currencies should show up on the drop-down when you're adding a flight via points to reduce clutter. If points are selected, auto check the pause price checks (maybe rename disable flight checks for all). Need to consider how this will look in the UI. 
+    - Add the ability to add points currencies (in addtion to the users current real currency) on the general page (like AAvantage miles and trueblue points). Only the configured points currencies should show up on the drop-down when you're adding a flight via points to reduce clutter. If points are selected, auto check the pause price checks (maybe rename disable flight checks for all). Need to consider how this will look in the UI. Really need to think the ui flow through. 
 
 ### Release v0.7.0
 - How to handle continuing monitoring a booked or watching
     - Right now in an email, if monitoring a specifc flight (booked or watching), and there is a price drop it will send an alert and it will show other flights on that route. I want to change that feature, when monitoing a specific flight, it should allow the ability to also monitor the route, if selected, dropdown addtional options (add colocation for origin and or destination, stop, time (depart/arrive), airline inclustions, exclusions, redeye) use cabin and fare from flight. if converting, copy all relevant data over and watch route and enable by deafult. (when just tracking flight, disbale route tracking, user has to opt in, and then extra options should be shown). update emails, include flight tracked on top, route on bottom. include on history graph, with the ability to hide route and just see the tracked flight (default is route is hidden). 
 - Make sure terminology booked and watching is used accross the app.
 
-### Release v0.7.1: Mobile Optimization
+### Release v0.7.1
+- Right now, history modal on shows the lowest price from each airline on a give search. but what if an airline has multiple cheaper flights than that other airline. My thought is to list 12 flights (deafult, and configurable from the general settings under search preferences (new)) on each search, making sure to show at least one from each airline on the route (deafult, configuruable on the general settings under search preferences (new)). Thoughts?
+    - In addtion on that general settings page under search preferences, add airlines always exludeded / included, basic vs non basic deafult, and redeye or not as deafults. Or would a new serach preferences page be better?
+
+### Release v0.7.2: Mobile Optimization
 - Moible Optimization
 - go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
 

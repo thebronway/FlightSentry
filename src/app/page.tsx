@@ -74,15 +74,38 @@ export default function Dashboard() {
       }
     } catch {}
 
-    // Re-check settings when returning to the tab or dashboard
-    const handleFocus = () => {
+    // Re-check flights and settings when returning to the tab or window
+    const handleSync = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      fetchFlights();
       fetchSettings();
+      setQuotaRefreshTrigger(prev => prev + 1);
     };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+
+    window.addEventListener('focus', handleSync);
+    document.addEventListener('visibilitychange', handleSync);
+
+    // Visibility-aware background polling (every 45s) to reflect automated scheduled checks
+    const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchFlights();
+        setQuotaRefreshTrigger(prev => prev + 1);
+      }
+    }, 45000);
+
+    return () => {
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleSync);
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const dsStatus = useMemo(() => getDataSourceStatus(settings), [settings]);
+
+  const activeHistoryFlight = useMemo(() => {
+    if (!historyFlight) return null;
+    return flights.find(f => f.id === historyFlight.id) || historyFlight;
+  }, [flights, historyFlight]);
 
   const handleFilterChange = (filter: FilterOption) => {
     setFilterBy(filter);
@@ -422,7 +445,7 @@ export default function Dashboard() {
         );
       })()}
 
-      <HistoryModal flight={historyFlight} onClose={() => setHistoryFlight(null)} />
+      <HistoryModal flight={activeHistoryFlight} onClose={() => setHistoryFlight(null)} />
       
       <FlightModal 
          isOpen={isModalOpen} 

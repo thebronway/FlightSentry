@@ -6,6 +6,7 @@ import { FareTier, CabinClass, SearchMode, PriceTrackingDirection, Flight, Setti
 import { useRouteLookup } from '@/hooks/useRouteLookup';
 import { getDataSourceStatus, normalizeAirlineCode } from '@/utils/airline';
 import { getTodayDateString } from '@/utils/date';
+import { getCoLocationInfo } from '@/utils/coLocations';
 import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSection';
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
@@ -265,7 +266,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6 transition-colors">
-      <div className="bg-gunmetal-card rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto border border-gunmetal-border flex flex-col">
+      <div className="bg-gunmetal-card rounded-xl shadow-2xl w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[92vh] overflow-y-auto border border-gunmetal-border flex flex-col">
         <div className="px-6 py-4 border-b border-gunmetal-border flex justify-between items-center sticky top-0 bg-gunmetal-card z-10">
           <h2 className="text-xl font-bold text-slate-100">
             {initialFlight ? 'Edit Tracked Flight' : 'Track New Flight'}
@@ -506,12 +507,30 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
               </label>
               <input
                 required
-                maxLength={3}
-                placeholder="DCA"
+                maxLength={30}
+                placeholder="e.g. DCA, WAS, or DFW, DAL"
                 value={formData.origin}
                 onChange={e => setFormData({ ...formData, origin: e.target.value.toUpperCase() })}
                 className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
+              {(() => {
+                const info = getCoLocationInfo(formData.origin);
+                if (!info) return null;
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 mt-1 text-[11px]">
+                    <span className="text-gunmetal-muted font-sans">{info.description}</span>
+                    {info.suggestedCode && info.suggestedActionLabel && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, origin: info.suggestedCode! }))}
+                        className="text-sky-400 hover:text-sky-300 font-semibold underline transition-colors"
+                      >
+                        {info.suggestedActionLabel} &rarr;
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -519,12 +538,30 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
               </label>
               <input
                 required
-                maxLength={3}
-                placeholder="LAS"
+                maxLength={30}
+                placeholder="e.g. LAS or DFW, DAL"
                 value={formData.destination}
                 onChange={e => setFormData({ ...formData, destination: e.target.value.toUpperCase() })}
                 className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
+              {(() => {
+                const info = getCoLocationInfo(formData.destination);
+                if (!info) return null;
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 mt-1 text-[11px]">
+                    <span className="text-gunmetal-muted font-sans">{info.description}</span>
+                    {info.suggestedCode && info.suggestedActionLabel && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, destination: info.suggestedCode! }))}
+                        className="text-sky-400 hover:text-sky-300 font-semibold underline transition-colors"
+                      >
+                        {info.suggestedActionLabel} &rarr;
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

@@ -2,6 +2,7 @@ import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
+import { resolveToApiAirportCodes } from '../utils/coLocations';
 
 export const checkHasDataPrice = async (
   flight: Flight,
@@ -18,9 +19,12 @@ export const checkHasDataPrice = async (
   }
 
   try {
+    const departureId = resolveToApiAirportCodes(flight.origin);
+    const arrivalId = resolveToApiAirportCodes(flight.destination);
+
     const url = new URL('https://api.hasdata.com/scrape/google/flights');
-    url.searchParams.append('departureId', flight.origin);
-    url.searchParams.append('arrivalId', flight.destination);
+    url.searchParams.append('departureId', departureId);
+    url.searchParams.append('arrivalId', arrivalId);
     url.searchParams.append('outboundDate', flight.departureDate);
     url.searchParams.append('type', 'oneWay');
     url.searchParams.append('currency', currency || 'USD');
@@ -105,10 +109,17 @@ export const checkHasDataPrice = async (
                         lastLeg.arrivalTime || 
                         (typeof lastLeg.arrival === 'string' ? lastLeg.arrival : lastLeg.arrival?.time);
 
+        const rawDep = firstLeg.departure_airport?.id || firstLeg.departureAirport?.id || firstLeg.departure_airport?.code;
+        const rawArr = lastLeg.arrival_airport?.id || lastLeg.arrivalAirport?.id || lastLeg.arrival_airport?.code;
+        const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
+        const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
           flightNumber: flightNum || undefined,
+          origin: legOrigin,
+          destination: legDestination,
           price: f.price,
           departureTime: depTime,
           arrivalTime: arrTime,

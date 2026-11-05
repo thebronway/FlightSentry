@@ -3,7 +3,7 @@ import { CarrierMatrixRow } from './types';
 import { parseHistoryItineraries } from './itineraryParser';
 import { getAirlineColor, getAirlineName, cleanDisplayTime } from '@/utils/airline';
 
-export function computeCarrierMatrix(history: PriceHistory[]): CarrierMatrixRow[] {
+export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: string): CarrierMatrixRow[] {
   // Sort chronologically (oldest to newest)
   const sorted = [...history]
     .filter(h => typeof h.price === 'number' && h.price > 0 && (h.status === 'Success' || h.status === 'Booked'))
@@ -15,6 +15,8 @@ export function computeCarrierMatrix(history: PriceHistory[]): CarrierMatrixRow[
   interface CarrierCheckRecord {
     price: number;
     flightNumber?: string;
+    origin?: string;
+    destination?: string;
     departureTime?: string;
     isNonstop?: boolean;
     stops?: number;
@@ -40,6 +42,8 @@ export function computeCarrierMatrix(history: PriceHistory[]): CarrierMatrixRow[
         carrierHistories[code].push({
           price: bestIt.price,
           flightNumber: bestIt.flightNumber,
+          origin: bestIt.origin,
+          destination: bestIt.destination,
           departureTime: bestIt.departureTime,
           isNonstop: bestIt.isNonstop,
           stops: bestIt.stops,
@@ -78,26 +82,34 @@ export function computeCarrierMatrix(history: PriceHistory[]): CarrierMatrixRow[
     const deltaStatus: 'dropped' | 'risen' | 'steady' =
       priceDelta < 0 ? 'dropped' : priceDelta > 0 ? 'risen' : 'steady';
 
-    // Construct descriptive best flight string: e.g. "B6 523 · Nonstop · 8:30 AM"
-    const detailParts: string[] = [];
-    if (latest.flightNumber) {
-      detailParts.push(`${code} ${latest.flightNumber}`);
-    } else {
-      detailParts.push(code);
-    }
+    // Construct descriptive best flight detail with 2-line layout metadata
+    const flightIdentifier = latest.flightNumber ? `${code} ${latest.flightNumber}` : code;
+    const legRoute = latest.origin && latest.destination
+      ? `${latest.origin} → ${latest.destination}`
+      : defaultRoute;
+
+    const schedParts: string[] = [];
     if (latest.isNonstop !== undefined) {
-      detailParts.push(latest.isNonstop ? 'Nonstop' : `${latest.stops || 1} Stop${(latest.stops || 1) > 1 ? 's' : ''}`);
+      schedParts.push(latest.isNonstop ? 'Nonstop' : `${latest.stops || 1} Stop${(latest.stops || 1) > 1 ? 's' : ''}`);
     }
     const formattedTime = cleanDisplayTime(latest.departureTime);
     if (formattedTime) {
-      detailParts.push(formattedTime);
+      schedParts.push(formattedTime);
     }
+    const scheduleDetail = schedParts.join(' · ');
+
+    const detailParts: string[] = [flightIdentifier];
+    if (legRoute) detailParts.push(legRoute);
+    if (scheduleDetail) detailParts.push(scheduleDetail);
 
     return {
       airline: code,
       airlineName: getAirlineName(code),
       color: getAirlineColor(code),
       bestFlightDetail: detailParts.join(' · '),
+      flightIdentifier,
+      route: legRoute,
+      scheduleDetail,
       currentLowestPrice: latest.price,
       allTimeLow,
       allTimeHigh,

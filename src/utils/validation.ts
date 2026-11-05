@@ -2,8 +2,18 @@ import { z } from 'zod';
 
 export const flightSchema = z.object({
   searchMode: z.enum(['Route', 'FlightNumber']),
-  origin: z.string().length(3).toUpperCase().optional().nullable(),
-  destination: z.string().length(3).toUpperCase().optional().nullable(),
+  origin: z
+    .string()
+    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, "Must be a 3-letter IATA code or comma-separated IATA codes (e.g. DCA, WAS, or DFW, DAL)")
+    .toUpperCase()
+    .optional()
+    .nullable(),
+  destination: z
+    .string()
+    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, "Must be a 3-letter IATA code or comma-separated IATA codes (e.g. DCA, WAS, or DFW, DAL)")
+    .toUpperCase()
+    .optional()
+    .nullable(),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
   airline: z.string().optional().nullable(),
   flightNumber: z.string().regex(/^\d+$/, "Flight number must be numbers only").optional().nullable(),

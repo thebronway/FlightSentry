@@ -3,6 +3,7 @@ import { DataSourceResult } from './datasource';
 import { getFlights, createQuery, Passengers } from 'fast-flights-ts';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
+import { resolveToAirportList } from '../utils/coLocations';
 
 const formatSimpleDatetime = (dt: any): string | undefined => {
   if (!dt) return undefined;
@@ -55,22 +56,42 @@ export const checkFastFlightsPrice = async (
     };
     const seat = fastFlightsSeatMap[flight.cabinClass || 'economy'] || 'economy';
 
-    const query = createQuery({
-      flights: [
-        { 
-          date: flight.departureDate, 
-          from_airport: flight.origin || '', 
-          to_airport: flight.destination || '' 
-        }
-      ],
-      seat,
-      trip: 'one-way',
-      passengers: new Passengers({ adults: 1 }),
-      max_stops: flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
-      currency: (currency || 'USD') as any,
-    });
+    const origins = resolveToAirportList(flight.origin);
+    const destinations = resolveToAirportList(flight.destination);
 
-    const results = await getFlights(query);
+    const fromList = origins.length > 0 ? origins : [flight.origin || ''];
+    const toList = destinations.length > 0 ? destinations : [flight.destination || ''];
+
+    const results: any[] = [];
+
+    for (const fromAirport of fromList) {
+      for (const toAirport of toList) {
+        try {
+          const query = createQuery({
+            flights: [
+              { 
+                date: flight.departureDate, 
+                from_airport: fromAirport, 
+                to_airport: toAirport 
+              }
+            ],
+            seat,
+            trip: 'one-way',
+            passengers: new Passengers({ adults: 1 }),
+            max_stops: flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
+            currency: (currency || 'USD') as any,
+          });
+
+          const legResults = await getFlights(query);
+          if (Array.isArray(legResults) && legResults.length > 0) {
+            results.push(...legResults);
+          }
+        } catch (pairErr) {
+          console.warn(`[FastFlights] Pair ${fromAirport} -> ${toAirport} failed:`, pairErr);
+        }
+      }
+    }
+
     if (!results || results.length === 0) {
       return { price: null, status: 'SoldOut' };
     }
@@ -89,10 +110,21 @@ export const checkFastFlightsPrice = async (
         const departureTime = formatSimpleDatetime(firstLeg.departure) || firstLeg.departure_time;
         const arrivalTime = formatSimpleDatetime(lastLeg.arrival) || lastLeg.arrival_time;
 
+        const rawDep = typeof firstLeg.from_airport === 'string'
+          ? firstLeg.from_airport
+          : firstLeg.from_airport?.code || firstLeg.departure_airport?.id;
+        const rawArr = typeof lastLeg.to_airport === 'string'
+          ? lastLeg.to_airport
+          : lastLeg.to_airport?.code || lastLeg.arrival_airport?.id;
+        const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
+        const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
           flightNumber: flightNum || undefined,
+          origin: legOrigin,
+          destination: legDestination,
           price: f.price,
           departureTime,
           arrivalTime,
