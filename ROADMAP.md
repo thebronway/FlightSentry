@@ -1,20 +1,12 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-04*  
-*Current Version: v0.6.4*
+*Last updated: 2026-11-05*  
+*Current Version: v0.6.5*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.6.5
-- Flight Card
-    - Remove Market Corridor from card, keep in history
-    - Put airline bubble of current price record holder next to current price (in addion to it being above) on watched flights only
-    - Booked Flights have the flight number as the title and the flight bubble, should we remove the flight bubble?
-- Flight Card & Condenced
-    - The tooltops for refresh / delete etc. Take too long to load because of the five-second delay. Can we make custom tool tips for all of these?
 
 ### Release v0.6.6
 - Flight Modal

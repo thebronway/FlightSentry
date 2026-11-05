@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-04*  
-*Current Version: v0.6.4*
+*Last updated: 2026-11-05*  
+*Current Version: v0.6.5*
 
 ## Changelog
+
+### Release v0.6.5
+- Removed Market Corridor gauge from dashboard flight cards (retained in price history modal).
+- Added current lowest price carrier bubble next to current price on watched flight cards.
+- Removed redundant carrier bubble from header on booked flight cards.
+- Replaced browser tooltips with custom instant tooltips on flight card and condensed view action buttons.
 
 ### Release v0.6.4
 - Universal Settings Autosave: Removed manual save buttons; automatically persist updates on blur, change, or Enter key with immediate toast feedback.

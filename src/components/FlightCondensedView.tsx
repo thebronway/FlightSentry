@@ -8,6 +8,7 @@ import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
 import { getGoogleFlightsUrl } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
+import Tooltip from './common/Tooltip';
 
 interface Props {
   flights: Flight[];
@@ -249,65 +250,93 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     className="py-3 px-4 text-right whitespace-nowrap cursor-default"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <button
-                        title={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check live price now'}
-                        onClick={() => checkNow(flight.id)}
-                        disabled={flight.status !== 'Upcoming'}
-                        className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                      <Tooltip
+                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : 'Check live price now'}
+                        align="right"
                       >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        title="View price history & trend graph"
-                        onClick={() => onShowHistory(flight)}
-                        className={`p-1.5 rounded transition-colors ${
-                          isHistoryHovered
-                            ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
-                            : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
-                        }`}
-                      >
-                        <Clock className="w-3.5 h-3.5" />
-                      </button>
-                      <a
-                        href={googleFlightsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Search on Google Flights"
-                        className="p-1.5 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded transition-colors"
-                      >
-                        <GoogleIcon className="w-3.5 h-3.5" />
-                      </a>
-                      <button
-                        title="Edit flight details & preferences"
-                        onClick={() => onEdit(flight)}
-                        className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      {!isPurchased && onConvertToBooked && (
                         <button
-                          title="Convert to Booked (I bought this flight)"
-                          onClick={() => onConvertToBooked(flight)}
-                          className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded transition-colors"
+                          onClick={() => checkNow(flight.id)}
+                          disabled={flight.status !== 'Upcoming'}
+                          className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                         >
-                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <RefreshCw className="w-3.5 h-3.5" />
                         </button>
+                      </Tooltip>
+                      <Tooltip
+                        content="View price history & trend graph"
+                        align="right"
+                      >
+                        <button
+                          onClick={() => onShowHistory(flight)}
+                          className={`p-1.5 rounded transition-colors ${
+                            isHistoryHovered
+                              ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
+                              : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
+                          }`}
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip
+                        content="Search on Google Flights"
+                        align="right"
+                      >
+                        <a
+                          href={googleFlightsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded transition-colors"
+                        >
+                          <GoogleIcon className="w-3.5 h-3.5" />
+                        </a>
+                      </Tooltip>
+                      <Tooltip
+                        content="Edit flight details & preferences"
+                        align="right"
+                      >
+                        <button
+                          onClick={() => onEdit(flight)}
+                          className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
+                      {!isPurchased && onConvertToBooked && (
+                        <Tooltip
+                          content="Convert to Booked (I bought this flight)"
+                          align="right"
+                        >
+                          <button
+                            onClick={() => onConvertToBooked(flight)}
+                            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded transition-colors"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
                       )}
-                      <button
-                        title={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
-                        onClick={() => toggleStatus(flight)}
-                        disabled={flight.status === 'Past'}
-                        className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                      <Tooltip
+                        content={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
+                        align="right"
                       >
-                        {flight.status === 'Upcoming' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                      </button>
-                      <button
-                        title="Delete flight"
-                        onClick={() => onDelete(flight)}
-                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded transition-colors"
+                        <button
+                          onClick={() => toggleStatus(flight)}
+                          disabled={flight.status === 'Past'}
+                          className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                        >
+                          {flight.status === 'Upcoming' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        </button>
+                      </Tooltip>
+                      <Tooltip
+                        content="Delete flight"
+                        align="right"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <button
+                          onClick={() => onDelete(flight)}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>

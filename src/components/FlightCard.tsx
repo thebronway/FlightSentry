@@ -6,9 +6,9 @@ import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingB
 import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl, cleanDisplayTime, getAirlineColor, getAirlineName } from '@/utils/airline';
+import { getGoogleFlightsUrl } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
-import RouteCorridorSummary from './RouteCorridorSummary';
+import Tooltip from './common/Tooltip';
 
 interface Props {
   flight: Flight;
@@ -65,6 +65,35 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
 
   const secondaryDetail = isFlightNumMode ? `${flight.origin} → ${flight.destination}` : '';
 
+  const currentPriceAirline = useMemo(() => {
+    if (isFlightNumMode) {
+      return { code: flight.airline, flightNumber: flight.flightNumber };
+    }
+    if (flight.latestMetadata) {
+      try {
+        const parsed = JSON.parse(flight.latestMetadata);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const exactMatch = parsed.find((it: any) => it.price === flight.currentPrice && it.airline);
+          if (exactMatch) {
+            return { code: exactMatch.airline.toUpperCase(), flightNumber: exactMatch.flightNumber || null };
+          }
+          const sortedByPrice = [...parsed]
+            .filter((it: any) => it.airline && typeof it.price === 'number')
+            .sort((a: any, b: any) => a.price - b.price);
+          if (sortedByPrice.length > 0) {
+            return { code: sortedByPrice[0].airline.toUpperCase(), flightNumber: sortedByPrice[0].flightNumber || null };
+          }
+        }
+      } catch {
+        // Ignored
+      }
+    }
+    if (flight.airline) {
+      return { code: flight.airline.toUpperCase(), flightNumber: null };
+    }
+    return null;
+  }, [isFlightNumMode, flight.airline, flight.flightNumber, flight.latestMetadata, flight.currentPrice]);
+
   const isPast = flight.status === 'Past';
   const googleFlightsUrl = getGoogleFlightsUrl(flight);
 
@@ -100,24 +129,26 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
               </p>
 
               {/* Dedicated Airlines Bubble Row (wraps naturally to next line if needed) */}
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                {isFlightNumMode ? (
-                  <AirlineBadge
-                    code={flight.airline}
-                    flightNumber={flight.flightNumber}
-                    size="sm"
-                  />
-                ) : operatingAirlines.length > 0 ? (
-                  operatingAirlines.map(code => (
+              {!isPurchased && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {isFlightNumMode ? (
                     <AirlineBadge
-                      key={code}
-                      code={code}
-                      size="xs"
-                      showFlightNumber={false}
+                      code={flight.airline}
+                      flightNumber={flight.flightNumber}
+                      size="sm"
                     />
-                  ))
-                ) : null}
-              </div>
+                  ) : operatingAirlines.length > 0 ? (
+                    operatingAirlines.map(code => (
+                      <AirlineBadge
+                        key={code}
+                        code={code}
+                        size="xs"
+                        showFlightNumber={false}
+                      />
+                    ))
+                  ) : null}
+                </div>
+              )}
             </div>
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
               flight.status === 'Upcoming'
@@ -226,9 +257,19 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
             return (
               <div className="flex justify-between items-end mt-3 mb-2">
                 <div>
-                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
-                  <p className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</p>
+                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice)}</span>
+                  {!isPurchased && currentPriceAirline && (
+                    <AirlineBadge
+                      code={currentPriceAirline.code}
+                      flightNumber={currentPriceAirline.flightNumber}
+                      showFlightNumber={false}
+                      size="xs"
+                    />
+                  )}
                 </div>
+              </div>
                 <div className="text-right">
                   <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice)}</p>
                   {delta !== 0 && (
@@ -274,25 +315,6 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
             );
           })()}
         </div>
-
-        {/* Route Market Corridor Gauge on Card */}
-        {!isFlightNumMode && flight.allTimeLow !== null && flight.allTimeLow !== undefined && flight.allTimeHigh !== null && flight.allTimeHigh !== undefined && (
-          <div className="mt-2">
-            <RouteCorridorSummary
-              compact
-              metrics={{
-                currentFloor: flight.currentPrice,
-                allTimeLow: flight.allTimeLow,
-                allTimeHigh: flight.allTimeHigh,
-                spreadPercent: (flight.allTimeHigh - flight.allTimeLow) > 0
-                  ? Math.min(100, Math.max(0, Math.round(((flight.currentPrice - flight.allTimeLow) / (flight.allTimeHigh - flight.allTimeLow)) * 100)))
-                  : 50,
-                totalChecks: 1,
-                hasSpread: flight.allTimeHigh > flight.allTimeLow,
-              }}
-            />
-          </div>
-        )}
       </div>
 
       {/* Bottom Action Bar (Clicks isolated from triggering history) */}
@@ -300,66 +322,101 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
         onClick={e => e.stopPropagation()}
         className={`mt-auto grid ${!isPurchased && onConvertToBooked ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
-        <button
-          title={isPast ? "Checks disabled for past flights" : "Check live price now"}
-          onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
-          disabled={isPast || flight.status === 'Paused'}
-          className="flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
+        <Tooltip
+          content={isPast ? "Checks disabled for past flights" : "Check live price now"}
+          align="left"
+          className="w-full"
         >
-          <RefreshCw className="w-4 h-4" />
-        </button>
-        <button
-          title="View price history & trend graph"
-          onClick={(e) => { e.stopPropagation(); onShowHistory(); }}
-          className={`flex justify-center items-center p-2 rounded-md transition-colors ${
-            isTopHovered
-              ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
-              : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-        </button>
-        <a
-          href={googleFlightsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Search on Google Flights"
-          onClick={(e) => e.stopPropagation()}
-          className="flex justify-center items-center p-2 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded-md transition-colors"
-        >
-          <GoogleIcon className="w-4 h-4" />
-        </a>
-        <button
-          title="Edit flight details & preferences"
-          onClick={(e) => { e.stopPropagation(); onEdit(flight); }}
-          className="flex justify-center items-center p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded-md transition-colors"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        {!isPurchased && onConvertToBooked && (
           <button
-            title="Convert to Booked (I bought this flight)"
-            onClick={(e) => { e.stopPropagation(); onConvertToBooked(flight); }}
-            className="flex justify-center items-center p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded-md transition-colors"
+            onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
+            disabled={isPast || flight.status === 'Paused'}
+            className="w-full flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
           >
-            <ShoppingBag className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
           </button>
+        </Tooltip>
+        <Tooltip
+          content="View price history & trend graph"
+          align="center"
+          className="w-full"
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onShowHistory(); }}
+            className={`w-full flex justify-center items-center p-2 rounded-md transition-colors ${
+              isTopHovered
+                ? 'text-white bg-slate-700/60 ring-1 ring-slate-400 shadow-sm'
+                : 'text-slate-300 hover:text-white hover:bg-gunmetal-canvas'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip
+          content="Search on Google Flights"
+          align="center"
+          className="w-full"
+        >
+          <a
+            href={googleFlightsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex justify-center items-center p-2 text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30 rounded-md transition-colors"
+          >
+            <GoogleIcon className="w-4 h-4" />
+          </a>
+        </Tooltip>
+        <Tooltip
+          content="Edit flight details & preferences"
+          align="center"
+          className="w-full"
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(flight); }}
+            className="w-full flex justify-center items-center p-2 text-purple-400 hover:text-purple-300 hover:bg-purple-950/30 rounded-md transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        {!isPurchased && onConvertToBooked && (
+          <Tooltip
+            content="Convert to Booked (I bought this flight)"
+            align="center"
+            className="w-full"
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); onConvertToBooked(flight); }}
+              className="w-full flex justify-center items-center p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded-md transition-colors"
+            >
+              <ShoppingBag className="w-4 h-4" />
+            </button>
+          </Tooltip>
         )}
-        <button
-          title={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
-          onClick={(e) => { e.stopPropagation(); toggleStatus(flight); }}
-          disabled={isPast}
-          className="flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
+        <Tooltip
+          content={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
+          align="center"
+          className="w-full"
         >
-          {flight.status === 'Upcoming' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-        </button>
-        <button
-          title="Delete flight"
-          onClick={(e) => { e.stopPropagation(); onDelete(flight); }}
-          className="flex justify-center items-center p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-md transition-colors"
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleStatus(flight); }}
+            disabled={isPast}
+            className="w-full flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
+          >
+            {flight.status === 'Upcoming' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+        </Tooltip>
+        <Tooltip
+          content="Delete flight"
+          align="right"
+          className="w-full"
         >
-          <Trash2 className="w-4 h-4" />
-        </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(flight); }}
+            className="w-full flex justify-center items-center p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 rounded-md transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
