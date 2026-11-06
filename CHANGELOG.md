@@ -1,9 +1,20 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.7.0*
+*Current Version: v0.7.1*
 
 ## Changelog
+
+### Release v0.7.1
+- Added Search Preferences tab in Settings for instance-wide flight search defaults.
+- Added instance defaults for cabin class, fare tier, max stops, redeye filtering, and airline inclusions/exclusions.
+- Auto-populated new flight tracking modals from global search defaults.
+- Added max stored itineraries setting (6–24) and carrier diversity engine toggle.
+- Implemented carrier diversity algorithm guaranteeing at least 1 lowest fare per operating airline on route checks.
+- Updated Carrier Breakdown Matrix with intermediate layover airport display, multi-departure inspection, and table sorting.
+- Streamlined Price Chart hover scrubber to compact per-airline summaries with departure counts.
+- Centered airline badge hover tooltips across cards, tables, and modal headers.
+- Fixed single-destination airport co-location badge display in the Price History header.
 
 ### Release v0.7.0
 - Application-wide domain terminology alignment: Watching and Booked

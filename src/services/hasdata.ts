@@ -114,6 +114,13 @@ export const checkHasDataPrice = async (
         const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
         const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
 
+        const layoverAirports = (f.flights && f.flights.length > 1)
+          ? f.flights.slice(0, -1).map((leg: any) => {
+              const arr = leg.arrival_airport?.id || leg.arrivalAirport?.id || leg.arrival_airport?.code || leg.arrivalAirport?.code || '';
+              return (typeof arr === 'string' ? arr : '').trim().toUpperCase();
+            }).filter((c: string) => c.length === 3)
+          : undefined;
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
@@ -126,6 +133,7 @@ export const checkHasDataPrice = async (
           duration: f.duration ? `${Math.floor(f.duration / 60)}h ${f.duration % 60}m` : (f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined),
           stops,
           isNonstop: stops === 0,
+          layoverAirports,
         };
       });
 

@@ -75,7 +75,15 @@ export const settingsDb = {
         minIncreaseDollar = @minIncreaseDollar,
         minIncreasePercent = @minIncreasePercent,
         pointsCurrencies = @pointsCurrencies,
-        globalPause = @globalPause
+        globalPause = @globalPause,
+        defaultCabinClass = @defaultCabinClass,
+        defaultFareTier = @defaultFareTier,
+        defaultNoRedeye = @defaultNoRedeye,
+        defaultMaxStops = @defaultMaxStops,
+        defaultIncludedAirlines = @defaultIncludedAirlines,
+        defaultExcludedAirlines = @defaultExcludedAirlines,
+        maxStoredItineraries = @maxStoredItineraries,
+        carrierDiversityEnabled = @carrierDiversityEnabled
       WHERE id = 1
     `);
     stmt.run(updated);

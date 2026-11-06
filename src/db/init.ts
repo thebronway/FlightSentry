@@ -49,6 +49,14 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN minIncreasePercent REAL NOT NULL DEFAULT 10.0",
         "ALTER TABLE flights ADD COLUMN currency TEXT",
         "ALTER TABLE settings ADD COLUMN pointsCurrencies TEXT NOT NULL DEFAULT '[]'",
+        "ALTER TABLE settings ADD COLUMN defaultCabinClass TEXT NOT NULL DEFAULT 'economy'",
+        "ALTER TABLE settings ADD COLUMN defaultFareTier TEXT NOT NULL DEFAULT 'Standard'",
+        "ALTER TABLE settings ADD COLUMN defaultNoRedeye INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN defaultMaxStops INTEGER",
+        "ALTER TABLE settings ADD COLUMN defaultIncludedAirlines TEXT",
+        "ALTER TABLE settings ADD COLUMN defaultExcludedAirlines TEXT",
+        "ALTER TABLE settings ADD COLUMN maxStoredItineraries INTEGER NOT NULL DEFAULT 12",
+        "ALTER TABLE settings ADD COLUMN carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1",
     ];
     for (const migration of migrations) {
         try {
@@ -174,13 +182,15 @@ export function initDb() {
                 fastFlightsEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
                 fastFlightsQuota, notificationsEnabled, discordEnabled, slackEnabled,
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
-                pointsCurrencies
+                pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
+                defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
+                maxStoredItineraries, carrierDiversityEnabled
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
                 'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0,
-                'USD', 50.0, 10.0, '[]'
+                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1
             )
         `);
         insertSettings.run();

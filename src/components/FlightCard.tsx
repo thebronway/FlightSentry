@@ -127,28 +127,6 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                   </span>
                 )}
               </p>
-
-              {/* Dedicated Airlines Bubble Row (wraps naturally to next line if needed) */}
-              {!isPurchased && (
-                <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                  {isFlightNumMode ? (
-                    <AirlineBadge
-                      code={flight.airline}
-                      flightNumber={flight.flightNumber}
-                      size="sm"
-                    />
-                  ) : operatingAirlines.length > 0 ? (
-                    operatingAirlines.map(code => (
-                      <AirlineBadge
-                        key={code}
-                        code={code}
-                        size="xs"
-                        showFlightNumber={false}
-                      />
-                    ))
-                  ) : null}
-                </div>
-              )}
             </div>
             {flight.status === 'Watching' ? (
               <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
@@ -168,6 +146,28 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
               </span>
             )}
           </div>
+
+          {/* Dedicated Airlines Bubble Row (spans full width across the card) */}
+          {!isPurchased && (
+            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+              {isFlightNumMode ? (
+                <AirlineBadge
+                  code={flight.airline}
+                  flightNumber={flight.flightNumber}
+                  size="sm"
+                />
+              ) : operatingAirlines.length > 0 ? (
+                operatingAirlines.map(code => (
+                  <AirlineBadge
+                    key={code}
+                    code={code}
+                    size="xs"
+                    showFlightNumber={false}
+                  />
+                ))
+              ) : null}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-1.5 my-2.5">
             {isPurchased && flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (

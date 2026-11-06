@@ -53,17 +53,20 @@ export default function ChartScrubberTooltip({
       </div>
 
       {isMultiAirlineMode && activeSummaries.length > 0 ? (
-        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5">
+        <div className="space-y-1.5">
           {activeSummaries
             .sort((a, b) => a.price - b.price)
             .map((s, idx) => {
               const isFloor = idx === 0;
               const formattedTime = cleanDisplayTime(s.departureTime);
+
               return (
                 <div
                   key={s.airline}
-                  className={`flex items-center justify-between gap-3 text-xs px-2 py-1 rounded ${
-                    isFloor ? 'bg-green-950/50 border border-green-800/50 font-bold' : 'hover:bg-gunmetal-canvas'
+                  className={`flex items-center justify-between gap-3 text-xs px-2.5 py-1.5 rounded transition-colors ${
+                    isFloor
+                      ? 'bg-green-950/50 border border-green-800/50 font-bold'
+                      : 'hover:bg-gunmetal-canvas'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -88,8 +91,8 @@ export default function ChartScrubberTooltip({
                       </span>
                     )}
                     {s.flightCount > 1 && (
-                      <span className="text-[9px] text-gunmetal-muted bg-gunmetal-canvas px-1 py-0.2 rounded border border-gunmetal-border/50">
-                        {s.flightCount} flights
+                      <span className="text-[9px] text-sky-400 bg-sky-950/60 px-1.5 py-0.2 rounded border border-sky-800/50 font-mono font-semibold">
+                        {s.flightCount} departures
                       </span>
                     )}
                   </div>

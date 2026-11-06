@@ -1,3 +1,16 @@
+export interface CarrierDepartureDetail {
+  flightIdentifier: string;
+  route?: string;
+  scheduleDetail?: string;
+  price: number;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: string;
+  stops?: number;
+  isNonstop?: boolean;
+  layoverAirports?: string[];
+}
+
 export interface CarrierMatrixRow {
   airline: string;
   airlineName: string;
@@ -12,6 +25,8 @@ export interface CarrierMatrixRow {
   priceDelta: number; // Current price minus previous check price for this carrier
   deltaStatus: 'dropped' | 'risen' | 'steady';
   isRouteFloor: boolean;
+  layoverAirports?: string[];
+  departures?: CarrierDepartureDetail[];
 }
 
 export interface RouteCorridorMetrics {

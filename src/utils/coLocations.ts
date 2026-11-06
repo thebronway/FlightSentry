@@ -329,3 +329,35 @@ export function resolveToAirportList(input?: string | null): string[] {
   const resolved = resolveToApiAirportCodes(input);
   return resolved ? resolved.split(',') : [];
 }
+
+/**
+ * Returns active co-location or multi-airport search description for display
+ * ONLY when an airport string actively encompasses multiple airports
+ * (either via an official IATA Metro Area Code like WAS/NYC or explicit comma-separated airports).
+ *
+ * Does NOT return suggestions for single physical airports (e.g. LAX, DCA).
+ */
+export function getActiveCoLocationBadge(code?: string | null): string | null {
+  if (!code) return null;
+  const cleaned = code.trim().toUpperCase();
+  const tokens = cleaned.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
+  if (tokens.length === 0) return null;
+
+  // 1. Official Metro Area Code (e.g. WAS, NYC, CHI)
+  if (tokens.length === 1 && METRO_AIRPORT_MAP[tokens[0]]) {
+    const entry = METRO_AIRPORT_MAP[tokens[0]];
+    return `Co-location (${entry.name}): includes ${entry.airports.join(', ')}`;
+  }
+
+  // 2. Multiple airports explicitly entered (e.g. "DFW, DAL" or "MIA, FLL")
+  if (tokens.length > 1) {
+    for (const cluster of Object.values(REGIONAL_CLUSTERS)) {
+      if (tokens.some(t => cluster.airports.includes(t))) {
+        return `Multi-airport search (${cluster.name}): ${tokens.join(', ')}`;
+      }
+    }
+    return `Multi-airport search: ${tokens.join(', ')}`;
+  }
+
+  return null;
+}

@@ -119,6 +119,15 @@ export const checkFastFlightsPrice = async (
         const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
         const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
 
+        const layoverAirports = (f.flights && f.flights.length > 1)
+          ? f.flights.slice(0, -1).map((leg: any) => {
+              const arr = typeof leg.to_airport === 'string'
+                ? leg.to_airport
+                : leg.to_airport?.code || leg.arrival_airport?.id || '';
+              return arr.trim().toUpperCase();
+            }).filter((c: string) => c.length === 3)
+          : undefined;
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
@@ -131,6 +140,7 @@ export const checkFastFlightsPrice = async (
           duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
           stops,
           isNonstop: stops === 0,
+          layoverAirports,
         };
       });
 

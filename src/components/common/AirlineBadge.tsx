@@ -17,7 +17,7 @@ export default function AirlineBadge({
   flightNumber,
   size = 'sm',
   showFlightNumber = true,
-  align = 'left',
+  align = 'center',
   className = '',
 }: AirlineBadgeProps) {
   const theme = getAirlineTheme(code);

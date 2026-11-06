@@ -1,28 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.7.0*
+*Current Version: v0.7.1*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.7.1: Global Search Preferences & Multi-Fare Ingestion
-- **Dedicated Search Preferences Tab in Settings:**
-  - Add a dedicated "Search Preferences" tab in Settings to establish instance-wide flight search defaults.
-  - Configure instance-wide defaults for:
-    - Default Cabin Class (Economy, Premium Economy, Business, First).
-    - Default Fare Tier (Standard vs. Basic Economy).
-    - Default Redeye Filter (Include vs. Exclude).
-    - Default Maximum Stops (Any, Nonstop, 1 Stop, 2 Stops).
-    - Global Airline Inclusions and Exclusions (e.g., always exclude specific carriers).
-    - Max stored itineraries per check (default: 12, configurable 6–24) with carrier diversity toggle.
-  - Automatically populate new flight tracking modals from these global defaults.
-- **Multi-Fare Ingestion & Carrier Diversity Engine:**
-  - Upgrade scraper and API result parsers (SerpAPI, SearchApi.io, HasData, Fast-Flights) to capture up to 12 itineraries per check.
-  - Implement a carrier-diversity selection algorithm: guarantee at least one lowest fare from every operating airline on the route before allocating remaining slots to the next absolute cheapest flights.
-  - Update the Carrier Breakdown Matrix and Price Chart to support inspecting multiple departures for a single airline on any given check.
 
 ### Release v0.7.2: Continuous Monitoring (Dual Flight & Route Tracking)
 - **Opt-In Route Monitoring on Specific Flights:**

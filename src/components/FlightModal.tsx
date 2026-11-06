@@ -164,11 +164,17 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
         setFormData({
           ...DEFAULT_STATE,
           currency: defaultSettings?.currency || 'USD',
+          fareTier: defaultSettings?.defaultFareTier || 'Standard',
+          cabinClass: defaultSettings?.defaultCabinClass || 'economy',
+          noRedeye: defaultSettings?.defaultNoRedeye === 1,
+          maxStops: (defaultSettings?.defaultMaxStops !== undefined && defaultSettings?.defaultMaxStops !== null) ? defaultSettings.defaultMaxStops : null,
+          includedAirlines: defaultSettings?.defaultIncludedAirlines || '',
+          excludedAirlines: defaultSettings?.defaultExcludedAirlines || '',
         });
       }
       setError(null);
     }
-  }, [isOpen, initialFlight, defaultSettings?.currency]);
+  }, [isOpen, initialFlight, defaultSettings]);
 
   if (!isOpen) return null;
 

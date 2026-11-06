@@ -5,12 +5,13 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Settings as SettingsType } from '@/types';
 import GeneralTab from './settings/GeneralTab';
 import DataSourcesTab from './settings/DataSourcesTab';
+import SearchPreferencesTab from './settings/SearchPreferencesTab';
 import SchedulingTab from './settings/SchedulingTab';
 import NotificationsTab from './settings/NotificationsTab';
 
 export default function SettingsForm() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [activeTab, setActiveTab] = useState<'general' | 'datasources' | 'scheduling' | 'notifications'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications'>('general');
 
   // Status & toast states
   const [providerStatus, setProviderStatus] = useState<Record<string, { type: 'success' | 'error'; message: string } | null>>({});
@@ -137,6 +138,17 @@ export default function SettingsForm() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('searchprefs')}
+          className={`px-4 py-2 font-medium text-sm transition-colors ${
+            activeTab === 'searchprefs'
+              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
+              : 'text-gunmetal-muted hover:text-slate-300'
+          }`}
+        >
+          Search Preferences
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('datasources')}
           className={`px-4 py-2 font-medium text-sm transition-colors ${
             activeTab === 'datasources'
@@ -172,6 +184,14 @@ export default function SettingsForm() {
 
       {activeTab === 'general' && (
         <GeneralTab
+          settings={settings}
+          onChange={setSettings}
+          onAutoSave={handleAutoSave}
+        />
+      )}
+
+      {activeTab === 'searchprefs' && (
+        <SearchPreferencesTab
           settings={settings}
           onChange={setSettings}
           onAutoSave={handleAutoSave}

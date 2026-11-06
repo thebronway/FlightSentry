@@ -113,6 +113,10 @@ export const checkSearchApiPrice = async (
         const legOrigin = typeof rawDep === 'string' && rawDep.trim().length === 3 ? rawDep.trim().toUpperCase() : undefined;
         const legDestination = typeof rawArr === 'string' && rawArr.trim().length === 3 ? rawArr.trim().toUpperCase() : undefined;
 
+        const layoverAirports = (f.flights && f.flights.length > 1)
+          ? f.flights.slice(0, -1).map((leg: any) => (leg.arrival_airport?.id || leg.arrival_airport?.code || '').trim().toUpperCase()).filter((c: string) => c.length === 3)
+          : undefined;
+
         return {
           airline: code,
           airlineName: firstLeg.airline || getAirlineName(code),
@@ -125,6 +129,7 @@ export const checkSearchApiPrice = async (
           duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
           stops,
           isNonstop: stops === 0,
+          layoverAirports,
         };
       });
 

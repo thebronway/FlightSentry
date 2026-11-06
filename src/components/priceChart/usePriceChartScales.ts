@@ -81,6 +81,18 @@ export function usePriceChartScales({
           const code = (it.airline || '').toUpperCase();
           if (!code || typeof it.price !== 'number' || it.price <= 0) return;
 
+          const depItem = {
+            flightNumber: it.flightNumber || undefined,
+            price: it.price,
+            origin: it.origin || undefined,
+            destination: it.destination || undefined,
+            departureTime: it.departureTime || undefined,
+            arrivalTime: it.arrivalTime || undefined,
+            duration: it.duration || undefined,
+            stops: it.stops,
+            isNonstop: it.isNonstop,
+          };
+
           if (!carrierMap[code]) {
             carrierMap[code] = {
               airline: code,
@@ -90,9 +102,12 @@ export function usePriceChartScales({
               destination: it.destination || undefined,
               departureTime: it.departureTime || undefined,
               flightCount: 1,
+              departures: [depItem],
             };
           } else {
             carrierMap[code].flightCount += 1;
+            if (!carrierMap[code].departures) carrierMap[code].departures = [];
+            carrierMap[code].departures!.push(depItem);
             if (it.price < carrierMap[code].price) {
               carrierMap[code].price = it.price;
               carrierMap[code].flightNumber = it.flightNumber || carrierMap[code].flightNumber;
@@ -102,6 +117,11 @@ export function usePriceChartScales({
             }
           }
         });
+        Object.values(carrierMap).forEach(c => {
+          if (c.departures && c.departures.length > 1) {
+            c.departures.sort((a, b) => a.price - b.price);
+          }
+        });
       } else if (h.airline) {
         const code = h.airline.toUpperCase();
         carrierMap[code] = {
@@ -109,6 +129,10 @@ export function usePriceChartScales({
           price: h.price,
           flightNumber: h.flightNumber || undefined,
           flightCount: 1,
+          departures: [{
+            flightNumber: h.flightNumber || undefined,
+            price: h.price,
+          }],
         };
       }
 

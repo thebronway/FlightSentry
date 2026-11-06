@@ -124,6 +124,14 @@ CREATE TABLE IF NOT EXISTS settings (
     searchApiResetDay INTEGER DEFAULT 1,
     hasdataResetDay INTEGER DEFAULT 1,
     pointsCurrencies TEXT NOT NULL DEFAULT '[]',
-    globalPause INTEGER NOT NULL DEFAULT 0
+    globalPause INTEGER NOT NULL DEFAULT 0,
+    defaultCabinClass TEXT NOT NULL DEFAULT 'economy',
+    defaultFareTier TEXT NOT NULL DEFAULT 'Standard',
+    defaultNoRedeye INTEGER NOT NULL DEFAULT 0,
+    defaultMaxStops INTEGER,
+    defaultIncludedAirlines TEXT,
+    defaultExcludedAirlines TEXT,
+    maxStoredItineraries INTEGER NOT NULL DEFAULT 12,
+    carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1
 );
 `;

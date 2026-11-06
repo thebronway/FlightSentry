@@ -1,5 +1,5 @@
 import { PriceHistory, RouteItinerary } from '@/types';
-import { CarrierMatrixRow } from './types';
+import { CarrierMatrixRow, CarrierDepartureDetail } from './types';
 import { parseHistoryItineraries } from './itineraryParser';
 import { getAirlineColor, getAirlineName, cleanDisplayTime } from '@/utils/airline';
 
@@ -20,6 +20,7 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
     departureTime?: string;
     isNonstop?: boolean;
     stops?: number;
+    layoverAirports?: string[];
   }
 
   const carrierHistories: Record<string, CarrierCheckRecord[]> = {};
@@ -47,6 +48,7 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
           departureTime: bestIt.departureTime,
           isNonstop: bestIt.isNonstop,
           stops: bestIt.stops,
+          layoverAirports: bestIt.layoverAirports,
         });
       });
     } else if (h.airline) {
@@ -61,6 +63,19 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
 
   const carriers = Object.keys(carrierHistories);
   if (carriers.length === 0) return [];
+
+  // Group all departures from the latest check by carrier
+  const latestCheck = sorted[sorted.length - 1];
+  const latestItineraries = parseHistoryItineraries(latestCheck);
+  const latestByCarrier: Record<string, RouteItinerary[]> = {};
+
+  latestItineraries.forEach(it => {
+    const code = (it.airline || '').toUpperCase();
+    if (!code || typeof it.price !== 'number' || it.price <= 0) return;
+    if (!latestByCarrier[code]) latestByCarrier[code] = [];
+    latestByCarrier[code].push(it);
+  });
+  Object.values(latestByCarrier).forEach(list => list.sort((a, b) => a.price - b.price));
 
   // Find the absolute lowest current price across any active carrier
   const currentPrices = carriers.map(code => {
@@ -90,7 +105,15 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
 
     const schedParts: string[] = [];
     if (latest.isNonstop !== undefined) {
-      schedParts.push(latest.isNonstop ? 'Nonstop' : `${latest.stops || 1} Stop${(latest.stops || 1) > 1 ? 's' : ''}`);
+      if (latest.isNonstop) {
+        schedParts.push('Nonstop');
+      } else {
+        const stopCount = latest.stops || 1;
+        const layoverStr = latest.layoverAirports && latest.layoverAirports.length > 0
+          ? ` (${latest.layoverAirports.join(', ')})`
+          : '';
+        schedParts.push(`${stopCount} Stop${stopCount > 1 ? 's' : ''}${layoverStr}`);
+      }
     }
     const formattedTime = cleanDisplayTime(latest.departureTime);
     if (formattedTime) {
@@ -101,6 +124,39 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
     const detailParts: string[] = [flightIdentifier];
     if (legRoute) detailParts.push(legRoute);
     if (scheduleDetail) detailParts.push(scheduleDetail);
+
+    const departures: CarrierDepartureDetail[] = (latestByCarrier[code] || []).map(it => {
+      const depIdentifier = it.flightNumber ? `${code} ${it.flightNumber}` : code;
+      const depRoute = it.origin && it.destination ? `${it.origin} → ${it.destination}` : defaultRoute;
+      const depSchedParts: string[] = [];
+      if (it.isNonstop !== undefined) {
+        if (it.isNonstop) {
+          depSchedParts.push('Nonstop');
+        } else {
+          const stopCount = it.stops || 1;
+          const layoverStr = it.layoverAirports && it.layoverAirports.length > 0
+            ? ` (${it.layoverAirports.join(', ')})`
+            : '';
+          depSchedParts.push(`${stopCount} Stop${stopCount > 1 ? 's' : ''}${layoverStr}`);
+        }
+      }
+      const depTime = cleanDisplayTime(it.departureTime);
+      if (depTime) {
+        depSchedParts.push(depTime);
+      }
+      return {
+        flightIdentifier: depIdentifier,
+        route: depRoute,
+        scheduleDetail: depSchedParts.join(' · '),
+        price: it.price,
+        departureTime: it.departureTime,
+        arrivalTime: it.arrivalTime,
+        duration: it.duration,
+        stops: it.stops,
+        isNonstop: it.isNonstop,
+        layoverAirports: it.layoverAirports,
+      };
+    });
 
     return {
       airline: code,
@@ -116,6 +172,8 @@ export function computeCarrierMatrix(history: PriceHistory[], defaultRoute?: str
       priceDelta,
       deltaStatus,
       isRouteFloor: latest.price === minCurrentPrice,
+      layoverAirports: latest.layoverAirports,
+      departures: departures.length > 0 ? departures : undefined,
     };
   });
 

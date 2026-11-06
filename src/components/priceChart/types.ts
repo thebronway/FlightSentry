@@ -8,6 +8,18 @@ export interface PriceChartProps {
   currency?: string | null;
 }
 
+export interface CarrierDeparture {
+  flightNumber?: string;
+  price: number;
+  origin?: string;
+  destination?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: string;
+  stops?: number;
+  isNonstop?: boolean;
+}
+
 export interface CarrierCheckSummary {
   airline: string;
   price: number;
@@ -16,6 +28,7 @@ export interface CarrierCheckSummary {
   destination?: string;
   departureTime?: string;
   flightCount: number;
+  departures?: CarrierDeparture[];
 }
 
 export interface PlottedDot {

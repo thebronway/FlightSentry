@@ -55,6 +55,7 @@ export interface RouteItinerary {
   duration?: string;
   stops?: number;
   isNonstop?: boolean;
+  layoverAirports?: string[];
 }
 
 export interface PriceHistory {
@@ -131,4 +132,12 @@ export interface Settings {
   hasdataResetDay?: number | null; // Day of the month (1-31)
   pointsCurrencies?: string | null;
   globalPause: number; // 0 (false) or 1 (true)
+  defaultCabinClass?: CabinClass;
+  defaultFareTier?: FareTier;
+  defaultNoRedeye?: number; // 0 (false) or 1 (true)
+  defaultMaxStops?: number | null;
+  defaultIncludedAirlines?: string | null;
+  defaultExcludedAirlines?: string | null;
+  maxStoredItineraries?: number;
+  carrierDiversityEnabled?: number; // 0 (false) or 1 (true)
 }

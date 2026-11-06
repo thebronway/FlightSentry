@@ -5,6 +5,7 @@ import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
 import { checkHasDataPrice as queryHasData } from './hasdata';
 import { checkFastFlightsPrice as queryFastFlights } from './fastflights';
+import { selectDiverseItineraries } from '../utils/routeIntelligence';
 
 export type DataSourceProvider = 'serpapi' | 'searchapi' | 'hasdata' | 'fastflights';
 
@@ -90,6 +91,12 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     }
 
     const durationMs = Date.now() - startTime;
+
+    if (result.status === 'Success' && result.itineraries && result.itineraries.length > 0) {
+      const maxStored = settings.maxStoredItineraries ?? 12;
+      const diversityActive = settings.carrierDiversityEnabled !== 0;
+      result.itineraries = selectDiverseItineraries(result.itineraries, maxStored, diversityActive);
+    }
 
     if (result.status === 'RateLimited') {
       failureReason = result.errorMessage || failureReason || 'Rate limit or anti-bot challenge (CAPTCHA / 429) detected';

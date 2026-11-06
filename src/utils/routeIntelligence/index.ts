@@ -3,3 +3,4 @@ export * from './itineraryParser';
 export * from './corridorCalculator';
 export * from './carrierMatrix';
 export * from './itineraryFilter';
+export * from './carrierDiversity';

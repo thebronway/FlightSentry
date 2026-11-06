@@ -3,7 +3,7 @@
 import { Flight } from '@/types';
 import { X, Calendar, ExternalLink, Tag, ShoppingBag, Pause, Clock } from 'lucide-react';
 import AirlineBadge from '../common/AirlineBadge';
-import { getCoLocationInfo } from '@/utils/coLocations';
+import { getActiveCoLocationBadge } from '@/utils/coLocations';
 
 interface Props {
   flight: Flight;
@@ -74,19 +74,19 @@ export default function HistoryModalHeader({
           )}
         </div>
         {(() => {
-          const originInfo = getCoLocationInfo(flight.origin);
-          const destInfo = getCoLocationInfo(flight.destination);
-          if (!originInfo && !destInfo) return null;
+          const originBadge = getActiveCoLocationBadge(flight.origin);
+          const destBadge = getActiveCoLocationBadge(flight.destination);
+          if (!originBadge && !destBadge) return null;
           return (
             <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
-              {originInfo && (
+              {originBadge && (
                 <span className="px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-800/50 font-sans">
-                  Origin: {originInfo.description}
+                  Origin: {originBadge}
                 </span>
               )}
-              {destInfo && (
+              {destBadge && (
                 <span className="px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-800/50 font-sans">
-                  Dest: {destInfo.description}
+                  Dest: {destBadge}
                 </span>
               )}
             </div>
