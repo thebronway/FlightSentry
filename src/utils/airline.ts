@@ -190,3 +190,74 @@ export function getDataSourceStatus(settings?: any | null): {
     available: true,
   };
 }
+
+export function getOperatingAirlines(flight: {
+  searchMode?: string | null;
+  flightNumber?: string | null;
+  latestMetadata?: string | null;
+  includedAirlines?: string | null;
+  airline?: string | null;
+}): string[] {
+  if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
+    return [];
+  }
+  const set = new Set<string>();
+  if (flight.latestMetadata) {
+    try {
+      const parsed = JSON.parse(flight.latestMetadata);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((it: any) => {
+          if (it.airline) set.add(it.airline.toUpperCase());
+        });
+      }
+    } catch {
+      // Ignored
+    }
+  }
+  if (set.size === 0 && flight.includedAirlines) {
+    flight.includedAirlines.split(',').forEach(code => {
+      const clean = code.trim().toUpperCase();
+      if (clean) set.add(clean);
+    });
+  }
+  if (set.size === 0 && flight.airline) {
+    set.add(flight.airline.toUpperCase());
+  }
+  return Array.from(set).sort();
+}
+
+export function getCurrentPriceAirline(flight: {
+  searchMode?: string | null;
+  flightNumber?: string | null;
+  latestMetadata?: string | null;
+  currentPrice: number;
+  airline?: string | null;
+}): { code: string; flightNumber: string | null } | null {
+  const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
+  if (isFlightNumMode) {
+    return { code: flight.airline || '', flightNumber: flight.flightNumber || null };
+  }
+  if (flight.latestMetadata) {
+    try {
+      const parsed = JSON.parse(flight.latestMetadata);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const exactMatch = parsed.find((it: any) => it.price === flight.currentPrice && it.airline);
+        if (exactMatch) {
+          return { code: exactMatch.airline.toUpperCase(), flightNumber: exactMatch.flightNumber || null };
+        }
+        const sortedByPrice = [...parsed]
+          .filter((it: any) => it.airline && typeof it.price === 'number')
+          .sort((a: any, b: any) => a.price - b.price);
+        if (sortedByPrice.length > 0) {
+          return { code: sortedByPrice[0].airline.toUpperCase(), flightNumber: sortedByPrice[0].flightNumber || null };
+        }
+      }
+    } catch {
+      // Ignored
+    }
+  }
+  if (flight.airline) {
+    return { code: flight.airline.toUpperCase(), flightNumber: null };
+  }
+  return null;
+}

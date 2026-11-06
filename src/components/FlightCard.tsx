@@ -6,7 +6,7 @@ import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingB
 import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl } from '@/utils/airline';
+import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
 import Tooltip from './common/Tooltip';
 
@@ -36,63 +36,9 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
     ? `${flight.airline} ${flight.flightNumber}`
     : `${flight.origin} → ${flight.destination}`;
 
-  const operatingAirlines = useMemo(() => {
-    if (isFlightNumMode) return [];
-    const set = new Set<string>();
-    if (flight.latestMetadata) {
-      try {
-        const parsed = JSON.parse(flight.latestMetadata);
-        if (Array.isArray(parsed)) {
-          parsed.forEach((it: any) => {
-            if (it.airline) set.add(it.airline.toUpperCase());
-          });
-        }
-      } catch {
-        // Ignored
-      }
-    }
-    if (set.size === 0 && flight.includedAirlines) {
-      flight.includedAirlines.split(',').forEach(code => {
-        const clean = code.trim().toUpperCase();
-        if (clean) set.add(clean);
-      });
-    }
-    if (set.size === 0 && flight.airline) {
-      set.add(flight.airline.toUpperCase());
-    }
-    return Array.from(set).sort();
-  }, [flight.latestMetadata, flight.airline, flight.includedAirlines, isFlightNumMode]);
-
+  const operatingAirlines = useMemo(() => getOperatingAirlines(flight), [flight]);
   const secondaryDetail = isFlightNumMode ? `${flight.origin} → ${flight.destination}` : '';
-
-  const currentPriceAirline = useMemo(() => {
-    if (isFlightNumMode) {
-      return { code: flight.airline, flightNumber: flight.flightNumber };
-    }
-    if (flight.latestMetadata) {
-      try {
-        const parsed = JSON.parse(flight.latestMetadata);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const exactMatch = parsed.find((it: any) => it.price === flight.currentPrice && it.airline);
-          if (exactMatch) {
-            return { code: exactMatch.airline.toUpperCase(), flightNumber: exactMatch.flightNumber || null };
-          }
-          const sortedByPrice = [...parsed]
-            .filter((it: any) => it.airline && typeof it.price === 'number')
-            .sort((a: any, b: any) => a.price - b.price);
-          if (sortedByPrice.length > 0) {
-            return { code: sortedByPrice[0].airline.toUpperCase(), flightNumber: sortedByPrice[0].flightNumber || null };
-          }
-        }
-      } catch {
-        // Ignored
-      }
-    }
-    if (flight.airline) {
-      return { code: flight.airline.toUpperCase(), flightNumber: null };
-    }
-    return null;
-  }, [isFlightNumMode, flight.airline, flight.flightNumber, flight.latestMetadata, flight.currentPrice]);
+  const currentPriceAirline = useMemo(() => getCurrentPriceAirline(flight), [flight]);
 
   const isPast = flight.status === 'Past';
   const googleFlightsUrl = getGoogleFlightsUrl(flight);
@@ -155,14 +101,16 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                   code={flight.airline}
                   flightNumber={flight.flightNumber}
                   size="sm"
+                  align="left"
                 />
               ) : operatingAirlines.length > 0 ? (
-                operatingAirlines.map(code => (
+                operatingAirlines.map((code, idx) => (
                   <AirlineBadge
                     key={code}
                     code={code}
                     size="xs"
                     showFlightNumber={false}
+                    align={idx === 0 ? 'left' : 'center'}
                   />
                 ))
               ) : null}

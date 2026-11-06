@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.7.1*
+*Current Version: v0.7.2*
 
 ## Changelog
+
+### Release v0.7.2
+- Added layover airport codes, column sorting, and expand/collapse to Carrier Breakdown.
+- Compacted Price Chart hover tooltips to single-line summaries to eliminate clipping.
+- Added operating carrier badges and lowest-price carrier indicators to Condensed View.
+- Fixed tooltip boundary clamping, z-index clipping, and single-airport co-location badges.
 
 ### Release v0.7.1
 - Added Search Preferences tab in Settings for instance-wide flight search defaults.

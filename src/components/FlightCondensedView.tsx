@@ -6,7 +6,7 @@ import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingB
 import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl } from '@/utils/airline';
+import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
 import Tooltip from './common/Tooltip';
 
@@ -25,18 +25,18 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
   const [hoveredHistoryFlightId, setHoveredHistoryFlightId] = useState<number | null>(null);
 
   return (
-    <div className="bg-gunmetal-card rounded-lg border border-gunmetal-border overflow-hidden shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="bg-gunmetal-card rounded-lg border border-gunmetal-border shadow-sm">
+      <div>
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gunmetal-border bg-gunmetal-canvas/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              <th className="py-3 px-4 border-l-4 border-l-transparent">Flight / Route</th>
+              <th className="py-3 px-4 border-l-4 border-l-transparent rounded-tl-lg">Flight / Route</th>
               <th className="py-3 px-4">Departure</th>
               <th className="py-3 px-4">Tier & Cabin</th>
               <th className="py-3 px-4">Current Price</th>
               <th className="py-3 px-4">Benchmark</th>
               <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-4 text-right rounded-tr-lg">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gunmetal-border text-sm">
@@ -49,6 +49,8 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
               const googleFlightsUrl = getGoogleFlightsUrl(flight);
               const isPast = flight.status === 'Past';
               const isHistoryHovered = hoveredHistoryFlightId === flight.id;
+              const operatingAirlines = getOperatingAirlines(flight);
+              const currentPriceAirline = getCurrentPriceAirline(flight);
               return (
                 <tr
                   key={flight.id}
@@ -76,7 +78,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     <div className="font-bold text-slate-100 font-sans group-hover/row:text-sky-400 transition-colors">
                       {isFlightNumMode ? `${flight.airline} ${flight.flightNumber}` : `${flight.origin} → ${flight.destination}`}
                     </div>
-                    <div className="text-xs text-gunmetal-muted flex items-center gap-1.5 mt-0.5">
+                    <div className="text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 mt-0.5">
                       {isFlightNumMode ? (
                         <>
                           <span>{flight.origin} → {flight.destination}</span>
@@ -84,8 +86,18 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         </>
                       ) : (
                         <>
-                          {flight.airline ? (
-                            <AirlineBadge code={flight.airline} size="xs" showFlightNumber={false} />
+                          {operatingAirlines.length > 0 ? (
+                            operatingAirlines.map((code, idx) => (
+                              <AirlineBadge
+                                key={code}
+                                code={code}
+                                size="xs"
+                                showFlightNumber={false}
+                                align={idx === 0 ? 'left' : 'center'}
+                              />
+                            ))
+                          ) : flight.airline ? (
+                            <AirlineBadge code={flight.airline} size="xs" showFlightNumber={false} align="left" />
                           ) : flight.includedAirlines ? (
                             <span>{flight.includedAirlines}</span>
                           ) : (
@@ -148,11 +160,21 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="font-black text-slate-100 block">
-                      {formatCurrency(flight.currentPrice, flight.currency)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-slate-100">
+                        {formatCurrency(flight.currentPrice, flight.currency)}
+                      </span>
+                      {!isPurchased && currentPriceAirline && (
+                        <AirlineBadge
+                          code={currentPriceAirline.code}
+                          flightNumber={currentPriceAirline.flightNumber}
+                          showFlightNumber={false}
+                          size="xs"
+                        />
+                      )}
+                    </div>
                     {delta !== 0 && (
-                      <span className={`text-xs font-semibold ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className={`text-xs font-semibold ${isDrop ? 'text-green-400' : 'text-red-400'} block`}>
                         {isDrop ? '↓' : '↑'} {formatCurrency(Math.abs(delta), flight.currency)}
                       </span>
                     )}
@@ -256,7 +278,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip
                         content={flight.status === 'Past' ? 'Checks disabled for past flights' : flight.status === 'Paused' ? 'Flight checks paused' : isPointsCurrency(flight.currency) ? 'Automated checks disabled for points flights' : 'Check live price now'}
-                        align="right"
+                        align="center"
                       >
                         <button
                           onClick={() => checkNow(flight.id)}
@@ -268,7 +290,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       </Tooltip>
                       <Tooltip
                         content="View price history & trend graph"
-                        align="right"
+                        align="center"
                       >
                         <button
                           onClick={() => onShowHistory(flight)}
@@ -283,7 +305,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       </Tooltip>
                       <Tooltip
                         content="Search on Google Flights"
-                        align="right"
+                        align="center"
                       >
                         <a
                           href={googleFlightsUrl}
@@ -296,7 +318,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       </Tooltip>
                       <Tooltip
                         content="Edit flight details & preferences"
-                        align="right"
+                        align="center"
                       >
                         <button
                           onClick={() => onEdit(flight)}
@@ -308,7 +330,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       {!isPurchased && onConvertToBooked && (
                         <Tooltip
                           content="Convert to Booked (I bought this flight)"
-                          align="right"
+                          align="center"
                         >
                           <button
                             onClick={() => onConvertToBooked(flight)}
@@ -320,7 +342,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                       )}
                       <Tooltip
                         content={flight.status === 'Past' ? 'Past flight' : flight.status !== 'Paused' ? 'Pause automated price checks' : 'Resume automated price checks'}
-                        align="right"
+                        align="center"
                       >
                         <button
                           onClick={() => toggleStatus(flight)}

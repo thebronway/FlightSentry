@@ -49,7 +49,7 @@ export default function AirlineBadge({
   }[align];
 
   return (
-    <div className={`group/airline relative inline-flex items-center ${className}`}>
+    <div className={`group/airline relative inline-flex items-center hover:z-50 ${className}`}>
       <span
         className={`inline-flex items-center gap-1.5 rounded font-bold font-mono border bg-gunmetal-canvas text-slate-200 border-gunmetal-border shadow-sm cursor-pointer transition-colors group-hover/airline:border-slate-500 group-hover/airline:text-white ${sizeClasses}`}
       >

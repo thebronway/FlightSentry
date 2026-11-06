@@ -1,14 +1,14 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.7.1*
+*Current Version: v0.7.2*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.7.2: Continuous Monitoring (Dual Flight & Route Tracking)
+### Release v0.7.3: Continuous Monitoring (Dual Flight & Route Tracking)
 - **Opt-In Route Monitoring on Specific Flights:**
   - Add an optional "Also Monitor Route Alternatives" toggle when tracking specific flight numbers (disabled by default for standalone flight tracking).
   - Progressive disclosure: toggling route monitoring reveals route-level filters (airport co-locations, stops, departure/arrival time windows, redeye exclusions, airline inclusions/exclusions), pre-populated from global Search Preferences.
@@ -19,7 +19,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Notifications & Emails: Position the primary tracked flight status, benchmark, and price change prominently in the top header card; display a secondary, compact table of alternative flights on the route below.
   - History Modal: Focus graph lines on the tracked flight by default; provide a toggle to overlay the broader route floor and competitor trends (default: route floor hidden to prevent clutter).
 
-### Release v0.7.3: Manual Entry Mode
+### Release v0.7.4: Manual Entry Mode
 - **Custom Historical & Manual Price Entries:**
   - Allow users to manually log price check data points directly into price history for both cash and award points flights.
   - Entry fields: Date (supports past calendar dates), Price / Points Cost, Carrier Code, Flight Number, and Route.
@@ -31,7 +31,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - **Purchased Flight**
   - Once a flight is booked, orignal purchase price should be locked, but a user can enter a new purchase price via manual mode and mark it as a rebook.
 
-### Release v0.7.4: Flight Modal Redesign
+### Release v0.7.5: Flight Modal Redesign
 - **Modular Modal Redesign:**
   - Ground-up redesign of the flight modal incorporating all finalized capabilities (Points vs. Cash, Watching vs. Booked, Route vs. Flight Number, Dual Route Monitoring, Search Preference Overrides, and Manual Logging).
   - Organize into clean visual sections:
@@ -47,19 +47,19 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - **Component Cleanup:**
   - Make sure a correct folders strcuture is used, no monolthic files, no hacks, no missing/deprecated/no longer used imports and that all best practices are followed. 
 
-### Release v0.7.5: Flight Card Redesign
+### Release v0.7.6: Flight Card / Condenced Redesign / Refresh
 
-### Release v0.7.6
+### Release v0.7.7
 - Fast Flights is broken, always showing sold old. need to look up actual documention and fix it.
 
-### Release v0.7.7: Mobile Optimization
+### Release v0.7.8: Mobile Optimization
 - **Mobile Experience Optimization:**
   - Convert Flight Modal, Convert Modal, and History Modal to responsive full-height bottom-sheets on mobile viewports (<640px).
   - Standardize touch targets (minimum 44x44px) across all form inputs, toggles, tags, and action buttons.
   - Add touch-friendly crosshair scrubbing on the Price History chart with viewport-bounded tooltips.
 - go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
 
-### Release v0.7.8a: Research Only, Security and Best Practices Audit
+### Release v0.7.9a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
 - Look for monolthic files / lack of folder organization
@@ -74,14 +74,14 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Make a plan for another ai for v0.6.8 for fixes, no fixes today. Be clear and concise.
     - Double check results
 
-### Release v0.7.8: Security and Best Practices Application
+### Release v0.7.9: Security and Best Practices Application
 - Security and Best Practices Application
 
-### Release v0.7.9a: Separate playwright container scraper plan
+### Release v0.8.0a: Separate playwright container scraper plan
 - Playwright for optional hosted scrapper, seperate container.
     - the goal here is to make a plan for a separate container called FlightSentry-Scrapper. Which eventually will be a data source. But this optional container will, you know, be a hefty guy because it would have to like load playwright and chromium and everything in between to go to the Google flights page and scrape it. That's why I want it separate from this container/build.
 
-### Release v0.7.9: Separate playwright container scraper implementation
+### Release v0.8.0: Separate playwright container scraper implementation
 - API Playwright optional hosted scrapper integration.
 
 ### Release v0.9.0: Production Prep

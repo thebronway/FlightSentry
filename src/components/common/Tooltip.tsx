@@ -39,7 +39,7 @@ export default function Tooltip({
     position === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5';
 
   return (
-    <div className={`relative inline-flex group/tooltip ${className}`}>
+    <div className={`relative inline-flex group/tooltip hover:z-50 ${className}`}>
       {children}
       <div
         role="tooltip"
