@@ -11,6 +11,7 @@ interface AirlineTagInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  maxTags?: number;
 }
 
 export default function AirlineTagInput({
@@ -19,6 +20,7 @@ export default function AirlineTagInput({
   placeholder = 'e.g. DL, AA (type code & press space or comma)',
   disabled = false,
   className = '',
+  maxTags,
 }: AirlineTagInputProps) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,14 +37,30 @@ export default function AirlineTagInput({
     if (!raw.trim()) return;
     const normalized = normalizeAirlineCode(raw);
     const clean = normalized && normalized !== 'UN' ? normalized : raw.trim().toUpperCase();
-    if (clean && !tags.includes(clean)) {
-      const updated = [...tags, clean];
-      onChange(updated.join(', '));
+    if (clean) {
+      if (maxTags === 1) {
+        onChange(clean);
+      } else if (!tags.includes(clean)) {
+        if (maxTags && tags.length >= maxTags) return;
+        const updated = [...tags, clean];
+        onChange(updated.join(', '));
+      }
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
+    if (maxTags === 1) {
+      if (text.includes(',') || text.includes(' ')) {
+        const token = text.replace(/[, ]+/g, '').trim();
+        if (token) commitToken(token);
+        setInputValue('');
+      } else {
+        setInputValue(text.toUpperCase());
+      }
+      return;
+    }
+
     if (text.includes(',') || text.includes(' ')) {
       const rawTokens = text.split(/[, ]+/);
       const remaining = rawTokens.pop() || '';
@@ -53,6 +71,7 @@ export default function AirlineTagInput({
         const normalized = normalizeAirlineCode(token);
         const clean = normalized && normalized !== 'UN' ? normalized : token.trim().toUpperCase();
         if (clean && !currentTags.includes(clean)) {
+          if (maxTags && currentTags.length >= maxTags) break;
           currentTags.push(clean);
         }
       }
@@ -128,17 +147,19 @@ export default function AirlineTagInput({
         );
       })}
 
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputValue}
-        disabled={disabled}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        placeholder={tags.length === 0 ? placeholder : 'Add carrier...'}
-        className="bg-transparent text-sm uppercase text-slate-200 placeholder-zinc-500 focus:outline-none flex-1 min-w-[70px] h-6 font-mono"
-      />
+      {(!maxTags || tags.length < maxTags) && (
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          disabled={disabled}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          placeholder={tags.length === 0 ? placeholder : 'Add carrier...'}
+          className="bg-transparent text-sm uppercase text-slate-200 placeholder-zinc-500 focus:outline-none flex-1 min-w-[70px] h-6 font-mono"
+        />
+      )}
     </div>
   );
 }

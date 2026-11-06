@@ -11,6 +11,7 @@ interface ScaleParams {
   baselinePrice: number;
   purchasePrice?: number | null;
   searchMode?: SearchMode;
+  overlayRouteFloor?: boolean;
 }
 
 export function usePriceChartScales({
@@ -18,6 +19,7 @@ export function usePriceChartScales({
   baselinePrice,
   purchasePrice,
   searchMode = 'Route',
+  overlayRouteFloor = false,
 }: ScaleParams) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -140,7 +142,7 @@ export function usePriceChartScales({
     });
   }, [sorted]);
 
-  const isMultiAirlineMode = searchMode === 'Route' && allOperatingAirlines.length > 1;
+  const isMultiAirlineMode = (searchMode === 'Route' || overlayRouteFloor) && allOperatingAirlines.length > 1;
 
   // Chart dimensions & margins
   const width = 740;

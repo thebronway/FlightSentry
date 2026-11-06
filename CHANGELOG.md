@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-05*  
-*Current Version: v0.7.2*
+*Last updated: 2026-11-06*  
+*Current Version: v0.7.3*
 
 ## Changelog
+
+### Release v0.7.3
+- Added opt-in "Also Monitor Route Alternatives" dual flight and route tracking for watched and booked flights.
+- Added alternative route scope selector for airport co-locations (exact airport vs. metro/regional clusters).
+- Added watched-to-booked route adoption with quick-select options from lowest monitored flights.
+- Added "Overlay Route Floor" toggle in Price History to overlay market floor and competitor trends on demand.
+- Updated alert notifications to feature primary flight benchmarks with a compact secondary route alternatives table.
+- Fixed flight number parser stripping digits on multi-digit flight numbers (e.g. AA 830).
+- Fixed background settings polling resetting flight modal state during active user input.
 
 ### Release v0.7.2
 - Added layover airport codes, column sorting, and expand/collapse to Carrier Breakdown.

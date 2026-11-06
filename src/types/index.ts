@@ -41,6 +41,7 @@ export interface Flight {
   minIncreasePercent?: number | null;
   maxStops?: number | null;
   currency?: string | null;
+  monitorRouteAlternatives?: number; // 0 (false) or 1 (true)
 }
 
 export interface RouteItinerary {

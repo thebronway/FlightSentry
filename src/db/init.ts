@@ -57,6 +57,7 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN defaultExcludedAirlines TEXT",
         "ALTER TABLE settings ADD COLUMN maxStoredItineraries INTEGER NOT NULL DEFAULT 12",
         "ALTER TABLE settings ADD COLUMN carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE flights ADD COLUMN monitorRouteAlternatives INTEGER NOT NULL DEFAULT 0",
     ];
     for (const migration of migrations) {
         try {

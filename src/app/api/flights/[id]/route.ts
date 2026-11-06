@@ -88,6 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       priceTrackingDirection: parsed.priceTrackingDirection ?? existing.priceTrackingDirection ?? 'drop',
       minIncreaseDollar: parsed.minIncreaseDollar !== undefined ? parsed.minIncreaseDollar : existing.minIncreaseDollar,
       minIncreasePercent: parsed.minIncreasePercent !== undefined ? parsed.minIncreasePercent : existing.minIncreasePercent,
+      monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : (existing.monitorRouteAlternatives ?? 0),
     });
 
     const updated = flightDb.getById(id);

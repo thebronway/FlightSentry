@@ -10,9 +10,18 @@ export const dynamic = 'force-dynamic';
 const convertSchema = z.object({
   purchasePrice: z.number().positive('Purchase price must be greater than zero'),
   airline: z.string().min(2, 'Airline carrier code is required').max(3),
-  flightNumber: z.string().regex(/^\d+$/, 'Flight number must be numbers only').optional().nullable().or(z.literal('')),
+  flightNumber: z.string().regex(/^\d+$/, 'Flight number must be numbers only').min(1, 'Flight number is required'),
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
   currency: z.string().max(50).optional().nullable().or(z.literal('')),
+  monitorRouteAlternatives: z.number().min(0).max(1).optional().default(1),
+  origin: z.string().optional().nullable(),
+  destination: z.string().optional().nullable(),
+  includedAirlines: z.string().optional().nullable(),
+  excludedAirlines: z.string().optional().nullable(),
+  maxStops: z.number().int().min(0).max(2).optional().nullable(),
+  earliestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
+  latestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
+  noRedeye: z.number().min(0).max(1).optional().default(0),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -41,6 +50,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       pnr: cleanPnr,
       searchMode,
       currency: parsed.currency || existing.currency,
+      monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : 1,
+      origin: parsed.origin ? parsed.origin.trim().toUpperCase() : existing.origin,
+      destination: parsed.destination ? parsed.destination.trim().toUpperCase() : existing.destination,
+      includedAirlines: parsed.includedAirlines !== undefined ? parsed.includedAirlines : existing.includedAirlines,
+      excludedAirlines: parsed.excludedAirlines !== undefined ? parsed.excludedAirlines : existing.excludedAirlines,
+      maxStops: parsed.maxStops !== undefined ? parsed.maxStops : existing.maxStops,
+      earliestDeparture: parsed.earliestDeparture !== undefined ? parsed.earliestDeparture : existing.earliestDeparture,
+      latestDeparture: parsed.latestDeparture !== undefined ? parsed.latestDeparture : existing.latestDeparture,
+      noRedeye: parsed.noRedeye !== undefined ? parsed.noRedeye : existing.noRedeye,
     });
 
     // Record milestone entry in price_history

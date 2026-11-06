@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS flights (
     minIncreasePercent REAL,
     maxStops INTEGER,
     currency TEXT,
+    monitorRouteAlternatives INTEGER NOT NULL DEFAULT 0,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
 );

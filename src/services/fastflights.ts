@@ -78,7 +78,7 @@ export const checkFastFlightsPrice = async (
             seat,
             trip: 'one-way',
             passengers: new Passengers({ adults: 1 }),
-            max_stops: flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
+            max_stops: flight.searchMode === 'Route' && flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
             currency: (currency || 'USD') as any,
           });
 
@@ -158,12 +158,24 @@ export const checkFastFlightsPrice = async (
 
       if (targetFlight && typeof targetFlight.price === 'number') {
         const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
+        let alternatives: RouteItinerary[] | undefined = undefined;
+        if (flight.monitorRouteAlternatives === 1) {
+          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+          if (flight.includedAirlines) {
+            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
+          }
+          if (flight.excludedAirlines) {
+            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
+          }
+        }
         return {
           price: targetFlight.price,
           status: 'Success',
           leadingAirline: targetCode,
           leadingFlightNumber: flight.flightNumber,
-          itineraries: parsedItineraries,
+          itineraries: alternatives,
         };
       }
       return { price: null, status: 'SoldOut' };

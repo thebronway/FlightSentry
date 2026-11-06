@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, PlaneTakeoff, Compass, Lock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { FareTier, CabinClass, SearchMode, PriceTrackingDirection, Flight, Settings } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
@@ -11,6 +11,7 @@ import TrackingGoalSection, { TrackingGoal } from './flightModal/TrackingGoalSec
 import AlertThresholdsSection from './flightModal/AlertThresholdsSection';
 import CadenceOverridesSection from './flightModal/CadenceOverridesSection';
 import SearchPreferencesSection from './flightModal/SearchPreferencesSection';
+import RouteCorridorCoLocationSection from './flightModal/RouteCorridorCoLocationSection';
 import AirlineTagInput from './common/AirlineTagInput';
 
 interface Props {
@@ -52,6 +53,7 @@ const DEFAULT_STATE = {
   priceTrackingDirection: 'drop' as PriceTrackingDirection,
   minIncreaseDollar: '',
   minIncreasePercent: '',
+  monitorRouteAlternatives: false,
 };
 
 export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight, settings }: Props) {
@@ -60,6 +62,9 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
   const [loading, setLoading] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const prevIsOpenRef = useRef(false);
+  const prevInitialFlightIdRef = useRef<number | undefined>(undefined);
 
   const dsStatus = useMemo(() => getDataSourceStatus(defaultSettings), [defaultSettings]);
 
@@ -107,10 +112,15 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
         .then(data => setDefaultSettings(data))
         .catch(err => console.error('Failed to load global settings in modal:', err));
     }
-  }, [settings, isOpen]);
+  }, [settings]);
 
   useEffect(() => {
-    if (isOpen) {
+    // Only initialize/reset form data when the modal transitions from closed to open,
+    // or when switching which flight is being edited, NOT on background settings polling
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isFlightChanged = isOpen && initialFlight?.id !== prevInitialFlightIdRef.current;
+
+    if (isOpening || isFlightChanged) {
       if (initialFlight) {
         let farOut = '';
         let standard = '';
@@ -159,6 +169,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           priceTrackingDirection: initialFlight.priceTrackingDirection || 'drop',
           minIncreaseDollar: (initialFlight.minIncreaseDollar !== null && initialFlight.minIncreaseDollar !== undefined) ? String(initialFlight.minIncreaseDollar) : '',
           minIncreasePercent: (initialFlight.minIncreasePercent !== null && initialFlight.minIncreasePercent !== undefined) ? String(initialFlight.minIncreasePercent) : '',
+          monitorRouteAlternatives: initialFlight.monitorRouteAlternatives === 1,
         });
       } else {
         setFormData({
@@ -170,10 +181,14 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
           maxStops: (defaultSettings?.defaultMaxStops !== undefined && defaultSettings?.defaultMaxStops !== null) ? defaultSettings.defaultMaxStops : null,
           includedAirlines: defaultSettings?.defaultIncludedAirlines || '',
           excludedAirlines: defaultSettings?.defaultExcludedAirlines || '',
+          monitorRouteAlternatives: false,
         });
       }
       setError(null);
     }
+
+    prevIsOpenRef.current = isOpen;
+    prevInitialFlightIdRef.current = initialFlight?.id;
   }, [isOpen, initialFlight, defaultSettings]);
 
   if (!isOpen) return null;
@@ -199,6 +214,28 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
     setFormData(prev => ({ ...prev, ...updates }));
     if (lookupFailed) setLookupFailed(false);
     if (error) setError(null);
+  };
+
+  const handleToggleRouteAlternatives = (enabled: boolean) => {
+    setFormData(prev => {
+      const updates: Partial<typeof formData> = { monitorRouteAlternatives: enabled };
+      // When turning on, pre-populate filters from global Search Preferences if empty
+      if (enabled && defaultSettings) {
+        if (!prev.includedAirlines && defaultSettings.defaultIncludedAirlines) {
+          updates.includedAirlines = defaultSettings.defaultIncludedAirlines;
+        }
+        if (!prev.excludedAirlines && defaultSettings.defaultExcludedAirlines) {
+          updates.excludedAirlines = defaultSettings.defaultExcludedAirlines;
+        }
+        if (prev.maxStops === null && defaultSettings.defaultMaxStops !== null && defaultSettings.defaultMaxStops !== undefined) {
+          updates.maxStops = defaultSettings.defaultMaxStops;
+        }
+        if (!prev.noRedeye && defaultSettings.defaultNoRedeye === 1) {
+          updates.noRedeye = true;
+        }
+      }
+      return { ...prev, ...updates };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -271,6 +308,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       priceTrackingDirection: formData.trackingGoal === 'booked' ? 'drop' : formData.priceTrackingDirection,
       minIncreaseDollar: formData.minIncreaseDollar ? parseFloat(formData.minIncreaseDollar) : null,
       minIncreasePercent: formData.minIncreasePercent ? parseFloat(formData.minIncreasePercent) : null,
+      monitorRouteAlternatives: effectiveSearchMode === 'FlightNumber' ? (formData.monitorRouteAlternatives ? 1 : 0) : 0,
     };
 
     try {
@@ -444,22 +482,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                     Carrier Code {formData.trackingGoal === 'booked' && '*'}
                   </label>
-                  <input
-                    required={formData.searchMode === 'FlightNumber' || formData.trackingGoal === 'booked'}
-                    placeholder="e.g. AS, AA, or Delta"
-                    maxLength={15}
+                  <AirlineTagInput
                     value={formData.airline}
-                    onChange={e => setFormData({ ...formData, airline: e.target.value.toUpperCase() })}
-                    onBlur={e => {
-                      const val = e.target.value.trim();
-                      if (val) {
-                        const normalized = normalizeAirlineCode(val);
-                        if (normalized && normalized !== 'UN') {
-                          setFormData(prev => ({ ...prev, airline: normalized }));
-                        }
-                      }
-                    }}
-                    className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                    onChange={val => setFormData(prev => ({ ...prev, airline: val }))}
+                    maxTags={1}
+                    placeholder="e.g. AS, AA, or Delta"
                   />
                 </div>
                 <div>
@@ -555,12 +582,12 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
               <input
                 required
                 maxLength={30}
-                placeholder="e.g. DCA, WAS, or DFW, DAL"
+                placeholder={formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' ? "e.g. DCA, WAS, or DFW, DAL" : "e.g. DCA"}
                 value={formData.origin}
                 onChange={e => setFormData({ ...formData, origin: e.target.value.toUpperCase() })}
                 className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
-              {(() => {
+              {formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' && (() => {
                 const info = getCoLocationInfo(formData.origin);
                 if (!info) return null;
                 return (
@@ -586,12 +613,12 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
               <input
                 required
                 maxLength={30}
-                placeholder="e.g. LAS or DFW, DAL"
+                placeholder={formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' ? "e.g. LAS or DFW, DAL" : "e.g. LAX"}
                 value={formData.destination}
                 onChange={e => setFormData({ ...formData, destination: e.target.value.toUpperCase() })}
                 className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
-              {(() => {
+              {formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' && (() => {
                 const info = getCoLocationInfo(formData.destination);
                 if (!info) return null;
                 return (
@@ -611,6 +638,69 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
               })()}
             </div>
           </div>
+
+          {/* Specific Flight Mode: Also Monitor Route Alternatives Toggle (Watching and Booked) */}
+          {formData.searchMode === 'FlightNumber' && (
+            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 space-y-3">
+              <label className="flex items-center justify-between cursor-pointer select-none">
+                <div className="space-y-0.5">
+                  <span className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    <span>Also Monitor Route Alternatives</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sky-950/60 text-sky-400 border border-sky-800/40 uppercase">
+                      Dual Tracking
+                    </span>
+                  </span>
+                  <span className="block text-xs text-gunmetal-muted">
+                    Concurrently check alternative flights on {formData.origin || 'Origin'} → {formData.destination || 'Destination'} using your route preferences while tracking {formData.airline || 'Flight'} #{formData.flightNumber || ''}.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.monitorRouteAlternatives}
+                  onChange={e => handleToggleRouteAlternatives(e.target.checked)}
+                  className="w-4 h-4 accent-slate-500 rounded ml-4 flex-shrink-0 cursor-pointer"
+                />
+              </label>
+
+              {formData.monitorRouteAlternatives && (
+                <div className="pt-3 border-t border-gunmetal-border/70 space-y-4 animate-in fade-in duration-150">
+                  <RouteCorridorCoLocationSection
+                    origin={formData.origin}
+                    destination={formData.destination}
+                    physicalOrigin={detectedRoute?.origin || (initialFlight?.airline && initialFlight?.flightNumber ? initialFlight.origin : null)}
+                    physicalDestination={detectedRoute?.destination || (initialFlight?.airline && initialFlight?.flightNumber ? initialFlight.destination : null)}
+                    onScopeChange={updates => setFormData(prev => ({ ...prev, ...updates }))}
+                  />
+
+                  <p className="text-[11px] text-sky-300/90 font-medium">
+                    Route filters pre-populated from global Search Preferences. Cabin class ({formData.cabinClass}) and fare tier ({formData.fareTier}) are inherited from the parent flight.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Route Airline Inclusions (Optional)
+                      </label>
+                      <AirlineTagInput
+                        value={formData.includedAirlines}
+                        onChange={val => handleFieldChange({ includedAirlines: val })}
+                        placeholder="e.g. DL, AA (type & press space or comma)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Route Airline Exclusions (Optional)
+                      </label>
+                      <AirlineTagInput
+                        value={formData.excludedAirlines}
+                        onChange={val => handleFieldChange({ excludedAirlines: val })}
+                        placeholder="e.g. NK, F9 (type & press space or comma)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Route Mode Airline Inclusions & Exclusions */}
           {formData.searchMode === 'Route' && formData.trackingGoal !== 'booked' && (
@@ -684,8 +774,8 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             </div>
           </div>
 
-          {/* Search Preferences: Stops, Time of Day, and No Redeye (Only for unbooked watching flights) */}
-          {formData.trackingGoal !== 'booked' && (
+          {/* Search Preferences: Stops, Time of Day, and No Redeye (Rendered for Route mode, or when Route Alternatives is checked) */}
+          {(formData.searchMode === 'Route' || formData.monitorRouteAlternatives) && (
             <SearchPreferencesSection
               earliestDeparture={formData.earliestDeparture}
               latestDeparture={formData.latestDeparture}

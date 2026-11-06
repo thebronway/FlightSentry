@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
       minIncreaseDollar: parsed.minIncreaseDollar ?? null,
       minIncreasePercent: parsed.minIncreasePercent ?? null,
       maxStops: parsed.maxStops ?? null,
+      monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
       nextCheckAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -208,6 +209,7 @@ export async function POST(req: NextRequest) {
       minDropDollar: parsed.minDropDollar ?? null,
       minDropPercent: parsed.minDropPercent ?? null,
       maxStops: parsed.maxStops ?? null,
+      monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
       currentPrice,
       status: initialStatus, 
       nextCheckAt 

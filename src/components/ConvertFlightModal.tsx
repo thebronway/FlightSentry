@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Flight } from '@/types';
-import { X, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
+import { X, ShoppingBag, Loader2, AlertCircle, Pencil } from 'lucide-react';
 import { formatCurrency, getCurrencySymbol } from '@/utils/format';
+import { cleanDisplayTime, normalizeAirlineCode } from '@/utils/airline';
+import AirlineBadge from './common/AirlineBadge';
+import AirlineTagInput from './common/AirlineTagInput';
+import SearchPreferencesSection from './flightModal/SearchPreferencesSection';
+import RouteCorridorCoLocationSection from './flightModal/RouteCorridorCoLocationSection';
 
 interface Props {
   isOpen: boolean;
@@ -28,15 +33,110 @@ export default function ConvertFlightModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && flight) {
-      setPurchasePrice(flight.currentPrice ? String(flight.currentPrice) : '');
-      setAirline(flight.airline || '');
-      setFlightNumber(flight.flightNumber || '');
-      setPnr(flight.pnr || '');
-      setCurrency(flight.currency || 'USD');
-      setError(null);
+  // Watched-to-Booked Route Adoption State
+  const [monitorRouteAlternatives, setMonitorRouteAlternatives] = useState(true);
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [includedAirlines, setIncludedAirlines] = useState('');
+  const [excludedAirlines, setExcludedAirlines] = useState('');
+  const [maxStops, setMaxStops] = useState<number | null>(null);
+  const [earliestDeparture, setEarliestDeparture] = useState('');
+  const [latestDeparture, setLatestDeparture] = useState('');
+  const [noRedeye, setNoRedeye] = useState(false);
+  const [selectedCandidateKey, setSelectedCandidateKey] = useState<string | null>(null);
 
+  const prevIsOpenRef = useRef(false);
+  const prevFlightIdRef = useRef<number | undefined>(undefined);
+
+  // Extract top lowest monitored itineraries from route price checks
+  const candidateFlights = useMemo(() => {
+    if (!flight?.latestMetadata) return [];
+    try {
+      const parsed = JSON.parse(flight.latestMetadata);
+      if (!Array.isArray(parsed)) return [];
+      const seen = new Set<string>();
+      const list: Array<{
+        key: string;
+        airline: string;
+        flightNumber?: string;
+        price: number;
+        departureTime?: string;
+        stops?: number;
+        isNonstop?: boolean;
+      }> = [];
+
+      for (const it of parsed) {
+        const code = (it.airline || '').trim().toUpperCase();
+        const fNum = (it.flightNumber || '').trim();
+        const price = typeof it.price === 'number' ? it.price : 0;
+        const key = `${code}-${fNum || 'var'}`;
+        if (code && price > 0 && !seen.has(key)) {
+          seen.add(key);
+          list.push({
+            key,
+            airline: code,
+            flightNumber: fNum || undefined,
+            price,
+            departureTime: it.departureTime,
+            stops: it.stops,
+            isNonstop: it.isNonstop !== undefined ? it.isNonstop : it.stops === 0,
+          });
+        }
+      }
+      return list.sort((a, b) => a.price - b.price).slice(0, 3);
+    } catch {
+      return [];
+    }
+  }, [flight?.latestMetadata]);
+
+  const handleSelectCandidate = (c: { airline: string; flightNumber?: string; price: number; key: string }) => {
+    setAirline(c.airline);
+    setFlightNumber(c.flightNumber || '');
+    setPurchasePrice(String(c.price));
+    setSelectedCandidateKey(c.key);
+  };
+
+  const handleSelectCustom = () => {
+    setSelectedCandidateKey('custom');
+    setAirline('');
+    setFlightNumber('');
+    setPurchasePrice('');
+  };
+
+  useEffect(() => {
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isFlightChanged = isOpen && flight?.id !== prevFlightIdRef.current;
+
+    if (isOpening || isFlightChanged) {
+      if (flight) {
+        // Leave booking fields blank so user can pick from monitored options or enter manually
+        setPurchasePrice('');
+        setAirline('');
+        setFlightNumber('');
+        setPnr(flight.pnr || '');
+        setCurrency(flight.currency || 'USD');
+        setSelectedCandidateKey(null);
+
+        // Copy existing route preferences and enable route monitoring by default
+        setMonitorRouteAlternatives(true);
+        setOrigin(flight.origin || '');
+        setDestination(flight.destination || '');
+        setIncludedAirlines(flight.includedAirlines || '');
+        setExcludedAirlines(flight.excludedAirlines || '');
+        setMaxStops(flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : null);
+        setEarliestDeparture(flight.earliestDeparture || '');
+        setLatestDeparture(flight.latestDeparture || '');
+        setNoRedeye(flight.noRedeye === 1);
+        setError(null);
+      }
+    }
+
+    prevIsOpenRef.current = isOpen;
+    prevFlightIdRef.current = flight?.id;
+  }, [isOpen, flight]);
+
+  useEffect(() => {
+    if (isOpen) {
       fetch('/api/settings')
         .then(res => res.json())
         .then(data => {
@@ -52,7 +152,7 @@ export default function ConvertFlightModal({
         })
         .catch(() => {});
     }
-  }, [isOpen, flight]);
+  }, [isOpen]);
 
   const isPoints = pointsCurrencies.includes(currency);
 
@@ -76,6 +176,12 @@ export default function ConvertFlightModal({
       return;
     }
 
+    if (!flightNumber.trim()) {
+      setError('Flight number is required for booked flights.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/flights/${flight.id}/convert`, {
         method: 'POST',
@@ -86,6 +192,15 @@ export default function ConvertFlightModal({
           flightNumber: flightNumber.trim() || null,
           pnr: pnr.trim().toUpperCase() || null,
           currency: currency || fiatCurrency,
+          monitorRouteAlternatives: monitorRouteAlternatives ? 1 : 0,
+          origin: origin.trim().toUpperCase(),
+          destination: destination.trim().toUpperCase(),
+          includedAirlines: includedAirlines ? includedAirlines.trim().toUpperCase() : null,
+          excludedAirlines: excludedAirlines ? excludedAirlines.trim().toUpperCase() : null,
+          maxStops: maxStops !== null && maxStops !== undefined ? maxStops : null,
+          earliestDeparture: earliestDeparture ? earliestDeparture.trim() : null,
+          latestDeparture: latestDeparture ? latestDeparture.trim() : null,
+          noRedeye: noRedeye ? 1 : 0,
         }),
       });
 
@@ -104,8 +219,8 @@ export default function ConvertFlightModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 sm:p-6 transition-colors">
+      <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[92vh] overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gunmetal-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -148,6 +263,85 @@ export default function ConvertFlightModal({
             </p>
           </div>
 
+          {/* Quick Select from Monitored Route Flights */}
+          {candidateFlights.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Select Booked Flight (from Monitored Route Options)
+                </label>
+                <span className="text-[11px] text-gunmetal-muted">
+                  Click a flight to pre-fill carrier, flight #, and price
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {candidateFlights.map((c, idx) => {
+                  const isSelected = selectedCandidateKey === c.key;
+                  const formattedTime = cleanDisplayTime(c.departureTime);
+                  const stopsLabel = c.isNonstop
+                    ? 'Nonstop'
+                    : c.stops === 1
+                    ? '1 Stop'
+                    : `${c.stops || 1} Stops`;
+
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => handleSelectCandidate(c)}
+                      className={`p-3 rounded-lg border text-left transition-all relative flex flex-col justify-between gap-2 cursor-pointer ${
+                        isSelected
+                          ? 'bg-emerald-950/40 border-emerald-500/80 ring-1 ring-emerald-500/50 shadow-md'
+                          : 'bg-gunmetal-canvas/60 border-gunmetal-border hover:border-slate-500 hover:bg-gunmetal-canvas'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <AirlineBadge
+                          code={c.airline}
+                          flightNumber={c.flightNumber}
+                          size="xs"
+                        />
+                        <span className="font-black text-sm text-slate-100 font-mono">
+                          {formatCurrency(c.price, currency || fiatCurrency)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-gunmetal-muted">
+                        <span>{stopsLabel}</span>
+                        {formattedTime && <span className="font-mono text-slate-300">{formattedTime}</span>}
+                      </div>
+                      {idx === 0 && (
+                        <span className="absolute -top-2 -right-1 text-[9px] font-bold uppercase tracking-wider bg-green-950 text-green-300 border border-green-800/80 px-1.5 py-0.2 rounded shadow-sm">
+                          Lowest Fare
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={handleSelectCustom}
+                  className={`p-3 rounded-lg border text-left transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                    selectedCandidateKey === 'custom'
+                      ? 'bg-slate-800/60 border-slate-400 ring-1 ring-slate-400/50 shadow-md text-slate-100'
+                      : 'bg-gunmetal-canvas/40 border-dashed border-gunmetal-border text-gunmetal-muted hover:text-slate-300 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded bg-gunmetal-card border border-gunmetal-border">
+                      <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                    </div>
+                    <span className="font-bold text-xs text-slate-200">Different Flight</span>
+                  </div>
+                  <span className="text-[11px] text-gunmetal-muted">
+                    Enter custom carrier, flight #, and price
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
@@ -185,7 +379,10 @@ export default function ConvertFlightModal({
                 min="1"
                 placeholder={flight.currentPrice ? String(flight.currentPrice) : (isPoints ? '35000' : '349.00')}
                 value={purchasePrice}
-                onChange={e => setPurchasePrice(e.target.value)}
+                onChange={e => {
+                  setPurchasePrice(e.target.value);
+                  setSelectedCandidateKey('custom');
+                }}
                 className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
             </div>
@@ -201,24 +398,29 @@ export default function ConvertFlightModal({
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Booked Carrier *
               </label>
-              <input
-                required
-                maxLength={3}
-                placeholder="e.g. DL, AA, F9"
+              <AirlineTagInput
                 value={airline}
-                onChange={e => setAirline(e.target.value.toUpperCase())}
-                className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                onChange={val => {
+                  setAirline(val);
+                  setSelectedCandidateKey('custom');
+                }}
+                maxTags={1}
+                placeholder="e.g. DL or Delta"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Flight # (Optional)
+                Flight Number *
               </label>
               <input
-                pattern="\d*"
+                required
+                pattern="\d+"
                 placeholder="e.g. 523"
                 value={flightNumber}
-                onChange={e => setFlightNumber(e.target.value)}
+                onChange={e => {
+                  setFlightNumber(e.target.value);
+                  setSelectedCandidateKey('custom');
+                }}
                 className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
             </div>
@@ -235,6 +437,82 @@ export default function ConvertFlightModal({
               onChange={e => setPnr(e.target.value.toUpperCase())}
               className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
             />
+          </div>
+
+          {/* Also Monitor Route Alternatives Toggle (Enabled by default on conversion) */}
+          <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 space-y-3">
+            <label className="flex items-center justify-between cursor-pointer select-none">
+              <div className="space-y-0.5">
+                <span className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <span>Also Monitor Route Alternatives</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 uppercase">
+                    Recommended
+                  </span>
+                </span>
+                <span className="block text-xs text-gunmetal-muted">
+                  Continue monitoring alternative flights on {origin || flight.origin} → {destination || flight.destination} to catch rebooking savings or competitor price drops.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={monitorRouteAlternatives}
+                onChange={e => setMonitorRouteAlternatives(e.target.checked)}
+                className="w-4 h-4 accent-slate-500 rounded ml-4 flex-shrink-0 cursor-pointer"
+              />
+            </label>
+
+            {monitorRouteAlternatives && (
+              <div className="pt-3 border-t border-gunmetal-border/70 space-y-4 animate-in fade-in duration-150">
+                <RouteCorridorCoLocationSection
+                  origin={origin}
+                  destination={destination}
+                  physicalOrigin={flight.origin}
+                  physicalDestination={flight.destination}
+                  onScopeChange={updates => {
+                    if (updates.origin !== undefined) setOrigin(updates.origin);
+                    if (updates.destination !== undefined) setDestination(updates.destination);
+                  }}
+                />
+
+                <p className="text-[11px] text-emerald-300/90 font-medium">
+                  Route preferences copied from your watched flight. You can refine airline filters or timing constraints below:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Route Airline Inclusions (Optional)
+                    </label>
+                    <AirlineTagInput
+                      value={includedAirlines}
+                      onChange={setIncludedAirlines}
+                      placeholder="e.g. DL, AA (type & press space or comma)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Route Airline Exclusions (Optional)
+                    </label>
+                    <AirlineTagInput
+                      value={excludedAirlines}
+                      onChange={setExcludedAirlines}
+                      placeholder="e.g. NK, F9 (type & press space or comma)"
+                    />
+                  </div>
+                </div>
+
+                <SearchPreferencesSection
+                  earliestDeparture={earliestDeparture}
+                  latestDeparture={latestDeparture}
+                  noRedeye={noRedeye}
+                  maxStops={maxStops}
+                  onEarliestChange={setEarliestDeparture}
+                  onLatestChange={setLatestDeparture}
+                  onNoRedeyeChange={setNoRedeye}
+                  onMaxStopsChange={setMaxStops}
+                />
+              </div>
+            )}
           </div>
 
           <div className="pt-3 border-t border-gunmetal-border flex items-center justify-end gap-2.5">

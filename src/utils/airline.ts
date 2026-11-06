@@ -52,11 +52,20 @@ export function normalizeAirlineCode(rawNameOrCode: string, rawFlightNum?: strin
 
 export function cleanFlightNumber(rawFlightNumber: string, airlineCode?: string): string {
   let num = (rawFlightNumber || '').trim();
+  if (!num) return '';
+
   if (airlineCode) {
     const prefixRegex = new RegExp(`^${airlineCode}\\s*`, 'i');
     num = num.replace(prefixRegex, '');
   }
-  return num.replace(/^[A-Z0-9]{2}\s*/i, '').trim();
+
+  // Only strip a 2-character IATA carrier prefix if it contains letters (e.g. B6, F9, AA),
+  // NEVER strip leading digits if the remaining flight number is pure numbers (e.g. 830, 2828).
+  num = num.replace(/^(?:[A-Z]{2}|[A-Z]\d|\d[A-Z])\s*(?=\d)/i, '').trim();
+
+  // Extract only the flight number digits
+  const match = num.match(/\d+/);
+  return match ? match[0] : num.trim();
 }
 
 export function cleanDisplayTime(timeStr?: string): string | null {

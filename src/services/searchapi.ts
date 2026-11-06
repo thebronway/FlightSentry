@@ -36,26 +36,31 @@ export const checkSearchApiPrice = async (
     };
     url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || 'economy');
 
-    if (flight.maxStops !== undefined && flight.maxStops !== null) {
-      // SearchApi.io stops: nonstop, one_stop_or_fewer, two_stops_or_fewer
-      const searchApiStopsMap: Record<number, string> = {
-        0: 'nonstop',
-        1: 'one_stop_or_fewer',
-        2: 'two_stops_or_fewer',
-      };
-      if (searchApiStopsMap[flight.maxStops]) {
-        url.searchParams.append('stops', searchApiStopsMap[flight.maxStops]);
-      }
-    }
-
     if (flight.fareTier === 'Standard') {
       url.searchParams.append('exclude_basic_economy', 'true');
     }
-    if (flight.includedAirlines) {
-      url.searchParams.append('included_airlines', flight.includedAirlines.replace(/\s+/g, ''));
-    }
-    if (flight.excludedAirlines) {
-      url.searchParams.append('excluded_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+
+    if (flight.searchMode === 'Route') {
+      if (flight.maxStops !== undefined && flight.maxStops !== null) {
+        // SearchApi.io stops: nonstop, one_stop_or_fewer, two_stops_or_fewer
+        const searchApiStopsMap: Record<number, string> = {
+          0: 'nonstop',
+          1: 'one_stop_or_fewer',
+          2: 'two_stops_or_fewer',
+        };
+        if (searchApiStopsMap[flight.maxStops]) {
+          url.searchParams.append('stops', searchApiStopsMap[flight.maxStops]);
+        }
+      }
+
+      if (flight.includedAirlines) {
+        url.searchParams.append('included_airlines', flight.includedAirlines.replace(/\s+/g, ''));
+      }
+      if (flight.excludedAirlines) {
+        url.searchParams.append('excluded_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      }
+    } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
+      url.searchParams.append('included_airlines', flight.airline.replace(/\s+/g, ''));
     }
 
     console.log(`[SearchApi] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
@@ -153,12 +158,24 @@ export const checkSearchApiPrice = async (
 
       if (targetFlight && typeof targetFlight.price === 'number') {
         const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
+        let alternatives: RouteItinerary[] | undefined = undefined;
+        if (flight.monitorRouteAlternatives === 1) {
+          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+          if (flight.includedAirlines) {
+            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
+          }
+          if (flight.excludedAirlines) {
+            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
+          }
+        }
         return {
           price: targetFlight.price,
           status: 'Success',
           leadingAirline: targetCode,
           leadingFlightNumber: flight.flightNumber,
-          itineraries: parsedItineraries,
+          itineraries: alternatives,
         };
       }
 

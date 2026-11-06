@@ -89,10 +89,20 @@ export function formatPriceDropAlert(
 
   const sortedCompetitors = Object.values(competitorMap).sort((a, b) => a.price - b.price);
 
+  const isFlightNumMode = flight.searchMode === 'FlightNumber' && Boolean(flight.flightNumber);
+  const includeAlternatives = isFlightNumMode
+    ? flight.monitorRouteAlternatives === 1
+    : sortedCompetitors.length > 1;
+
+  // For specific flights, exclude the primary flight from the secondary alternatives table
+  const alternativeFlights = isFlightNumMode
+    ? sortedCompetitors.filter(c => !(c.code === leadingAirlineCode && c.flightNumber === leadingFlightNum))
+    : sortedCompetitors;
+
   // Markdown Body (Discord, Slack, Generic Webhook)
   let body = `**${alertType}!**\n\n`;
   body += `**Route:** ${flight.origin} → ${flight.destination}\n`;
-  body += `**Leading Flight:** ${flightIdentifier} (${leadingAirlineName})\n`;
+  body += `**${isFlightNumMode ? 'Tracked Flight' : 'Leading Flight'}:** ${flightIdentifier} (${leadingAirlineName})\n`;
   body += `**Departure Date:** ${flight.departureDate}\n`;
   body += `**Cabin / Fare Tier:** ${flight.cabinClass.replace('_', ' ')} (${flight.fareTier})\n`;
   if (flight.pnr) body += `**Booking Confirmation (PNR):** ${flight.pnr}\n`;
@@ -102,9 +112,9 @@ export function formatPriceDropAlert(
   body += `**New Lowest Fare:** ${formatCurrency(newPrice)}\n`;
   body += `**Total Savings:** ${formatCurrency(savingsAmount)} (${formatPercent(savingsPercent)})\n\n`;
 
-  if (sortedCompetitors.length > 1) {
-    body += `**Competing Airline Fares (Same Query):**\n`;
-    sortedCompetitors.forEach(comp => {
+  if (includeAlternatives && alternativeFlights.length > 0) {
+    body += `**${isFlightNumMode ? `Alternative Flights on Route (${flight.origin} → ${flight.destination})` : 'Competing Airline Fares (Same Query)'}:**\n`;
+    alternativeFlights.forEach(comp => {
       const isWinner = comp.code === leadingAirlineCode && comp.price === newPrice;
       const formattedTime = cleanDisplayTime(comp.departureTime);
       const parts: string[] = [];
@@ -124,7 +134,7 @@ export function formatPriceDropAlert(
   htmlBody += `<h2 style="color: #0f172a; margin-bottom: 4px;">${alertType}!</h2>`;
   htmlBody += `<p style="font-size: 16px; margin-top: 0; color: #475569;"><strong>${flight.origin} &rarr; ${flight.destination}</strong> &middot; ${flight.departureDate}</p>`;
   htmlBody += `<div style="background-color: #f1f5f9; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">`;
-  htmlBody += `<p style="margin: 4px 0;"><strong>Winning Flight:</strong> ${flightIdentifier} (${leadingAirlineName})</p>`;
+  htmlBody += `<p style="margin: 4px 0;"><strong>${isFlightNumMode ? 'Tracked Flight' : 'Winning Flight'}:</strong> ${flightIdentifier} (${leadingAirlineName})</p>`;
   htmlBody += `<p style="margin: 4px 0;"><strong>Cabin Class:</strong> ${flight.cabinClass.replace('_', ' ')} &middot; <strong>Tier:</strong> ${flight.fareTier}</p>`;
   if (flight.pnr) htmlBody += `<p style="margin: 4px 0;"><strong>PNR:</strong> ${flight.pnr}</p>`;
   if (details?.sourceUsed) htmlBody += `<p style="margin: 4px 0; font-size: 12px; color: #64748b;">Verified via ${details.sourceUsed}</p>`;
@@ -137,11 +147,11 @@ export function formatPriceDropAlert(
   htmlBody += `</table>`;
   htmlBody += `</div>`;
 
-  if (sortedCompetitors.length > 1) {
-    htmlBody += `<h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 8px;">Competing Airline Fares (Same Query)</h3>`;
+  if (includeAlternatives && alternativeFlights.length > 0) {
+    htmlBody += `<h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 8px;">${isFlightNumMode ? `Alternative Flights on Route (${flight.origin} &rarr; ${flight.destination})` : 'Competing Airline Fares (Same Query)'}</h3>`;
     htmlBody += `<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">`;
     htmlBody += `<tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b;"><th style="padding: 8px;">Airline</th><th style="padding: 8px;">Flight</th><th style="padding: 8px; text-align: right;">Price</th></tr>`;
-    sortedCompetitors.forEach(comp => {
+    alternativeFlights.forEach(comp => {
       const isWinner = comp.code === leadingAirlineCode && comp.price === newPrice;
       const formattedTime = cleanDisplayTime(comp.departureTime);
       htmlBody += `<tr style="border-bottom: 1px solid #f1f5f9; ${isWinner ? 'background-color: #f0fdf4; font-weight: bold;' : ''}">`;

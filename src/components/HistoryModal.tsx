@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Flight, PriceHistory } from '@/types';
+import { Layers } from 'lucide-react';
 import PriceChart from './PriceChart';
 import RouteCorridorSummary from './RouteCorridorSummary';
 import CarrierBreakdownTable from './CarrierBreakdownTable';
@@ -19,6 +20,12 @@ interface Props {
 export default function HistoryModal({ flight, onClose }: Props) {
   const [history, setHistory] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [overlayRouteFloor, setOverlayRouteFloor] = useState(false);
+
+  // Default route floor overlay to hidden on every flight modal open to prevent visual clutter
+  useEffect(() => {
+    setOverlayRouteFloor(false);
+  }, [flight?.id]);
 
   const loadHistory = useCallback((flightId: number, silent = false) => {
     if (!silent) setLoading(true);
@@ -151,25 +158,48 @@ export default function HistoryModal({ flight, onClose }: Props) {
             />
           )}
 
+          {overlayRouteFloor && isFlightNumMode && (
+            <RouteCorridorSummary metrics={corridorMetrics} />
+          )}
+
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Price History Graph
-              </h3>
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Price History Graph
+                </h3>
+                {isFlightNumMode && (flight.monitorRouteAlternatives === 1 || history.some(h => Boolean(h.metadata))) && (
+                  <button
+                    type="button"
+                    onClick={() => setOverlayRouteFloor(prev => !prev)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold border transition-all cursor-pointer ${
+                      overlayRouteFloor
+                        ? 'bg-sky-950/60 border-sky-500 text-sky-300 shadow-sm'
+                        : 'bg-gunmetal-canvas border-gunmetal-border text-gunmetal-muted hover:text-slate-200 hover:border-slate-500'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>{overlayRouteFloor ? 'Route Floor Overlay: ON' : 'Overlay Route Floor'}</span>
+                  </button>
+                )}
+              </div>
               <span className="text-[11px] text-gunmetal-muted">
-                Hover over data points to inspect checks
+                {overlayRouteFloor
+                  ? 'Viewing route floor & competitor trends'
+                  : 'Hover over data points to inspect checks'}
               </span>
             </div>
             <PriceChart
               history={history}
               baselinePrice={flight.baselinePrice}
               purchasePrice={flight.purchasePrice}
-              searchMode={flight.searchMode}
+              searchMode={overlayRouteFloor ? 'Route' : flight.searchMode}
+              overlayRouteFloor={overlayRouteFloor}
               currency={flight.currency}
             />
           </div>
 
-          {isRouteMode && <CarrierBreakdownTable history={history} flight={flight} />}
+          {(isRouteMode || overlayRouteFloor) && <CarrierBreakdownTable history={history} flight={flight} />}
 
           <HistoryIntradayLog
             dayGroups={dayGroups}

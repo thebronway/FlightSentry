@@ -38,22 +38,26 @@ export const checkHasDataPrice = async (
     };
     url.searchParams.append('travelClass', travelClassMap[flight.cabinClass || 'economy'] || 'economy');
 
-    if (flight.maxStops !== undefined && flight.maxStops !== null) {
-      // HasData stops: nonStop, oneStopOrFewer, twoStopsOrFewer
-      const hasDataStopsMap: Record<number, string> = {
-        0: 'nonStop',
-        1: 'oneStopOrFewer',
-        2: 'twoStopsOrFewer',
-      };
-      if (hasDataStopsMap[flight.maxStops]) {
-        url.searchParams.append('stops', hasDataStopsMap[flight.maxStops]);
+    if (flight.searchMode === 'Route') {
+      if (flight.maxStops !== undefined && flight.maxStops !== null) {
+        // HasData stops: nonStop, oneStopOrFewer, twoStopsOrFewer
+        const hasDataStopsMap: Record<number, string> = {
+          0: 'nonStop',
+          1: 'oneStopOrFewer',
+          2: 'twoStopsOrFewer',
+        };
+        if (hasDataStopsMap[flight.maxStops]) {
+          url.searchParams.append('stops', hasDataStopsMap[flight.maxStops]);
+        }
       }
-    }
 
-    if (flight.includedAirlines) {
-      url.searchParams.append('includeAirlines', flight.includedAirlines.replace(/\s+/g, ''));
-    } else if (flight.excludedAirlines) {
-      url.searchParams.append('excludeAirlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      if (flight.includedAirlines) {
+        url.searchParams.append('includeAirlines', flight.includedAirlines.replace(/\s+/g, ''));
+      } else if (flight.excludedAirlines) {
+        url.searchParams.append('excludeAirlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      }
+    } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
+      url.searchParams.append('includeAirlines', flight.airline.replace(/\s+/g, ''));
     }
 
     console.log(`[HasData] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
@@ -157,12 +161,24 @@ export const checkHasDataPrice = async (
 
       if (targetFlight && typeof targetFlight.price === 'number') {
         const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
+        let alternatives: RouteItinerary[] | undefined = undefined;
+        if (flight.monitorRouteAlternatives === 1) {
+          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+          if (flight.includedAirlines) {
+            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
+          }
+          if (flight.excludedAirlines) {
+            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
+          }
+        }
         return {
           price: targetFlight.price,
           status: 'Success',
           leadingAirline: targetCode,
           leadingFlightNumber: flight.flightNumber,
-          itineraries: parsedItineraries,
+          itineraries: alternatives,
         };
       }
 

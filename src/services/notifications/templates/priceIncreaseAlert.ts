@@ -82,11 +82,21 @@ export function formatPriceIncreaseAlert(
 
   const sortedCompetitors = Object.values(competitorMap).sort((a, b) => a.price - b.price);
 
+  const isFlightNumMode = flight.searchMode === 'FlightNumber' && Boolean(flight.flightNumber);
+  const includeAlternatives = isFlightNumMode
+    ? flight.monitorRouteAlternatives === 1
+    : sortedCompetitors.length > 1;
+
+  // For specific flights, exclude the primary flight from the secondary alternatives table
+  const alternativeFlights = isFlightNumMode
+    ? sortedCompetitors.filter(c => !(c.code === leadingAirlineCode && c.flightNumber === leadingFlightNum))
+    : sortedCompetitors;
+
   // Markdown Body (Discord, Slack, Generic Webhook)
   let body = `⚠️ **Price Surge Alert!**\n\n`;
   body += `Fares on your watched route are climbing. Consider booking soon before prices increase further.\n\n`;
   body += `**Route:** ${flight.origin} → ${flight.destination}\n`;
-  body += `**Current Lowest:** ${flightIdentifier} (${leadingAirlineName})\n`;
+  body += `**${isFlightNumMode ? 'Tracked Flight' : 'Current Lowest'}:** ${flightIdentifier} (${leadingAirlineName})\n`;
   body += `**Departure Date:** ${flight.departureDate}\n`;
   body += `**Cabin / Fare Tier:** ${flight.cabinClass.replace('_', ' ')} (${flight.fareTier})\n`;
   if (details?.sourceUsed) body += `**Data Provider:** ${details.sourceUsed}\n`;
@@ -95,9 +105,9 @@ export function formatPriceIncreaseAlert(
   body += `**New Current Price:** ${formatCurrency(newPrice)}\n`;
   body += `**Price Increase:** +${formatCurrency(surgeAmount)} (+${formatPercent(surgePercent)})\n\n`;
 
-  if (sortedCompetitors.length > 1) {
-    body += `**All Competing Fares (Same Query):**\n`;
-    sortedCompetitors.forEach(comp => {
+  if (includeAlternatives && alternativeFlights.length > 0) {
+    body += `**${isFlightNumMode ? `Alternative Flights on Route (${flight.origin} → ${flight.destination})` : 'All Competing Fares (Same Query)'}:**\n`;
+    alternativeFlights.forEach(comp => {
       const formattedTime = cleanDisplayTime(comp.departureTime);
       const parts: string[] = [];
       if (comp.flightNumber) parts.push(`#${comp.flightNumber}`);
@@ -116,7 +126,7 @@ export function formatPriceIncreaseAlert(
   htmlBody += `<h2 style="color: #b91c1c; margin-bottom: 4px;">⚠️ Price Surge Alert!</h2>`;
   htmlBody += `<p style="font-size: 16px; margin-top: 0; color: #475569;">Fares for <strong>${flight.origin} &rarr; ${flight.destination}</strong> on ${flight.departureDate} are rising.</p>`;
   htmlBody += `<div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">`;
-  htmlBody += `<p style="margin: 4px 0;"><strong>Lowest Available Flight:</strong> ${flightIdentifier} (${leadingAirlineName})</p>`;
+  htmlBody += `<p style="margin: 4px 0;"><strong>${isFlightNumMode ? 'Tracked Flight' : 'Lowest Available Flight'}:</strong> ${flightIdentifier} (${leadingAirlineName})</p>`;
   htmlBody += `<p style="margin: 4px 0;"><strong>Cabin Class:</strong> ${flight.cabinClass.replace('_', ' ')} &middot; <strong>Tier:</strong> ${flight.fareTier}</p>`;
   if (details?.sourceUsed) htmlBody += `<p style="margin: 4px 0; font-size: 12px; color: #64748b;">Verified via ${details.sourceUsed}</p>`;
   htmlBody += `</div>`;
@@ -128,11 +138,11 @@ export function formatPriceIncreaseAlert(
   htmlBody += `</table>`;
   htmlBody += `</div>`;
 
-  if (sortedCompetitors.length > 1) {
-    htmlBody += `<h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 8px;">All Competing Airline Fares</h3>`;
+  if (includeAlternatives && alternativeFlights.length > 0) {
+    htmlBody += `<h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 8px;">${isFlightNumMode ? `Alternative Flights on Route (${flight.origin} &rarr; ${flight.destination})` : 'All Competing Airline Fares'}</h3>`;
     htmlBody += `<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">`;
     htmlBody += `<tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b;"><th style="padding: 8px;">Airline</th><th style="padding: 8px;">Flight</th><th style="padding: 8px; text-align: right;">Price</th></tr>`;
-    sortedCompetitors.forEach(comp => {
+    alternativeFlights.forEach(comp => {
       const formattedTime = cleanDisplayTime(comp.departureTime);
       htmlBody += `<tr style="border-bottom: 1px solid #f1f5f9;">`;
       htmlBody += `<td style="padding: 8px;">${comp.name} (${comp.code})</td>`;

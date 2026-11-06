@@ -361,3 +361,85 @@ export function getActiveCoLocationBadge(code?: string | null): string | null {
 
   return null;
 }
+
+export interface CorridorScopeOption {
+  exactCode: string;
+  exactLabel: string;
+  areaCode: string;
+  areaLabel: string;
+  areaDescription: string;
+  isAreaActive: boolean;
+}
+
+/**
+ * Returns co-location scope options for an airport (Exact airport vs Metropolitan / Regional Cluster).
+ * Used when tracking specific flights with route alternatives enabled.
+ */
+export function getCorridorScopeOptions(
+  currentCode?: string | null,
+  physicalCode?: string | null
+): CorridorScopeOption | null {
+  if (!currentCode && !physicalCode) return null;
+  const cleaned = (currentCode || '').trim().toUpperCase();
+  const tokens = cleaned.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
+  const phys = (physicalCode || '').trim().toUpperCase() || (tokens.length === 1 ? tokens[0] : null);
+
+  // 1. Check if physical or tokens belong to a Metro Area (e.g. WAS, NYC, CHI)
+  let metroCode: string | null = null;
+  if (phys && AIRPORT_TO_METRO[phys]) {
+    metroCode = AIRPORT_TO_METRO[phys];
+  } else if (phys && METRO_AIRPORT_MAP[phys]) {
+    metroCode = phys;
+  } else {
+    for (const t of tokens) {
+      if (METRO_AIRPORT_MAP[t]) {
+        metroCode = t;
+        break;
+      }
+      if (AIRPORT_TO_METRO[t]) {
+        metroCode = AIRPORT_TO_METRO[t];
+        break;
+      }
+    }
+  }
+
+  if (metroCode && METRO_AIRPORT_MAP[metroCode]) {
+    const entry = METRO_AIRPORT_MAP[metroCode];
+    const exact = (phys && entry.airports.includes(phys))
+      ? phys
+      : (tokens.find(t => entry.airports.includes(t)) || entry.airports[0]);
+    const isAreaActive = cleaned === metroCode || tokens.includes(metroCode) || (tokens.length > 1 && tokens.some(t => entry.airports.includes(t)));
+
+    return {
+      exactCode: exact,
+      exactLabel: `${exact} (Exact Airport)`,
+      areaCode: metroCode,
+      areaLabel: `${metroCode} (${entry.name})`,
+      areaDescription: `Includes ${entry.airports.join(', ')}`,
+      isAreaActive,
+    };
+  }
+
+  // 2. Check if physical or tokens belong to a Regional Cluster (e.g. DFW/DAL, LAX basin, SFO bay, MIA/FLL)
+  for (const cluster of Object.values(REGIONAL_CLUSTERS)) {
+    const isMember = (phys && cluster.airports.includes(phys)) || tokens.some(t => cluster.airports.includes(t));
+    if (isMember) {
+      const exact = (phys && cluster.airports.includes(phys))
+        ? phys
+        : (tokens.find(t => cluster.airports.includes(t)) || cluster.airports[0]);
+      const areaCode = cluster.airports.join(', ');
+      const isAreaActive = tokens.length > 1 || cleaned === areaCode;
+
+      return {
+        exactCode: exact,
+        exactLabel: `${exact} (Exact Airport)`,
+        areaCode,
+        areaLabel: `${cluster.name}`,
+        areaDescription: `Includes ${cluster.airports.join(', ')}`,
+        isAreaActive,
+      };
+    }
+  }
+
+  return null;
+}

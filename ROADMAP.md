@@ -1,23 +1,12 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-05*  
-*Current Version: v0.7.2*
+*Last updated: 2026-11-06*  
+*Current Version: v0.7.3*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.7.3: Continuous Monitoring (Dual Flight & Route Tracking)
-- **Opt-In Route Monitoring on Specific Flights:**
-  - Add an optional "Also Monitor Route Alternatives" toggle when tracking specific flight numbers (disabled by default for standalone flight tracking).
-  - Progressive disclosure: toggling route monitoring reveals route-level filters (airport co-locations, stops, departure/arrival time windows, redeye exclusions, airline inclusions/exclusions), pre-populated from global Search Preferences.
-  - Inherit cabin class and fare tier (Standard vs. Basic) directly from the parent flight.
-- **Watched-to-Booked Route Adoption:**
-  - When converting a watched flight to booked status, copy all existing route search preferences and enable "Also Monitor Route Alternatives" by default.
-- **Alert & Visualization Hierarchy:**
-  - Notifications & Emails: Position the primary tracked flight status, benchmark, and price change prominently in the top header card; display a secondary, compact table of alternative flights on the route below.
-  - History Modal: Focus graph lines on the tracked flight by default; provide a toggle to overlay the broader route floor and competitor trends (default: route floor hidden to prevent clutter).
 
 ### Release v0.7.4: Manual Entry Mode
 - **Custom Historical & Manual Price Entries:**
@@ -29,25 +18,26 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - If the flight number differs, append the data point as a competing flight on that route's history log.
   - For cash flights, provide an optional toggle to immediately trigger an automated live verification check for that route/flight if data sources are active.
 - **Purchased Flight**
-  - Once a flight is booked, orignal purchase price should be locked, but a user can enter a new purchase price via manual mode and mark it as a rebook.
+  - Once a flight is booked, orignal purchase price should be locked, but a user can enter a new purchase price via manual mode (need better phrasology or maybe a dedicated added rebooked flight button or something) and mark it as a rebook.
 
 ### Release v0.7.5: Flight Modal Redesign
 - **Modular Modal Redesign:**
   - Ground-up redesign of the flight modal incorporating all finalized capabilities (Points vs. Cash, Watching vs. Booked, Route vs. Flight Number, Dual Route Monitoring, Search Preference Overrides, and Manual Logging).
-  - Organize into clean visual sections:
-    1. Tracking Goal & Currency (Watching vs. Booked, Fiat vs. Points).
-    2. Route & Schedule (Airports with Co-Location quick-swaps, Flight Number auto-detection, Departure Date).
-    3. Cabin & Fares (Cabin Class, Fare Restrictions).
-    4. Dual Route Tracking (Collapsible opt-in panel with stops, time steppers, redeye toggle, and airline tags).
-    5. Alert Rules & Cadence (Threshold targets with real-time math previews, check cadence selectors, pause/mute toggles).
-  - Decompose monolithic state into isolated, single-responsibility sub-components.
+  - Organize into clean visual sections
+  - thoughts? give honest opinion
+    - three main options
+      - Watching a route: user just enters route info, can covert if purchased.
+      - Wacting a flight: flight required, route optional via checkbox, then shows route options
+      - booked: flight required, route optional via checkbox, then shows route options
+  - Decompose monolithic state into isolated, single-responsibility sub-components. Make sure a correct folders strcuture is used, files can be moved
   - Points bookings should not have Price Alerts, notifications, etc. and Disable flight price checks should be checked and greyed out. 
 - **Mobile Experience Optimization:**
   - Make sure the redesign includes a mobile optimization for the modal.
 - **Component Cleanup:**
-  - Make sure a correct folders strcuture is used, no monolthic files, no hacks, no missing/deprecated/no longer used imports and that all best practices are followed. 
+  - Make no hacks, no missing/deprecated/no longer used imports and that all best practices are followed. 
+  - warning if they leave the tab or clcik the x with unsaved changes.
 
-### Release v0.7.6: Flight Card / Condenced Redesign / Refresh
+### Release v0.7.6: Flight Card / Condensed Redesign / Refresh
 
 ### Release v0.7.7
 - Fast Flights is broken, always showing sold old. need to look up actual documention and fix it.

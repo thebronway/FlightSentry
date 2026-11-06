@@ -6,6 +6,7 @@ export interface PriceChartProps {
   purchasePrice?: number | null;
   searchMode?: SearchMode;
   currency?: string | null;
+  overlayRouteFloor?: boolean;
 }
 
 export interface CarrierDeparture {

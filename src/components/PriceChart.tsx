@@ -12,6 +12,7 @@ export default function PriceChart({
   purchasePrice,
   searchMode = 'Route',
   currency,
+  overlayRouteFloor = false,
 }: PriceChartProps) {
   const {
     sorted,
@@ -48,6 +49,7 @@ export default function PriceChart({
     baselinePrice,
     purchasePrice,
     searchMode,
+    overlayRouteFloor,
   });
 
   if (sorted.length === 0) {

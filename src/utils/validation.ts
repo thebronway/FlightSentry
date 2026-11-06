@@ -38,6 +38,7 @@ export const flightSchema = z.object({
   minIncreasePercent: z.number().nonnegative().optional().nullable(),
   maxStops: z.number().int().min(0).max(2).optional().nullable(),
   currency: z.string().max(50).optional().nullable(),
+  monitorRouteAlternatives: z.number().min(0).max(1).optional().default(0),
 });
 
 export const flightStatusSchema = z.object({
