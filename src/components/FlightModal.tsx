@@ -222,7 +222,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       : null;
 
     if (formData.trackingGoal === 'booked' && !formData.flightNumber.trim()) {
-      setError('Flight number is required for already booked flights.');
+      setError('Flight number is required for booked flights.');
       return;
     }
 
@@ -255,7 +255,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       minDropPercent: formData.minDropPercent ? parseFloat(formData.minDropPercent) : null,
       pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,
       notes: formData.notes ? formData.notes.trim() : null,
-      status: formData.pauseTracking ? 'Paused' : 'Upcoming',
+      status: formData.pauseTracking ? 'Paused' : (formData.trackingGoal === 'booked' ? 'Booked' : 'Watching'),
       disableNotifications: formData.disableNotifications ? 1 : 0,
       scheduleOverride,
       earliestDeparture: formData.earliestDeparture ? formData.earliestDeparture.trim() : null,
@@ -300,7 +300,11 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
       <div className="bg-gunmetal-card rounded-xl shadow-2xl w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[92vh] overflow-y-auto border border-gunmetal-border flex flex-col">
         <div className="px-6 py-4 border-b border-gunmetal-border flex justify-between items-center sticky top-0 bg-gunmetal-card z-10">
           <h2 className="text-xl font-bold text-slate-100">
-            {initialFlight ? 'Edit Tracked Flight' : 'Track New Flight'}
+            {initialFlight
+              ? initialFlight.status === 'Booked'
+                ? 'Edit Booked Flight'
+                : 'Edit Watched Flight'
+              : 'Track New Flight'}
           </h2>
           <button 
             type="button" 
@@ -402,7 +406,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             }}
           />
 
-          {/* Flight Number Inputs (Presented in FlightNumber Mode or when Already Booked) */}
+          {/* Flight Number Inputs (Presented in FlightNumber Mode or when Booked) */}
           {(formData.searchMode === 'FlightNumber' || formData.trackingGoal === 'booked') && (
             <div className="space-y-3">
               <div className={`grid ${formData.trackingGoal === 'watching' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-2'} gap-4`}>

@@ -33,6 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     // Update flight record in place
     flightDb.update(id, {
+      status: existing.status === 'Paused' ? 'Paused' : 'Booked',
       purchasePrice: parsed.purchasePrice,
       priceTrackingDirection: 'drop',
       airline: cleanAirline,

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS flights (
     scheduleOverride TEXT,
     disableNotifications INTEGER NOT NULL DEFAULT 0,
     nextCheckAt TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'Upcoming',
+    status TEXT NOT NULL DEFAULT 'Watching',
     earliestDeparture TEXT,
     latestDeparture TEXT,
     noRedeye INTEGER NOT NULL DEFAULT 0,

@@ -1,4 +1,4 @@
-export type FlightStatus = 'Upcoming' | 'Paused' | 'Past';
+export type FlightStatus = 'Watching' | 'Booked' | 'Paused' | 'Past';
 export type FareTier = 'Basic Economy' | 'Standard';
 export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 export type SearchMode = 'Route' | 'FlightNumber';

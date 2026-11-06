@@ -150,32 +150,29 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
                 </div>
               )}
             </div>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-              flight.status === 'Upcoming'
-                ? 'bg-green-900/30 text-green-400 border border-green-800/40'
-                : flight.status === 'Paused'
-                ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
-                : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
-            }`}>
-              {flight.status}
-            </span>
+            {flight.status === 'Watching' ? (
+              <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <Tag className="w-3 h-3 text-sky-400" /> Watching
+              </span>
+            ) : flight.status === 'Booked' ? (
+              <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+              </span>
+            ) : flight.status === 'Paused' ? (
+              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <Pause className="w-3 h-3 text-amber-400" /> Paused
+              </span>
+            ) : (
+              <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                <Clock className="w-3 h-3 text-slate-400" /> Past
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 my-2.5">
-            {isPurchased ? (
-              <>
-                <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                  <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
-                </span>
-                {flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (
-                  <span className="bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded text-xs font-semibold">
-                    +{formatCurrency(flight.baselinePrice - flight.purchasePrice!, flight.currency)} Rebook Savings
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <Tag className="w-3 h-3 text-sky-400" /> Watching
+            {isPurchased && flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice! && (
+              <span className="bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded text-xs font-semibold">
+                +{formatCurrency(flight.baselinePrice - flight.purchasePrice!, flight.currency)} Rebook Savings
               </span>
             )}
             {flight.currency && isPointsCurrency(flight.currency) && (
@@ -398,7 +395,7 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
           </Tooltip>
         )}
         <Tooltip
-          content={isPast ? "Past flight" : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
+          content={isPast ? "Past flight" : flight.status !== 'Paused' ? 'Pause automated price checks' : 'Resume automated price checks'}
           align="center"
           className="w-full"
         >
@@ -407,7 +404,7 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
             disabled={isPast}
             className="w-full flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
           >
-            {flight.status === 'Upcoming' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {flight.status !== 'Paused' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
         </Tooltip>
         <Tooltip

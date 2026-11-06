@@ -3,6 +3,7 @@ import { flightDb } from '@/db/flights';
 import { historyDb } from '@/db/history';
 import { flightStatusSchema } from '@/utils/validation';
 import { flightSchema } from '@/utils/validation';
+import { FlightStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,15 +21,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Departure date cannot be in the past.' }, { status: 400 });
     }
 
-    const updatedStatus = body.status === 'Paused' 
+    const newPurchasePrice = parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice;
+    const isBooked = (newPurchasePrice !== null && newPurchasePrice !== undefined && newPurchasePrice > 0) || Boolean(parsed.pnr || existing.pnr);
+
+    const updatedStatus: FlightStatus = body.status === 'Paused' 
       ? 'Paused' 
-      : body.status === 'Upcoming' 
-      ? 'Upcoming' 
       : body.status === 'Past'
       ? 'Past'
+      : body.status === 'Booked'
+      ? 'Booked'
+      : body.status === 'Watching'
+      ? 'Watching'
+      : body.status === 'Upcoming'
+      ? (isBooked ? 'Booked' : 'Watching')
       : existing.status;
-
-    const newPurchasePrice = parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice;
     const isRebooked =
       existing.purchasePrice !== null &&
       existing.purchasePrice !== undefined &&

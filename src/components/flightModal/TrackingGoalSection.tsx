@@ -78,7 +78,7 @@ export default function TrackingGoalSection({
           }`}
         >
           <Tag className="w-3.5 h-3.5" />
-          <span>Planning to Book (Watching)</span>
+          <span>Watching</span>
         </button>
         <button
           type="button"
@@ -90,7 +90,7 @@ export default function TrackingGoalSection({
           }`}
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Already Booked (Drop Alerts)</span>
+          <span>Booked</span>
         </button>
       </div>
 

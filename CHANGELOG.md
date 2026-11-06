@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.9*
+*Current Version: v0.7.0*
 
 ## Changelog
+
+### Release v0.7.0
+- Application-wide domain terminology alignment: Watching and Booked
+- Eliminated legacy references to "Planning to Book", "Upcoming", and "Active" in filter chips, modal titles, and status tooltips.
+- Cleaned up database flight status enums with automatic migration transitioning legacy upcoming/active records to Watching or Booked.
+- Added domain status indicator badges to the price history modal header.
+- Updated flight creation, edit, and conversion modals to clearly reflect Watching and Booked workflows.
 
 ### Release v0.6.9
 - Added points and award mileage currency tracking (e.g., AAvantage miles, TrueBlue points) for watched and booked flights.

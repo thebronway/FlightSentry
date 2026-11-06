@@ -23,7 +23,8 @@ export function useFlightActions(onRefresh: () => void) {
   const toggleStatus = useCallback(
     async (flight: Flight) => {
       if (flight.status === 'Past') return;
-      const newStatus = flight.status === 'Upcoming' ? 'Paused' : 'Upcoming';
+      const isBooked = (flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0) || Boolean(flight.pnr);
+      const newStatus = flight.status === 'Paused' ? (isBooked ? 'Booked' : 'Watching') : 'Paused';
       try {
         setLoadingFlightId(flight.id);
         const res = await fetch(`/api/flights/${flight.id}`, {

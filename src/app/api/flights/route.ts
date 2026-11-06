@@ -42,15 +42,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Departure date cannot be in the past.' }, { status: 400 });
     }
 
-    const initialStatus: FlightStatus = body.status === 'Paused' ? 'Paused' : 'Upcoming';
+    const isBooked = Boolean((parsed.purchasePrice && parsed.purchasePrice > 0) || parsed.pnr);
+    const initialStatus: FlightStatus = body.status === 'Paused'
+      ? 'Paused'
+      : body.status === 'Booked'
+      ? 'Booked'
+      : body.status === 'Watching'
+      ? 'Watching'
+      : isBooked
+      ? 'Booked'
+      : 'Watching';
 
     let initialAirline = parsed.airline || null;
     let initialFlightNumber = parsed.flightNumber || null;
     let initialMetadata: string | null = null;
     let initialSourceUsed: string | null = null;
     let liveSearchResultPrice: number | null = null;
-
-    const isBooked = Boolean(parsed.purchasePrice && parsed.purchasePrice > 0);
 
     // Check if flight is tracking award points currency
     let pointsList: string[] = [];

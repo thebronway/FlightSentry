@@ -103,15 +103,6 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
 
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {isPurchased ? (
-                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-[11px] font-semibold inline-flex items-center gap-1">
-                          <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
-                        </span>
-                      ) : (
-                        <span className="bg-sky-950/50 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-[11px] font-semibold inline-flex items-center gap-1">
-                          <Tag className="w-3 h-3 text-sky-400" /> Watching
-                        </span>
-                      )}
                       {flight.currency && isPointsCurrency(flight.currency) && (
                         <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1">
                           <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
@@ -237,15 +228,23 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      flight.status === 'Upcoming'
-                        ? 'bg-green-900/30 text-green-400 border border-green-800/40'
-                        : flight.status === 'Paused'
-                        ? 'bg-amber-900/30 text-amber-400 border border-amber-800/40'
-                        : 'bg-slate-800/50 text-slate-400 border border-slate-700/50'
-                    }`}>
-                      {flight.status}
-                    </span>
+                    {flight.status === 'Watching' ? (
+                      <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-sky-400" /> Watching
+                      </span>
+                    ) : flight.status === 'Booked' ? (
+                      <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                        <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+                      </span>
+                    ) : flight.status === 'Paused' ? (
+                      <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                        <Pause className="w-3 h-3 text-amber-400" /> Paused
+                      </span>
+                    ) : (
+                      <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400" /> Past
+                      </span>
+                    )}
                   </td>
 
                   <td 
@@ -256,12 +255,12 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                   >
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip
-                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : isPointsCurrency(flight.currency) ? 'Automated checks disabled for points flights' : 'Check live price now'}
+                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : flight.status === 'Paused' ? 'Flight checks paused' : isPointsCurrency(flight.currency) ? 'Automated checks disabled for points flights' : 'Check live price now'}
                         align="right"
                       >
                         <button
                           onClick={() => checkNow(flight.id)}
-                          disabled={flight.status !== 'Upcoming' || isPointsCurrency(flight.currency)}
+                          disabled={flight.status === 'Past' || flight.status === 'Paused' || isPointsCurrency(flight.currency)}
                           className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
@@ -320,7 +319,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                         </Tooltip>
                       )}
                       <Tooltip
-                        content={flight.status === 'Past' ? 'Past flight' : flight.status === 'Upcoming' ? 'Pause automated price checks' : 'Resume automated price checks'}
+                        content={flight.status === 'Past' ? 'Past flight' : flight.status !== 'Paused' ? 'Pause automated price checks' : 'Resume automated price checks'}
                         align="right"
                       >
                         <button
@@ -328,7 +327,7 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                           disabled={flight.status === 'Past'}
                           className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
                         >
-                          {flight.status === 'Upcoming' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                          {flight.status !== 'Paused' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                         </button>
                       </Tooltip>
                       <Tooltip

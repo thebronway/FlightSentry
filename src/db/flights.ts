@@ -27,7 +27,7 @@ export const flightDb = {
     const now = new Date().toISOString();
     return db.prepare(`
       SELECT * FROM flights 
-      WHERE status = 'Upcoming' AND nextCheckAt <= @now 
+      WHERE status IN ('Watching', 'Booked') AND nextCheckAt <= @now 
       ORDER BY nextCheckAt ASC LIMIT 1
     `).get({ now }) as Flight | undefined;
   },

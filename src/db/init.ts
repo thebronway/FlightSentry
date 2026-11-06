@@ -58,6 +58,22 @@ export function initDb() {
         }
     }
 
+    // Migrate legacy flight statuses to standardized domain vocabulary
+    try {
+        db.exec(`
+            UPDATE flights 
+            SET status = 'Booked' 
+            WHERE status IN ('Upcoming', 'Active') 
+              AND ((purchasePrice IS NOT NULL AND purchasePrice > 0) OR (pnr IS NOT NULL AND TRIM(pnr) != ''));
+
+            UPDATE flights 
+            SET status = 'Watching' 
+            WHERE status IN ('Upcoming', 'Active');
+        `);
+    } catch {
+        // Ignored
+    }
+
     // Ensure datasource_logs table exists for existing databases
     try {
         db.exec(`

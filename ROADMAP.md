@@ -1,18 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-05*  
-*Current Version: v0.6.9*
+*Current Version: v0.7.0*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.7.0: Terminology Alignment & UI Cleanup
-- **Application-Wide Terminology Standardization:**
-  - Audit and strictly enforce **Watching** (prospective tracking) and **Booked** (purchased flights / rebooking credit monitoring) across all views.
-  - Eliminate legacy references to "Planning to Book", "Upcoming", and "Active" in filter chips, modal titles, and status tooltips.
-  - Clean up database flight status enums and update filter logic to use clear domain vocabulary.
 
 ### Release v0.7.1: Global Search Preferences & Multi-Fare Ingestion
 - **Dedicated Search Preferences Tab in Settings:**
@@ -50,6 +44,8 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - If the entered carrier and flight number match the tracked flight, append the data point directly to that flight's historical timeline.
   - If the flight number differs, append the data point as a competing flight on that route's history log.
   - For cash flights, provide an optional toggle to immediately trigger an automated live verification check for that route/flight if data sources are active.
+- **Purchased Flight**
+  - Once a flight is booked, orignal purchase price should be locked, but a user can enter a new purchase price via manual mode and mark it as a rebook.
 
 ### Release v0.7.4: Flight Modal Redesign
 - **Modular Modal Redesign:**
@@ -61,17 +57,25 @@ This document tracks planned improvements, enhancements, and technical debt for 
     4. Dual Route Tracking (Collapsible opt-in panel with stops, time steppers, redeye toggle, and airline tags).
     5. Alert Rules & Cadence (Threshold targets with real-time math previews, check cadence selectors, pause/mute toggles).
   - Decompose monolithic state into isolated, single-responsibility sub-components.
+  - Points bookings should not have Price Alerts, notifications, etc. and Disable flight price checks should be checked and greyed out. 
 - **Mobile Experience Optimization:**
   - Make sure the redesign includes a mobile optimization for the modal.
+- **Component Cleanup:**
+  - Make sure a correct folders strcuture is used, no monolthic files, no hacks, no missing/deprecated/no longer used imports and that all best practices are followed. 
 
-### Release v0.7.5: Mobile Optimization
+### Release v0.7.5: Flight Card Redesign
+
+### Release v0.7.6
+- Fast Flights is broken, always showing sold old. need to look up actual documention and fix it.
+
+### Release v0.7.7: Mobile Optimization
 - **Mobile Experience Optimization:**
   - Convert Flight Modal, Convert Modal, and History Modal to responsive full-height bottom-sheets on mobile viewports (<640px).
   - Standardize touch targets (minimum 44x44px) across all form inputs, toggles, tags, and action buttons.
   - Add touch-friendly crosshair scrubbing on the Price History chart with viewport-bounded tooltips.
 - go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
 
-### Release v0.7.6a: Research Only, Security and Best Practices Audit
+### Release v0.7.8a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
 - Look for monolthic files / lack of folder organization
@@ -86,20 +90,24 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Make a plan for another ai for v0.6.8 for fixes, no fixes today. Be clear and concise.
     - Double check results
 
-### Release v0.7.6: Security and Best Practices Application
+### Release v0.7.8: Security and Best Practices Application
 - Security and Best Practices Application
 
-### Release v0.7.7a: Separate playwright container scraper plan
+### Release v0.7.9a: Separate playwright container scraper plan
 - Playwright for optional hosted scrapper, seperate container.
     - the goal here is to make a plan for a separate container called FlightSentry-Scrapper. Which eventually will be a data source. But this optional container will, you know, be a hefty guy because it would have to like load playwright and chromium and everything in between to go to the Google flights page and scrape it. That's why I want it separate from this container/build.
 
-### Release v0.7.7: Separate playwright container scraper implementation
+### Release v0.7.9: Separate playwright container scraper implementation
 - API Playwright optional hosted scrapper integration.
-
-### Release v0.8.8: API
 
 ### Release v0.9.0: Production Prep
 - Docker Compose Example
+
+### Release v0.9.1: Dev API
+- API monitor, script or function to test the apis, make sure all apis are returning the same result to verify api is still working.
+
+### Release v0.9.1: Public API
+- Expose API endpoint, for external apps to add, read flights (with api key authentication)
 
 ### Release v0.9.5
 - Site Launch

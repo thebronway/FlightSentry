@@ -114,7 +114,7 @@ export default function ConvertFlightModal({
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-100">
-                Mark Flight as Booked
+                Convert to Booked
               </h3>
               <p className="text-xs text-gunmetal-muted">
                 {flight.origin} → {flight.destination} · {flight.departureDate}
@@ -141,10 +141,10 @@ export default function ConvertFlightModal({
 
           <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 text-xs text-slate-300 space-y-1">
             <span className="font-semibold text-emerald-300 block">
-              Transition to Rebooking Savings Monitoring
+              Transition from Watching to Booked
             </span>
             <p className="text-gunmetal-muted leading-relaxed">
-              Converting records what you paid and locks tracking strictly to price drop alerts. If fares drop below your purchase price, FlightSentry will alert you to rebook and secure airline savings. All previous price history remains intact.
+              Converting from watching to booked records what you paid and switches tracking strictly to price drop alerts. If fares drop below your purchase price, FlightSentry will alert you to rebook and secure airline savings. All previous price history remains intact.
             </p>
           </div>
 
@@ -259,7 +259,7 @@ export default function ConvertFlightModal({
               ) : (
                 <>
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Confirm Booking</span>
+                  <span>Convert to Booked</span>
                 </>
               )}
             </button>

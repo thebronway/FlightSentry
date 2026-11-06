@@ -192,7 +192,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Tracking Goal Filter Toggle */}
           {(() => {
-            const isBooked = (f: Flight) => Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
+            const isBooked = (f: Flight) => f.status === 'Booked' || Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
             const activeOnly = flights.filter(f => f.status !== 'Past');
             const watchingTotal = activeOnly.filter(f => !isBooked(f)).length;
             const bookedTotal = activeOnly.filter(f => isBooked(f)).length;
@@ -343,7 +343,7 @@ export default function Dashboard() {
       />
 
       {(() => {
-        const isBooked = (f: Flight) => Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
+        const isBooked = (f: Flight) => f.status === 'Booked' || Boolean((f.purchasePrice && f.purchasePrice > 0) || f.pnr);
         const allActive = sortedFlights.filter(f => f.status !== 'Past');
         const allPast = sortedFlights.filter(f => f.status === 'Past');
 
@@ -368,7 +368,7 @@ export default function Dashboard() {
               </div>
             ) : activeFlights.length === 0 ? (
               <div className="py-10 text-center text-gunmetal-muted border border-dashed border-gunmetal-border rounded-lg bg-gunmetal-card/40 mb-6">
-                <p className="text-sm font-medium text-slate-300">No upcoming flights currently monitored</p>
+                <p className="text-sm font-medium text-slate-300">No active flights currently monitored</p>
                 <p className="text-xs text-gunmetal-muted mt-1">Check past flights below or click "Add Flight" to start tracking.</p>
               </div>
             ) : viewMode === 'cards' ? (
