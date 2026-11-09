@@ -1,46 +1,40 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-06*  
-*Current Version: v0.7.3*
+*Last updated: 2026-11-09*  
+*Current Version: v0.7.4*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.7.4: Manual Entry Mode
-- **Custom Historical & Manual Price Entries:**
-  - Allow users to manually log price check data points directly into price history for both cash and award points flights.
-  - Entry fields: Date (supports past calendar dates), Price / Points Cost, Carrier Code, Flight Number, and Route.
-  - Pre-fill fields automatically based on the selected flight's active metadata, with full user override capability.
-- **Flight & Route Association Logic:**
-  - If the entered carrier and flight number match the tracked flight, append the data point directly to that flight's historical timeline.
-  - If the flight number differs, append the data point as a competing flight on that route's history log.
-  - For cash flights, provide an optional toggle to immediately trigger an automated live verification check for that route/flight if data sources are active.
-- **Purchased Flight**
-  - Once a flight is booked, orignal purchase price should be locked, but a user can enter a new purchase price via manual mode (need better phrasology or maybe a dedicated added rebooked flight button or something) and mark it as a rebook.
-
 ### Release v0.7.5: Flight Modal Redesign
+- First look at the codebase and current features. 
 - **Modular Modal Redesign:**
   - Ground-up redesign of the flight modal incorporating all finalized capabilities (Points vs. Cash, Watching vs. Booked, Route vs. Flight Number, Dual Route Monitoring, Search Preference Overrides, and Manual Logging).
   - Organize into clean visual sections
   - thoughts? give honest opinion
     - three main options
       - Watching a route: user just enters route info, can covert if purchased.
-      - Wacting a flight: flight required, route optional via checkbox, then shows route options
+      - Wacting a flight: flight required, route optional via checkbox, then shows route options, can covert if purchased.
       - booked: flight required, route optional via checkbox, then shows route options
+    - We need to log when the user booked a flight, deafault to today, but also allow dates in the past. 
   - Decompose monolithic state into isolated, single-responsibility sub-components. Make sure a correct folders strcuture is used, files can be moved
   - Points bookings should not have Price Alerts, notifications, etc. and Disable flight price checks should be checked and greyed out. 
+  - Figure out how to incorporte manual mode (from the prevous release.)
 - **Mobile Experience Optimization:**
   - Make sure the redesign includes a mobile optimization for the modal.
 - **Component Cleanup:**
   - Make no hacks, no missing/deprecated/no longer used imports and that all best practices are followed. 
   - warning if they leave the tab or clcik the x with unsaved changes.
+- make a plan with options when needed AND ONLY IF NEEDED. we will discuss first. 
 
 ### Release v0.7.6: Flight Card / Condensed Redesign / Refresh
+- Manual Mode
+- No Drops badge
 
-### Release v0.7.7
-- Fast Flights is broken, always showing sold old. need to look up actual documention and fix it.
+### Release v0.7.7: API audit
+- Fast Flights is broken, always showing sold old. need to look up actual documention and fix it. double check all api offical docuementation. DO NOT GUESS. Look up each one.
 
 ### Release v0.7.8: Mobile Optimization
 - **Mobile Experience Optimization:**

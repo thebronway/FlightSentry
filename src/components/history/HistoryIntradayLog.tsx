@@ -12,7 +12,7 @@ const SOURCE_LABEL_MAP: Record<string, string> = {
   hasdata: 'HasData',
   fastflights: 'Fast-Flights',
   'Price Paid': 'Price Paid',
-  manual: 'Price Paid',
+  manual: 'Manual Price Entry',
 };
 
 interface Props {
@@ -132,16 +132,16 @@ export default function HistoryIntradayLog({
                             {checkRoute}
                           </span>
                         )}
-                        <span className="font-bold text-sm text-slate-100">
+                        <span className="font-bold text-sm text-slate-100 font-mono">
                           {formatCurrency(record.price, flight.currency)}
                         </span>
                         {dropFromBenchmark > 0 && (
-                          <span className="text-green-400 font-semibold text-[11px]">
+                          <span className="text-green-400 font-semibold text-[11px] font-mono">
                             (-{formatCurrency(dropFromBenchmark, flight.currency)})
                           </span>
                         )}
                         {dropFromBenchmark < 0 && (
-                          <span className="text-red-400 font-semibold text-[11px]">
+                          <span className="text-red-400 font-semibold text-[11px] font-mono">
                             (+{formatCurrency(Math.abs(dropFromBenchmark), flight.currency)})
                           </span>
                         )}
@@ -149,6 +149,7 @@ export default function HistoryIntradayLog({
 
                       <div className="flex items-center gap-2">
                         {(() => {
+                          const isManualCheck = record.sourceUsed === 'manual';
                           let isRebooked = false;
                           let creditClaimed = 0;
                           if (record.status === 'Booked' && record.metadata) {
@@ -163,42 +164,72 @@ export default function HistoryIntradayLog({
                             }
                           }
 
+                          // 1. Rebooked booking milestone
+                          if (isRebooked) {
+                            return (
+                              <>
+                                <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-emerald-900/50 text-emerald-300 border-emerald-600/70">
+                                  {creditClaimed > 0
+                                    ? `Rebooked (+${formatCurrency(creditClaimed, flight.currency)} Savings)`
+                                    : 'Rebooked Fare'}
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-emerald-950/60 text-emerald-300 border-emerald-700/70 shadow-sm">
+                                  Price Paid
+                                </span>
+                              </>
+                            );
+                          }
+
+                          // 2. Initial Booking milestone
+                          if (record.status === 'Booked') {
+                            return (
+                              <>
+                                <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-emerald-950/60 text-emerald-400 border-emerald-800/50">
+                                  Initial Booking
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-emerald-950/60 text-emerald-300 border-emerald-700/70 shadow-sm">
+                                  Price Paid
+                                </span>
+                              </>
+                            );
+                          }
+
+                          // 3. Single badge for manual price checks
+                          if (isManualCheck) {
+                            return (
+                              <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-sky-950/60 text-sky-300 border-sky-700/60 shadow-sm">
+                                Manual Check
+                              </span>
+                            );
+                          }
+
+                          // 4. Automated provider check (Status + Source provider)
                           return (
-                            <span
-                              className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-                                record.status === 'Success'
-                                  ? 'bg-green-900/30 text-green-400 border-green-800/40'
-                                  : isRebooked
-                                  ? 'bg-emerald-900/50 text-emerald-300 border-emerald-600/70'
-                                  : record.status === 'Booked'
-                                  ? 'Initial Booking'
-                                  : 'bg-red-900/30 text-red-400 border-red-800/40'
-                              }`}
-                            >
-                              {isRebooked
-                                ? creditClaimed > 0
-                                  ? `Rebooked (+${formatCurrency(creditClaimed, flight.currency)} Savings)`
-                                  : 'Rebooked Fare'
-                                : record.status === 'Booked'
-                                ? 'Initial Booking'
-                                : record.status}
-                            </span>
+                            <>
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
+                                  record.status === 'Success'
+                                    ? 'bg-green-900/30 text-green-400 border-green-800/40'
+                                    : 'bg-red-900/30 text-red-400 border-red-800/40'
+                                }`}
+                              >
+                                {record.status}
+                              </span>
+                              {record.sourceUsed && (
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
+                                    record.sourceUsed === 'fastflights'
+                                      ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
+                                      : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
+                                  }`}
+                                  title={`Data Source: ${SOURCE_LABEL_MAP[record.sourceUsed] || record.sourceUsed}`}
+                                >
+                                  {SOURCE_LABEL_MAP[record.sourceUsed] || record.sourceUsed}
+                                </span>
+                              )}
+                            </>
                           );
                         })()}
-                        {record.sourceUsed && (
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-                              record.sourceUsed === 'Price Paid' || record.sourceUsed === 'manual'
-                                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/70 shadow-sm'
-                                : record.sourceUsed === 'fastflights'
-                                ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
-                                : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
-                            }`}
-                            title={`Data Source: ${SOURCE_LABEL_MAP[record.sourceUsed] || record.sourceUsed}`}
-                          >
-                            {SOURCE_LABEL_MAP[record.sourceUsed] || record.sourceUsed}
-                          </span>
-                        )}
                         {(record.status === 'Success' || record.status === 'Booked') && (
                           <a
                             href={`https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}${record.airline ? `%20${encodeURIComponent(record.airline)}` : ''}${record.flightNumber ? `%20${encodeURIComponent(record.flightNumber)}` : ''}%20oneway`}

@@ -1,5 +1,6 @@
 import db from './index';
 import { Flight } from '../types';
+import { historyDb } from './history';
 
 export const flightDb = {
   getAll: (): Flight[] => {
@@ -41,7 +42,7 @@ export const flightDb = {
       INSERT INTO flights (
         searchMode, origin, destination, departureDate, airline, flightNumber, 
         includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
-        purchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
+        purchasePrice, originalPurchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
         earliestDeparture, latestDeparture, noRedeye, priceTrackingDirection,
         minIncreaseDollar, minIncreasePercent, maxStops, currency,
@@ -49,7 +50,7 @@ export const flightDb = {
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
-        @purchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
+        @purchasePrice, @originalPurchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
         @earliestDeparture, @latestDeparture, @noRedeye, @priceTrackingDirection,
         @minIncreaseDollar, @minIncreasePercent, @maxStops, @currency,
@@ -60,6 +61,7 @@ export const flightDb = {
     const now = new Date().toISOString();
     const currentPrice = flight.currentPrice !== undefined ? flight.currentPrice : flight.baselinePrice;
     const purchasePrice = flight.purchasePrice ?? null;
+    const originalPurchasePrice = flight.originalPurchasePrice ?? purchasePrice;
     const targetPrice = flight.targetPrice ?? null;
     const minDropDollar = flight.minDropDollar ?? null;
     const minDropPercent = flight.minDropPercent ?? null;
@@ -115,6 +117,7 @@ export const flightDb = {
         cabinClass = @cabinClass,
         baselinePrice = @baselinePrice,
         purchasePrice = @purchasePrice,
+        originalPurchasePrice = @originalPurchasePrice,
         minDropDollar = @minDropDollar,
         minDropPercent = @minDropPercent,
         notes = @notes,
@@ -148,6 +151,68 @@ export const flightDb = {
   updateStatus: (id: number, status: Flight['status']): void => {
     const stmt = db.prepare('UPDATE flights SET status = @status, updatedAt = @now WHERE id = @id');
     stmt.run({ id, status, now: new Date().toISOString() });
+  },
+
+  rebook: (
+    id: number,
+    newPrice: number,
+    details?: {
+      airline?: string | null;
+      flightNumber?: string | null;
+      pnr?: string | null;
+      notes?: string | null;
+      checkedAt?: string | null;
+    }
+  ): Flight | undefined => {
+    const flight = flightDb.getById(id);
+    if (!flight) return undefined;
+
+    const oldPurchasePrice = flight.purchasePrice || flight.baselinePrice;
+    const originalPurchasePrice = flight.originalPurchasePrice || oldPurchasePrice;
+    const now = new Date().toISOString();
+    const checkedAt = details?.checkedAt || now;
+    const creditClaimed = Math.max(0, oldPurchasePrice - newPrice);
+
+    const rebookTx = db.transaction(() => {
+      const stmt = db.prepare(`
+        UPDATE flights SET
+          originalPurchasePrice = @originalPurchasePrice,
+          purchasePrice = @newPrice,
+          currentPrice = @newPrice,
+          airline = COALESCE(@airline, airline),
+          flightNumber = COALESCE(@flightNumber, flightNumber),
+          pnr = COALESCE(@pnr, pnr),
+          notes = COALESCE(@notes, notes),
+          updatedAt = @now
+        WHERE id = @id
+      `);
+      stmt.run({
+        id,
+        originalPurchasePrice,
+        newPrice,
+        airline: details?.airline ? details.airline.trim().toUpperCase() : null,
+        flightNumber: details?.flightNumber ? details.flightNumber.trim() : null,
+        pnr: details?.pnr ? details.pnr.trim().toUpperCase() : null,
+        notes: details?.notes !== undefined ? details.notes : null,
+        now,
+      });
+
+      historyDb.insert(id, newPrice, 'Booked', {
+        airline: details?.airline || flight.airline,
+        flightNumber: details?.flightNumber || flight.flightNumber,
+        metadata: JSON.stringify({
+          milestone: 'Rebooked Flight',
+          previousPrice: oldPurchasePrice,
+          creditClaimed,
+          pnr: details?.pnr || flight.pnr || null,
+        }),
+        sourceUsed: 'Price Paid',
+        checkedAt,
+      });
+    });
+
+    rebookTx();
+    return flightDb.getById(id);
   },
 
   delete: (id: number): void => {

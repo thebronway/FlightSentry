@@ -19,6 +19,7 @@ export interface Flight {
   cabinClass: CabinClass;
   baselinePrice: number;
   purchasePrice?: number | null;
+  originalPurchasePrice?: number | null;
   targetPrice?: number | null;
   currentPrice: number;
   minDropDollar?: number | null;

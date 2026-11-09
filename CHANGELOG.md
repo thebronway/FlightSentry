@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-06*  
-*Current Version: v0.7.3*
+*Last updated: 2026-11-09*  
+*Current Version: v0.7.4*
 
 ## Changelog
+
+### Release v0.7.4
+- Added Manual Price Entry modal for cash and award points flights with past-or-present date/time validation.
+- Implemented flight and route association logic (timeline match vs. competing corridor fare).
+- Added dedicated Rebook Flight modal locking original purchase price and logging rebook savings.
+- Added "Log Rebook" action buttons to flight cards, condensed table rows, and history modal header.
+- Added dynamic button swapping replacing the refresh button with manual check when automated polling is disabled.
+- Locked purchase price and goal toggle when editing existing booked flights.
+- Standardized monospace font formatting across history check logs.
 
 ### Release v0.7.3
 - Added opt-in "Also Monitor Route Alternatives" dual flight and route tracking for watched and booked flights.

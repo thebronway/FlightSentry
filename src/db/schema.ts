@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS flights (
     cabinClass TEXT NOT NULL DEFAULT 'economy',
     baselinePrice REAL NOT NULL,
     purchasePrice REAL,
+    originalPurchasePrice REAL,
     targetPrice REAL,
     currentPrice REAL NOT NULL,
     minDropDollar REAL,

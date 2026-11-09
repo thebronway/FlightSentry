@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
@@ -17,10 +17,22 @@ interface Props {
   onShowHistory: () => void;
   onEdit: (flight: Flight) => void;
   onConvertToBooked?: (flight: Flight) => void;
+  onOpenManualCheck?: (flight: Flight) => void;
+  onRebook?: (flight: Flight) => void;
   onDelete: (flight: Flight) => void;
 }
 
-export default function FlightCard({ flight, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked, onDelete }: Props) {
+export default function FlightCard({
+  flight,
+  settings,
+  onRefresh,
+  onShowHistory,
+  onEdit,
+  onConvertToBooked,
+  onOpenManualCheck,
+  onRebook,
+  onDelete,
+}: Props) {
   const { toggleStatus, checkNow } = useFlightActions(onRefresh);
   const [isTopHovered, setIsTopHovered] = useState(false);
 
@@ -270,21 +282,36 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
       {/* Bottom Action Bar (Clicks isolated from triggering history) */}
       <div
         onClick={e => e.stopPropagation()}
-        className={`mt-auto grid ${!isPurchased && onConvertToBooked ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
+        className={`mt-auto grid ${(!isPurchased && onConvertToBooked) || (isPurchased && onRebook) ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
-        <Tooltip
-          content={isPast ? "Checks disabled for past flights" : isPointsCurrency(flight.currency) ? "Automated checks disabled for points flights" : "Check live price now"}
-          align="left"
-          className="w-full"
-        >
-          <button
-            onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
-            disabled={isPast || flight.status === 'Paused' || isPointsCurrency(flight.currency)}
-            className="w-full flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md disabled:opacity-25 disabled:pointer-events-none transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </Tooltip>
+        {isPast ? (
+          <Tooltip content="Checks disabled for past flights" align="left" className="w-full">
+            <button
+              disabled
+              className="w-full flex justify-center items-center p-2 text-sky-400 rounded-md opacity-25 pointer-events-none"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        ) : (flight.status === 'Paused' || isPointsCurrency(flight.currency)) && onOpenManualCheck ? (
+          <Tooltip content="Log manual price check" align="left" className="w-full">
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenManualCheck(flight); }}
+              className="w-full flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 rounded-md transition-colors"
+            >
+              {isPointsCurrency(flight.currency) ? <Coins className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
+            </button>
+          </Tooltip>
+        ) : (
+          <Tooltip content="Check live price now" align="left" className="w-full">
+            <button
+              onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
+              className="w-full flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        )}
         <Tooltip
           content="View price history & trend graph"
           align="center"
@@ -339,6 +366,20 @@ export default function FlightCard({ flight, settings, onRefresh, onShowHistory,
               className="w-full flex justify-center items-center p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded-md transition-colors"
             >
               <ShoppingBag className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        )}
+        {isPurchased && onRebook && (
+          <Tooltip
+            content="Log Flight Rebook or Price Adjustment"
+            align="center"
+            className="w-full"
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); onRebook(flight); }}
+              className="w-full flex justify-center items-center p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded-md transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
             </button>
           </Tooltip>
         )}

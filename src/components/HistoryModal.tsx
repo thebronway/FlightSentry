@@ -11,16 +11,21 @@ import { DayGroup } from './history/types';
 import HistoryModalHeader from './history/HistoryModalHeader';
 import FlightStatBadges from './history/FlightStatBadges';
 import HistoryIntradayLog from './history/HistoryIntradayLog';
+import ManualPriceEntryModal from './history/ManualPriceEntryModal';
+import RebookFlightModal from './history/RebookFlightModal';
 
 interface Props {
   flight: Flight | null;
   onClose: () => void;
+  onUpdateFlight?: (updatedFlight?: Flight) => void;
 }
 
-export default function HistoryModal({ flight, onClose }: Props) {
+export default function HistoryModal({ flight, onClose, onUpdateFlight }: Props) {
   const [history, setHistory] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [overlayRouteFloor, setOverlayRouteFloor] = useState(false);
+  const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
+  const [isRebookOpen, setIsRebookOpen] = useState(false);
 
   // Default route floor overlay to hidden on every flight modal open to prevent visual clutter
   useEffect(() => {
@@ -145,6 +150,8 @@ export default function HistoryModal({ flight, onClose }: Props) {
           isFlightNumMode={Boolean(isFlightNumMode)}
           primaryTitle={primaryTitle}
           onClose={onClose}
+          onOpenManualEntry={() => setIsManualEntryOpen(true)}
+          onOpenRebook={() => setIsRebookOpen(true)}
         />
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -209,6 +216,26 @@ export default function HistoryModal({ flight, onClose }: Props) {
           />
         </div>
       </div>
+
+      <ManualPriceEntryModal
+        isOpen={isManualEntryOpen}
+        flight={flight}
+        onClose={() => setIsManualEntryOpen(false)}
+        onSuccess={(updatedFlight) => {
+          if (flight?.id) loadHistory(flight.id, false);
+          if (onUpdateFlight) onUpdateFlight(updatedFlight);
+        }}
+      />
+
+      <RebookFlightModal
+        isOpen={isRebookOpen}
+        flight={flight}
+        onClose={() => setIsRebookOpen(false)}
+        onSuccess={(updatedFlight) => {
+          if (flight?.id) loadHistory(flight.id, false);
+          if (onUpdateFlight) onUpdateFlight(updatedFlight);
+        }}
+      />
     </div>
   );
 }

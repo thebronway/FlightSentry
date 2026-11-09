@@ -1,7 +1,7 @@
 'use client';
 
 import { Flight } from '@/types';
-import { X, Calendar, ExternalLink, Tag, ShoppingBag, Pause, Clock } from 'lucide-react';
+import { X, Calendar, ExternalLink, Tag, ShoppingBag, Pause, Clock, Plus, RotateCcw } from 'lucide-react';
 import AirlineBadge from '../common/AirlineBadge';
 import { getActiveCoLocationBadge } from '@/utils/coLocations';
 
@@ -10,6 +10,8 @@ interface Props {
   isFlightNumMode: boolean;
   primaryTitle: string;
   onClose: () => void;
+  onOpenManualEntry?: () => void;
+  onOpenRebook?: () => void;
 }
 
 export default function HistoryModalHeader({
@@ -17,6 +19,8 @@ export default function HistoryModalHeader({
   isFlightNumMode,
   primaryTitle,
   onClose,
+  onOpenManualEntry,
+  onOpenRebook,
 }: Props) {
   const cabinClassQuery = flight.cabinClass === 'premium_economy'
     ? '%20premium%20economy'
@@ -110,6 +114,26 @@ export default function HistoryModalHeader({
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {onOpenRebook && (flight.status === 'Booked' || (flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0)) && (
+          <button
+            type="button"
+            onClick={onOpenRebook}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-200 hover:text-white rounded-md shadow-sm transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Log Flight Rebook</span>
+          </button>
+        )}
+        {onOpenManualEntry && (
+          <button
+            type="button"
+            onClick={onOpenManualEntry}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-200 hover:text-white rounded-md shadow-sm transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Log Manual Price Entry</span>
+          </button>
+        )}
         <a
           href={googleFlightsUrl}
           target="_blank"

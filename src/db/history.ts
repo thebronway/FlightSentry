@@ -15,6 +15,7 @@ export const historyDb = {
       flightNumber?: string | null;
       metadata?: string | null;
       sourceUsed?: string | null;
+      checkedAt?: string | null;
     }
   ): void => {
     const stmt = db.prepare(`
@@ -29,7 +30,7 @@ export const historyDb = {
       flightNumber: details?.flightNumber ?? null,
       metadata: details?.metadata ?? null,
       sourceUsed: details?.sourceUsed ?? null,
-      checkedAt: new Date().toISOString(),
+      checkedAt: details?.checkedAt || new Date().toISOString(),
     });
   },
   

@@ -1,6 +1,6 @@
 'use client';
 
-import { Tag, ShoppingBag, Coins } from 'lucide-react';
+import { Tag, ShoppingBag, Coins, Lock } from 'lucide-react';
 import { getCurrencySymbol } from '@/utils/format';
 
 export type TrackingGoal = 'watching' | 'booked';
@@ -14,6 +14,7 @@ interface Props {
   pointsCurrencies: string[];
   fiatCurrency: string;
   minDepartureDate?: string;
+  isPurchasePriceLocked?: boolean;
   onGoalChange: (goal: TrackingGoal) => void;
   onPurchaseChange: (val: string) => void;
   onBaselinePriceChange: (val: string) => void;
@@ -30,6 +31,7 @@ export default function TrackingGoalSection({
   pointsCurrencies,
   fiatCurrency,
   minDepartureDate,
+  isPurchasePriceLocked = false,
   onGoalChange,
   onPurchaseChange,
   onBaselinePriceChange,
@@ -70,11 +72,12 @@ export default function TrackingGoalSection({
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
+          disabled={isPurchasePriceLocked}
           onClick={() => onGoalChange('watching')}
           className={`flex items-center justify-center gap-2 p-2.5 rounded-md text-xs font-semibold transition-colors border ${
             trackingGoal === 'watching'
               ? 'bg-gunmetal-border border-slate-400 text-slate-100 shadow-sm'
-              : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200'
+              : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
           }`}
         >
           <Tag className="w-3.5 h-3.5" />
@@ -140,26 +143,41 @@ export default function TrackingGoalSection({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              {isPoints ? 'Points Redeemed *' : 'Purchase Price (Amount Paid)'}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                {isPoints ? 'Points Redeemed *' : 'Purchase Price (Amount Paid)'}
+              </label>
+              {isPurchasePriceLocked && (
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-400">
+                  <Lock className="w-3 h-3" /> Locked
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <span className={`font-mono text-sm ${isPoints ? 'text-amber-400 font-semibold flex items-center gap-1 text-xs' : 'text-gunmetal-muted'}`}>
                 {isPoints ? <><Coins className="w-3.5 h-3.5" /> pts</> : getCurrencySymbol(currency)}
               </span>
               <input
                 required={trackingGoal === 'booked'}
+                disabled={isPurchasePriceLocked}
+                readOnly={isPurchasePriceLocked}
                 type="number"
                 step={isPoints ? "1" : "0.01"}
                 min="1"
                 placeholder={isPoints ? "e.g. 50000" : "e.g. 349.00"}
                 value={purchasePrice}
                 onChange={e => onPurchaseChange(e.target.value)}
-                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                className={`w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono ${
+                  isPurchasePriceLocked ? 'opacity-60 cursor-not-allowed bg-gunmetal-card border-gunmetal-border/80' : ''
+                }`}
               />
             </div>
             <p className="text-[11px] text-gunmetal-muted mt-1">
-              {isPoints ? 'Recorded points paid for this flight.' : 'Alerts trigger when fares drop below what you paid.'}
+              {isPurchasePriceLocked
+                ? 'Original purchase price is locked. Use the "Log Flight Rebook" button on the dashboard or history modal to record fare adjustments.'
+                : isPoints
+                ? 'Recorded points paid for this flight.'
+                : 'Alerts trigger when fares drop below what you paid.'}
             </p>
           </div>
           <div>

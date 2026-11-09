@@ -435,6 +435,7 @@ export default function FlightModal({ isOpen, onClose, onSuccess, initialFlight,
             pointsCurrencies={pointsList}
             fiatCurrency={defaultSettings?.currency || 'USD'}
             minDepartureDate={getTodayDateString(defaultSettings?.timezone)}
+            isPurchasePriceLocked={Boolean(initialFlight && (initialFlight.status === 'Booked' || (initialFlight.purchasePrice !== null && initialFlight.purchasePrice !== undefined && initialFlight.purchasePrice > 0)))}
             onGoalChange={goal => setFormData(prev => ({ ...prev, trackingGoal: goal, searchMode: goal === 'booked' ? 'FlightNumber' : prev.searchMode }))}
             onPurchaseChange={val => setFormData({ ...formData, purchasePrice: val })}
             onBaselinePriceChange={val => setFormData({ ...formData, baselinePrice: val })}

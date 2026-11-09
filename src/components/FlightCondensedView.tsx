@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
@@ -17,10 +17,22 @@ interface Props {
   onShowHistory: (flight: Flight) => void;
   onEdit: (flight: Flight) => void;
   onConvertToBooked?: (flight: Flight) => void;
+  onOpenManualCheck?: (flight: Flight) => void;
+  onRebook?: (flight: Flight) => void;
   onDelete: (flight: Flight) => void;
 }
 
-export default function FlightCondensedView({ flights, settings, onRefresh, onShowHistory, onEdit, onConvertToBooked, onDelete }: Props) {
+export default function FlightCondensedView({
+  flights,
+  settings,
+  onRefresh,
+  onShowHistory,
+  onEdit,
+  onConvertToBooked,
+  onOpenManualCheck,
+  onRebook,
+  onDelete,
+}: Props) {
   const { toggleStatus, checkNow } = useFlightActions(onRefresh);
   const [hoveredHistoryFlightId, setHoveredHistoryFlightId] = useState<number | null>(null);
 
@@ -276,18 +288,34 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                     className="py-3 px-4 text-right whitespace-nowrap cursor-default"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <Tooltip
-                        content={flight.status === 'Past' ? 'Checks disabled for past flights' : flight.status === 'Paused' ? 'Flight checks paused' : isPointsCurrency(flight.currency) ? 'Automated checks disabled for points flights' : 'Check live price now'}
-                        align="center"
-                      >
-                        <button
-                          onClick={() => checkNow(flight.id)}
-                          disabled={flight.status === 'Past' || flight.status === 'Paused' || isPointsCurrency(flight.currency)}
-                          className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded disabled:opacity-25 disabled:pointer-events-none transition-colors"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                        </button>
-                      </Tooltip>
+                      {isPast ? (
+                        <Tooltip content="Checks disabled for past flights" align="center">
+                          <button
+                            disabled
+                            className="p-1.5 text-sky-400 rounded opacity-25 pointer-events-none"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                      ) : (flight.status === 'Paused' || isPointsCurrency(flight.currency)) && onOpenManualCheck ? (
+                        <Tooltip content="Log manual price check" align="center">
+                          <button
+                            onClick={() => onOpenManualCheck(flight)}
+                            className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 rounded transition-colors"
+                          >
+                            {isPointsCurrency(flight.currency) ? <Coins className="w-3.5 h-3.5" /> : <DollarSign className="w-3.5 h-3.5" />}
+                          </button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip content="Check live price now" align="center">
+                          <button
+                            onClick={() => checkNow(flight.id)}
+                            className="p-1.5 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded transition-colors"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                      )}
                       <Tooltip
                         content="View price history & trend graph"
                         align="center"
@@ -337,6 +365,19 @@ export default function FlightCondensedView({ flights, settings, onRefresh, onSh
                             className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded transition-colors"
                           >
                             <ShoppingBag className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                      )}
+                      {isPurchased && onRebook && (
+                        <Tooltip
+                          content="Log Flight Rebook or Price Adjustment"
+                          align="center"
+                        >
+                          <button
+                            onClick={() => onRebook(flight)}
+                            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30 rounded transition-colors"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                         </Tooltip>
                       )}

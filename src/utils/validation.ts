@@ -24,6 +24,7 @@ export const flightSchema = z.object({
   cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).default('economy'),
   baselinePrice: z.number().positive().optional().nullable(),
   purchasePrice: z.number().positive().optional().nullable(),
+  originalPurchasePrice: z.number().positive().optional().nullable(),
   targetPrice: z.number().positive().optional().nullable(),
   minDropDollar: z.number().nonnegative().optional().nullable(),
   minDropPercent: z.number().nonnegative().optional().nullable(),
@@ -114,4 +115,25 @@ export const settingsSchema = z.object({
   fastFlightsPaused: z.number().min(0).max(1).optional(),
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
+});
+
+export const manualPriceEntrySchema = z.object({
+  price: z.number().positive("Price or points must be greater than zero"),
+  date: z
+    .string()
+    .min(1, "Date is required")
+    .refine(
+      val => {
+        const time = new Date(val).getTime();
+        return !isNaN(time) && time <= Date.now() + 60000;
+      },
+      "Date and time cannot be in the future"
+    ),
+  airline: z.string().min(1, "Carrier code is required").toUpperCase(),
+  flightNumber: z.string().regex(/^\d+$/, "Flight number must be numeric").optional().nullable().or(z.literal('')),
+  origin: z.string().regex(/^[A-Z]{3}$/, "Origin must be a 3-letter IATA code").optional().nullable().or(z.literal('')),
+  destination: z.string().regex(/^[A-Z]{3}$/, "Destination must be a 3-letter IATA code").optional().nullable().or(z.literal('')),
+  isRebook: z.boolean().optional().default(false),
+  pnr: z.string().max(10).optional().nullable().or(z.literal('')),
+  notes: z.string().optional().nullable(),
 });

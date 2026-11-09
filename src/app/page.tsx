@@ -10,6 +10,8 @@ import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
 import ConvertFlightModal from '@/components/ConvertFlightModal';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import ManualPriceEntryModal from '@/components/history/ManualPriceEntryModal';
+import RebookFlightModal from '@/components/history/RebookFlightModal';
 import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 import { setActiveCurrency } from '@/utils/format';
@@ -24,6 +26,8 @@ export default function Dashboard() {
   const [historyFlight, setHistoryFlight] = useState<Flight | null>(null);
   const [convertingFlight, setConvertingFlight] = useState<Flight | null>(null);
   const [deletingFlight, setDeletingFlight] = useState<Flight | null>(null);
+  const [manualEntryFlight, setManualEntryFlight] = useState<Flight | null>(null);
+  const [rebookingFlight, setRebookingFlight] = useState<Flight | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -382,6 +386,8 @@ export default function Dashboard() {
                     onShowHistory={() => setHistoryFlight(f)} 
                     onEdit={handleEdit} 
                     onConvertToBooked={setConvertingFlight}
+                    onOpenManualCheck={setManualEntryFlight}
+                    onRebook={setRebookingFlight}
                     onDelete={setDeletingFlight}
                   />
                 ))}
@@ -394,6 +400,8 @@ export default function Dashboard() {
                 onShowHistory={f => setHistoryFlight(f)} 
                 onEdit={handleEdit} 
                 onConvertToBooked={setConvertingFlight}
+                onOpenManualCheck={setManualEntryFlight}
+                onRebook={setRebookingFlight}
                 onDelete={setDeletingFlight}
               />
             )}
@@ -445,7 +453,25 @@ export default function Dashboard() {
         );
       })()}
 
-      <HistoryModal flight={activeHistoryFlight} onClose={() => setHistoryFlight(null)} />
+      <HistoryModal 
+        flight={activeHistoryFlight} 
+        onClose={() => setHistoryFlight(null)} 
+        onUpdateFlight={handleRefreshAll}
+      />
+
+      <ManualPriceEntryModal
+        isOpen={Boolean(manualEntryFlight)}
+        flight={manualEntryFlight}
+        onClose={() => setManualEntryFlight(null)}
+        onSuccess={handleRefreshAll}
+      />
+
+      <RebookFlightModal
+        isOpen={Boolean(rebookingFlight)}
+        flight={rebookingFlight}
+        onClose={() => setRebookingFlight(null)}
+        onSuccess={handleRefreshAll}
+      />
       
       <FlightModal 
          isOpen={isModalOpen} 
