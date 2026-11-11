@@ -205,7 +205,7 @@ export function useFlightModalState({
         const isBooked = (initialFlight.purchasePrice !== null && initialFlight.purchasePrice !== undefined && initialFlight.purchasePrice > 0) || Boolean(initialFlight.pnr);
         const trackingType: TrackingOption = isBooked
           ? 'flight_booked'
-          : initialFlight.searchMode === 'FlightNumber' || initialFlight.flightNumber
+          : (initialFlight.searchMode === 'FlightNumber' && Boolean(initialFlight.flightNumber))
           ? 'flight_watch'
           : 'route_watch';
 

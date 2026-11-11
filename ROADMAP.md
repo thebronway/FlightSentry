@@ -1,18 +1,12 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-09*  
-*Current Version: v0.7.5*
+*Last updated: 2026-11-10*  
+*Current Version: v0.7.6*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.7.6: Logic and API fix
-- All 4 APIs need verification that they are programed correctly to work with the features of this app. You need to identify all the available features and then you need to go and look up the documentation for each API, you are not allowed to guess, you are not allowed to assume, you are not allowed to do anything else except go look up the exact documentation to make sure the features are compatible. If they're not compatible, we can discuss. If they are compatible, make sure they are programed correctly. Fast flights is always broken. It's not getting captured or rate limited. It's saying sold out on all fucking flights, no matter what combination I do.
-- there's  logic issue because if I do a route, I watch a route and I do WAS to NYC on oneworld, then just monitors a random AA flight from DCA to JFK. Why is it switching to route?
-- go through the logic of every single possibility for searching and make sure it's programed correctly. You must go slow and methodically.
-- this is just a bug fix release, except for I wanna make the logs more accurate for the APIs and the data sources. Everything I just wanna make everything more accurate and I need to verify that if the log says it's sold out, it's actually sold out. The logs error messages need to be precise and specific and maybe more verbose
 
 ### Release v0.7.7: Flight Card / Condensed Redesign / Refresh
 - Manual Mode Badge
@@ -20,21 +14,25 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - No Drops badge
 - Stylize route / flight
   - Put locations in bubbles and put flight name and number a bubble with the airline color
-- Flight Card
-  - Rethink the layout of the card and what is needed and what is not
-  - If the actions buttons remain the same on the, the history button needs a left align,, and the pause button needs a right align, the rest stay as is. 
-- I dont like the bell < price dot > price to show when youll be notified, it looks weird
+- Rethink the layout of both flight card and condenseed and what is needed and what is not
+  - Flight card: If the actions buttons remain the same on the, the history button needs a left align,, and the pause button needs a right align, the rest stay as is. On condenced the right 4 icons need a right align. 
+- I dont like the bell < price dot > price to show when youll be notified, it looks weird, but we need to display that
 - When booking with points, by is the currency a badge in the middle and not next tot he price
 - Route to Flight Converter or Route to flight and route converter. basically like picking a perferred flight to watch
+- When applicable, give me options
 
 ### Release v0.7.8
 - Flight Modal
   - Thoughts on removing speificy route details manualually when just watching or booking a flight? Or maybe just removing co-lcoation option for when watching or booking a flight (and leaving it when the route option is added)
 - Data Sources
   - Add a way to manually log a used query, for example, if I use an api manually for soemthing else or whatever, I need to update that count somehow, so it activetly reflect the correct api upsage left. It will be done from the data soruces page
+  - When opening logs for a data source, the background is faded, but the top 1/4 inch is not
 - Quota ribbon
-  - When expanded, when a bar gets to 75% full, make it yellow, 90% make it red
-  - When collasaped (make collasped the default), make the first number xxx / total, yellow at 75% used and 90% make it red.
+  - When expanded, when a bar gets to 75% full, make it yellow, 95% make it red
+  - When collasaped (make collasped the default), make the first number xxx / total, yellow at 75% used and 95% make it red.
+- if all data sources are paused or not configured, the user should still be able to add a flight, but only in manual mode, so always allow the add flight button, but if all data sources are paused or not configured when they go to track the flight or route, that should be great out if manual mode is not selected with the appropriate messaging.
+- Banners
+  - Update banner > look at the raw changlog github blob or whatever, and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page
 
 ### Release v0.7.9: Mobile Optimization
 - **Mobile Experience Optimization:**
@@ -55,9 +53,9 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Look for inconsistent theming or elements
 - Look to clean up database alters, no one has old database, clean up to make it better
 - Old flights cleanup worth it? maybe keep 1 year, but user changeable in settings? performance implications? 
-- Every item should be its own phase, and then when developing a plan, reference previous findings
-- Make a plan for another ai for v0.6.8 for fixes, no fixes today. Be clear and concise.
-    - Double check results
+- Every above item should be its own phase, and then when developing a plan, reference previous findings
+- Make a plan for another ai for v0.8.0 for fixes, no fixes today. Be clear and concise.
+- Double check results. It will be compared against another ai. 
 
 ### Release v0.8.0: Security and Best Practices Application
 - Security and Best Practices Application
@@ -65,9 +63,14 @@ This document tracks planned improvements, enhancements, and technical debt for 
 ### Release v0.8.1a: Separate playwright container scraper plan
 - Playwright for optional hosted scrapper, seperate container.
     - the goal here is to make a plan for a separate container called FlightSentry-Scrapper. Which eventually will be a data source. But this optional container will, you know, be a hefty guy because it would have to like load playwright and chromium and everything in between to go to the Google flights page and scrape it. That's why I want it separate from this container/build.
+- I uploaded the current code base. This will be a seperate docker container.
+- this separate docker container will have an API endpoint that can be accessed by the main app with an API key and all.
+- we really need to think about scraping and rate limiting, etc.
+- does the app need a UI? How will the user get their API key, and are there other settings that will be needed, if we will make a mini UI for lack of a better term, it should follow the exact theming of the current app.
+- all you're doing today is making a plan for another AI, and they will make that container. You should add specific instructions so it pulls the same architecture as this app. I will set up a new github and everything. Should it just be called FlightSentry-Scraper?
 
 ### Release v0.8.1: Separate playwright container scraper implementation
-- API Playwright optional hosted scrapper integration.
+- API Playwright hosted scrapper integration into the app as a free optional scraper
 
 ### Release v0.9.0: Production Prep
 - Docker Compose Example

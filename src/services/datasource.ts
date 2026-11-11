@@ -98,11 +98,16 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
       result.itineraries = selectDiverseItineraries(result.itineraries, maxStored, diversityActive);
     }
 
-    if (result.status === 'RateLimited') {
-      failureReason = result.errorMessage || failureReason || 'Rate limit or anti-bot challenge (CAPTCHA / 429) detected';
+    if (result.status === 'Success') {
+      const count = result.itineraries?.length || 0;
+      const winner = result.leadingAirline || flight.airline || 'Carrier';
+      const flightNumStr = result.leadingFlightNumber ? ` #${result.leadingFlightNumber}` : '';
+      failureReason = `Retrieved fare: $${result.price} (${winner}${flightNumStr}, ${count} ${count === 1 ? 'itinerary' : 'itineraries'} captured)`;
+    } else if (result.status === 'RateLimited') {
+      failureReason = result.errorMessage || failureReason || 'Rate limit or anti-bot challenge (HTTP 429 / CAPTCHA) detected';
       console.warn(`[Router] RATE LIMIT / BOT BLOCK DETECTED on provider: ${strategy}. Logged for tracking.`);
     } else if (result.status === 'SoldOut') {
-      failureReason = result.errorMessage || 'No matching itineraries or available seats found';
+      failureReason = result.errorMessage || 'Upstream provider confirmed 0 matching flight itineraries for this route and date';
     } else if (result.status === 'Error' && !failureReason) {
       failureReason = result.errorMessage || `${strategy} query failed or returned an unparseable response`;
     }
@@ -119,7 +124,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
         flightNumber: flightNumLabel,
         departureDate: flight.departureDate,
         status: result.status,
-        statusCode: result.status === 'Success' ? 200 : result.status === 'RateLimited' ? 429 : 500,
+        statusCode: result.status === 'Success' || result.status === 'SoldOut' ? 200 : result.status === 'RateLimited' ? 429 : 500,
         errorMessage: failureReason,
         durationMs,
       });

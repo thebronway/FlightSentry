@@ -189,6 +189,9 @@ export async function POST(req: NextRequest) {
     }
 
     const currentPrice = liveSearchResultPrice ?? baselinePrice;
+    const isRouteMode = parsed.searchMode === 'Route';
+    const finalAirline = isRouteMode ? (parsed.airline || '') : (parsed.airline || initialAirline || '');
+    const finalFlightNumber = isRouteMode ? null : (parsed.flightNumber || initialFlightNumber);
 
     settings = settingsDb.get();
     const nextCheckAt = calculateNextCheck({
@@ -198,7 +201,8 @@ export async function POST(req: NextRequest) {
       purchasePrice: parsed.purchasePrice ?? null,
       targetPrice: parsed.targetPrice ?? null,
       currentPrice,
-      airline: parsed.airline || initialAirline || '',
+      airline: finalAirline,
+      flightNumber: finalFlightNumber,
       status: initialStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -208,8 +212,8 @@ export async function POST(req: NextRequest) {
 
     const newFlightId = flightDb.create({ 
       ...parsed, 
-      airline: parsed.airline || initialAirline || '',
-      flightNumber: parsed.flightNumber || initialFlightNumber,
+      airline: finalAirline,
+      flightNumber: finalFlightNumber,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       baselinePrice,

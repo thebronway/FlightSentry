@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-09*  
-*Current Version: v0.7.5*
+*Last updated: 2026-11-10*  
+*Current Version: v0.7.6*
 
 ## Changelog
+
+### Release v0.7.6
+- Fixed Fast-Flights error handling to track scraper exceptions and return RateLimited on anti-bot challenges or Error on connection failures instead of false SoldOut status.
+- Added airline alliance expansion to member carrier codes across Fast-Flights, SerpAPI, SearchApi.io, and HasData query parameters and candidate filters.
+- Fixed route search probe overwriting parent flight airline and flight number in the database with winning leg details.
+- Fixed flight modal misclassifying route tracking monitors as flight number watches.
+- Added verbose data source logging capturing HTTP status codes, captured itinerary counts, and specific failure reasons.
 
 ### Release v0.7.5
 - Redesigned flight modal into modular sub-components with isolated sticky header, scrollable body, and fixed footer.

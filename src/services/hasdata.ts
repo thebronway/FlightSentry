@@ -52,9 +52,15 @@ export const checkHasDataPrice = async (
       }
 
       if (flight.includedAirlines) {
-        url.searchParams.append('includeAirlines', flight.includedAirlines.replace(/\s+/g, ''));
+        const expandedIncluded = expandAlliancesToAirlines(flight.includedAirlines);
+        if (expandedIncluded.length > 0) {
+          url.searchParams.append('includeAirlines', expandedIncluded.join(','));
+        }
       } else if (flight.excludedAirlines) {
-        url.searchParams.append('excludeAirlines', flight.excludedAirlines.replace(/\s+/g, ''));
+        const expandedExcluded = expandAlliancesToAirlines(flight.excludedAirlines);
+        if (expandedExcluded.length > 0) {
+          url.searchParams.append('excludeAirlines', expandedExcluded.join(','));
+        }
       }
       if (flight.excludedConnectingAirports) {
         url.searchParams.append('excludeConnections', flight.excludedConnectingAirports.replace(/\s+/g, ''));
@@ -77,13 +83,18 @@ export const checkHasDataPrice = async (
 
     if (response.status === 429) {
       console.warn('[HasData] Rate limit encountered (HTTP 429). Logged for tracking.');
-      return { price: null, status: 'RateLimited' };
+      return { price: null, status: 'RateLimited', errorMessage: 'HasData rate limit (HTTP 429)' };
     }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[HasData] HTTP ${response.status} ${response.statusText}: ${errorText}`);
-      return { price: null, status: 'Error' };
+      let parsedMessage = errorText;
+      try {
+        const json = JSON.parse(errorText);
+        parsedMessage = json.error || json.message || errorText;
+      } catch {}
+      return { price: null, status: 'Error', errorMessage: `HasData HTTP ${response.status}: ${parsedMessage}` };
     }
 
     const data = await response.json();
@@ -94,7 +105,7 @@ export const checkHasDataPrice = async (
     console.log(`[HasData] Returned ${allFlights.length} itineraries`);
 
     if (allFlights.length === 0) {
-      return { price: null, status: 'SoldOut' };
+      return { price: null, status: 'SoldOut', errorMessage: 'HasData returned 0 flight itineraries for this route and date' };
     }
 
     // Parse and retain all structured competitor itineraries
@@ -226,8 +237,9 @@ export const checkHasDataPrice = async (
     }
 
     return { price: null, status: 'SoldOut' };
-  } catch (error) {
-    console.error('[HasData] Request exception:', error);
-    return { price: null, status: 'Error' };
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    console.error('[HasData] Request exception:', msg);
+    return { price: null, status: 'Error', errorMessage: `HasData exception: ${msg}` };
   }
 };

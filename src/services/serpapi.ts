@@ -51,10 +51,16 @@ export const checkFlightPrice = async (
       }
 
       if (flight.includedAirlines) {
-        url.searchParams.append('include_airlines', flight.includedAirlines.replace(/\s+/g, ''));
+        const expandedIncluded = expandAlliancesToAirlines(flight.includedAirlines);
+        if (expandedIncluded.length > 0) {
+          url.searchParams.append('include_airlines', expandedIncluded.join(','));
+        }
       }
       if (flight.excludedAirlines) {
-        url.searchParams.append('exclude_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+        const expandedExcluded = expandAlliancesToAirlines(flight.excludedAirlines);
+        if (expandedExcluded.length > 0) {
+          url.searchParams.append('exclude_airlines', expandedExcluded.join(','));
+        }
       }
       if (flight.excludedConnectingAirports) {
         url.searchParams.append('exclude_conns', flight.excludedConnectingAirports.replace(/\s+/g, ''));
@@ -71,13 +77,18 @@ export const checkFlightPrice = async (
 
     if (response.status === 429) {
       console.warn("[SerpAPI] Rate limit (HTTP 429)");
-      return { price: null, status: 'RateLimited' };
+      return { price: null, status: 'RateLimited', errorMessage: 'SerpAPI rate limit (HTTP 429)' };
     }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[SerpAPI] HTTP ${response.status} ${response.statusText}: ${errorText}`);
-      return { price: null, status: 'Error' };
+      let parsedMessage = errorText;
+      try {
+        const json = JSON.parse(errorText);
+        parsedMessage = json.error || json.message || errorText;
+      } catch {}
+      return { price: null, status: 'Error', errorMessage: `SerpAPI HTTP ${response.status}: ${parsedMessage}` };
     }
 
     const data = await response.json();
@@ -88,7 +99,7 @@ export const checkFlightPrice = async (
     console.log(`[SerpAPI] Returned ${allFlights.length} itineraries (${bestFlights.length} best, ${otherFlights.length} other)`);
 
     if (allFlights.length === 0) {
-      return { price: null, status: 'SoldOut' };
+      return { price: null, status: 'SoldOut', errorMessage: 'SerpAPI returned 0 flight itineraries for this route and date' };
     }
 
     // Parse and retain all structured competitor itineraries
@@ -212,8 +223,9 @@ export const checkFlightPrice = async (
     }
 
     return { price: null, status: 'SoldOut' };
-  } catch (error) {
-    console.error("Error fetching from SerpApi:", error);
-    return { price: null, status: 'Error' };
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    console.error("Error fetching from SerpApi:", msg);
+    return { price: null, status: 'Error', errorMessage: `SerpAPI exception: ${msg}` };
   }
 };

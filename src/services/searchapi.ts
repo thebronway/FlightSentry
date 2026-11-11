@@ -54,10 +54,16 @@ export const checkSearchApiPrice = async (
       }
 
       if (flight.includedAirlines) {
-        url.searchParams.append('included_airlines', flight.includedAirlines.replace(/\s+/g, ''));
+        const expandedIncluded = expandAlliancesToAirlines(flight.includedAirlines);
+        if (expandedIncluded.length > 0) {
+          url.searchParams.append('included_airlines', expandedIncluded.join(','));
+        }
       }
       if (flight.excludedAirlines) {
-        url.searchParams.append('excluded_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+        const expandedExcluded = expandAlliancesToAirlines(flight.excludedAirlines);
+        if (expandedExcluded.length > 0) {
+          url.searchParams.append('excluded_airlines', expandedExcluded.join(','));
+        }
       }
       if (flight.excludedConnectingAirports) {
         url.searchParams.append('exclude_conns', flight.excludedConnectingAirports.replace(/\s+/g, ''));
@@ -104,7 +110,7 @@ export const checkSearchApiPrice = async (
     console.log(`[SearchApi] Returned ${allFlights.length} itineraries (${bestFlights.length} best, ${otherFlights.length} other)`);
 
     if (allFlights.length === 0) {
-      return { price: null, status: 'SoldOut' };
+      return { price: null, status: 'SoldOut', errorMessage: 'SearchApi.io returned 0 flight itineraries for this route and date' };
     }
 
     // Parse and retain all structured competitor itineraries

@@ -1,7 +1,7 @@
 import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
 import { getFlights, createQuery, Passengers } from 'fast-flights-ts';
-import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
+import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToAirportList } from '../utils/coLocations';
 
@@ -63,6 +63,7 @@ export const checkFastFlightsPrice = async (
     const toList = destinations.length > 0 ? destinations : [flight.destination || ''];
 
     const results: any[] = [];
+    const pairErrors: string[] = [];
 
     for (const fromAirport of fromList) {
       for (const toAirport of toList) {
@@ -86,14 +87,37 @@ export const checkFastFlightsPrice = async (
           if (Array.isArray(legResults) && legResults.length > 0) {
             results.push(...legResults);
           }
-        } catch (pairErr) {
-          console.warn(`[FastFlights] Pair ${fromAirport} -> ${toAirport} failed:`, pairErr);
+        } catch (pairErr: any) {
+          const msg = pairErr?.message || String(pairErr);
+          console.warn(`[FastFlights] Pair ${fromAirport} -> ${toAirport} failed:`, msg);
+          pairErrors.push(msg);
         }
       }
     }
 
     if (!results || results.length === 0) {
-      return { price: null, status: 'SoldOut' };
+      if (pairErrors.length > 0) {
+        const sampleError = pairErrors[0].toLowerCase();
+        if (
+          sampleError.includes('429') ||
+          sampleError.includes('captcha') ||
+          sampleError.includes('unusual traffic') ||
+          sampleError.includes('consent') ||
+          sampleError.includes('blocked')
+        ) {
+          return {
+            price: null,
+            status: 'RateLimited',
+            errorMessage: `Google Flights anti-bot / CAPTCHA challenge detected (${pairErrors[0]})`,
+          };
+        }
+        return {
+          price: null,
+          status: 'Error',
+          errorMessage: `Fast-Flights scraper query failed: ${pairErrors[0]}`,
+        };
+      }
+      return { price: null, status: 'SoldOut', errorMessage: 'Upstream search returned 0 available flight itineraries for this route/date' };
     }
 
     const parsedItineraries: RouteItinerary[] = results
@@ -189,6 +213,14 @@ export const checkFastFlightsPrice = async (
     if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
       const target = flight.airline.toLowerCase();
       candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
+    }
+    if (flight.includedAirlines) {
+      const included = expandAlliancesToAirlines(flight.includedAirlines);
+      candidates = candidates.filter((it: RouteItinerary) => included.includes(it.airline));
+    }
+    if (flight.excludedAirlines) {
+      const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
+      candidates = candidates.filter((it: RouteItinerary) => !excluded.includes(it.airline));
     }
 
     // Apply time-of-day and redeye search preferences
