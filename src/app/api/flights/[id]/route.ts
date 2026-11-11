@@ -89,6 +89,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       minIncreaseDollar: parsed.minIncreaseDollar !== undefined ? parsed.minIncreaseDollar : existing.minIncreaseDollar,
       minIncreasePercent: parsed.minIncreasePercent !== undefined ? parsed.minIncreasePercent : existing.minIncreasePercent,
       monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : (existing.monitorRouteAlternatives ?? 0),
+      bookingDate: parsed.bookingDate !== undefined ? parsed.bookingDate : existing.bookingDate,
+      isManual: parsed.isManual !== undefined ? parsed.isManual : (existing.isManual ?? 0),
+      maxLayoverMinutes: parsed.maxLayoverMinutes !== undefined ? parsed.maxLayoverMinutes : existing.maxLayoverMinutes,
+      excludedConnectingAirports: parsed.excludedConnectingAirports !== undefined ? parsed.excludedConnectingAirports : existing.excludedConnectingAirports,
+      maxTotalDurationMinutes: parsed.maxTotalDurationMinutes !== undefined ? parsed.maxTotalDurationMinutes : existing.maxTotalDurationMinutes,
+      includedAlliances: parsed.includedAlliances !== undefined ? parsed.includedAlliances : existing.includedAlliances,
+      excludedAlliances: parsed.excludedAlliances !== undefined ? parsed.excludedAlliances : existing.excludedAlliances,
     });
 
     const updated = flightDb.getById(id);

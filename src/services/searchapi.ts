@@ -1,6 +1,6 @@
 import { DataSourceResult } from './datasource';
 import { Flight, RouteItinerary } from '../types';
-import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
+import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToApiAirportCodes } from '../utils/coLocations';
 
@@ -58,6 +58,12 @@ export const checkSearchApiPrice = async (
       }
       if (flight.excludedAirlines) {
         url.searchParams.append('excluded_airlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      }
+      if (flight.excludedConnectingAirports) {
+        url.searchParams.append('exclude_conns', flight.excludedConnectingAirports.replace(/\s+/g, ''));
+      }
+      if (flight.maxTotalDurationMinutes) {
+        url.searchParams.append('max_duration', String(flight.maxTotalDurationMinutes));
       }
     } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
       url.searchParams.append('included_airlines', flight.airline.replace(/\s+/g, ''));
@@ -122,6 +128,12 @@ export const checkSearchApiPrice = async (
           ? f.flights.slice(0, -1).map((leg: any) => (leg.arrival_airport?.id || leg.arrival_airport?.code || '').trim().toUpperCase()).filter((c: string) => c.length === 3)
           : undefined;
 
+        let maxLayoverMinutes: number | undefined = undefined;
+        if (Array.isArray(f.layovers) && f.layovers.length > 0) {
+          const durations = f.layovers.map((l: any) => Number(l.duration)).filter((d: number) => !isNaN(d) && d > 0);
+          if (durations.length > 0) maxLayoverMinutes = Math.max(...durations);
+        }
+
         return {
           airline: code,
           airlineName: firstLeg.airline || getAirlineName(code),
@@ -132,9 +144,11 @@ export const checkSearchApiPrice = async (
           departureTime: firstLeg.departure_airport?.time,
           arrivalTime: lastLeg.arrival_airport?.time,
           duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
+          durationMinutes: typeof f.total_duration === 'number' ? f.total_duration : undefined,
           stops,
           isNonstop: stops === 0,
           layoverAirports,
+          maxLayoverMinutes,
         };
       });
 
@@ -184,16 +198,16 @@ export const checkSearchApiPrice = async (
 
     // Route Mode: filter candidates according to airline inclusion/exclusion criteria
     let candidates: RouteItinerary[] = parsedItineraries;
-    if (flight.airline) {
+    if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
       const target = flight.airline.toLowerCase();
       candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
     }
     if (flight.includedAirlines) {
-      const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+      const included = expandAlliancesToAirlines(flight.includedAirlines);
       candidates = candidates.filter((it: RouteItinerary) => included.includes(it.airline));
     }
     if (flight.excludedAirlines) {
-      const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+      const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
       candidates = candidates.filter((it: RouteItinerary) => !excluded.includes(it.airline));
     }
 

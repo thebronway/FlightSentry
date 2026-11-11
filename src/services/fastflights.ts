@@ -128,6 +128,8 @@ export const checkFastFlightsPrice = async (
             }).filter((c: string) => c.length === 3)
           : undefined;
 
+        const durationMins = typeof f.total_duration === 'number' ? f.total_duration : undefined;
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
@@ -137,7 +139,8 @@ export const checkFastFlightsPrice = async (
           price: f.price,
           departureTime,
           arrivalTime,
-          duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
+          duration: durationMins ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m` : undefined,
+          durationMinutes: durationMins,
           stops,
           isNonstop: stops === 0,
           layoverAirports,
@@ -183,7 +186,7 @@ export const checkFastFlightsPrice = async (
 
     // 2. Route Mode: candidate filtering
     let candidates: RouteItinerary[] = parsedItineraries;
-    if (flight.airline) {
+    if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
       const target = flight.airline.toLowerCase();
       candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
     }

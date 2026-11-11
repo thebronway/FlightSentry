@@ -59,6 +59,16 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE flights ADD COLUMN monitorRouteAlternatives INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE flights ADD COLUMN originalPurchasePrice REAL",
+        "ALTER TABLE flights ADD COLUMN bookingDate TEXT",
+        "ALTER TABLE flights ADD COLUMN isManual INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE flights ADD COLUMN maxLayoverMinutes INTEGER",
+        "ALTER TABLE flights ADD COLUMN excludedConnectingAirports TEXT",
+        "ALTER TABLE flights ADD COLUMN maxTotalDurationMinutes INTEGER",
+        "ALTER TABLE flights ADD COLUMN includedAlliances TEXT",
+        "ALTER TABLE flights ADD COLUMN excludedAlliances TEXT",
+        "ALTER TABLE settings ADD COLUMN defaultMaxLayoverMinutes INTEGER",
+        "ALTER TABLE settings ADD COLUMN defaultExcludedConnectingAirports TEXT",
+        "ALTER TABLE settings ADD COLUMN defaultMaxTotalDurationMinutes INTEGER",
     ];
     for (const migration of migrations) {
         try {

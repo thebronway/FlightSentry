@@ -83,7 +83,10 @@ export const settingsDb = {
         defaultIncludedAirlines = @defaultIncludedAirlines,
         defaultExcludedAirlines = @defaultExcludedAirlines,
         maxStoredItineraries = @maxStoredItineraries,
-        carrierDiversityEnabled = @carrierDiversityEnabled
+        carrierDiversityEnabled = @carrierDiversityEnabled,
+        defaultMaxLayoverMinutes = @defaultMaxLayoverMinutes,
+        defaultExcludedConnectingAirports = @defaultExcludedConnectingAirports,
+        defaultMaxTotalDurationMinutes = @defaultMaxTotalDurationMinutes
       WHERE id = 1
     `);
     stmt.run(updated);

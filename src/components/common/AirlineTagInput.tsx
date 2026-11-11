@@ -1,9 +1,15 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { X } from 'lucide-react';
-import { getAirlineTheme } from '@/utils/airlineThemes';
+import { X, Globe } from 'lucide-react';
+import {
+  getAirlineTheme,
+  AIRLINE_ALLIANCES,
+  AirlineAllianceKey,
+  resolveAllianceKey,
+} from '@/utils/airlineThemes';
 import { normalizeAirlineCode } from '@/utils/airline';
+import Tooltip from './Tooltip';
 
 interface AirlineTagInputProps {
   value?: string | null;
@@ -12,6 +18,7 @@ interface AirlineTagInputProps {
   disabled?: boolean;
   className?: string;
   maxTags?: number;
+  showAlliances?: boolean;
 }
 
 export default function AirlineTagInput({
@@ -21,6 +28,7 @@ export default function AirlineTagInput({
   disabled = false,
   className = '',
   maxTags,
+  showAlliances = true,
 }: AirlineTagInputProps) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,6 +43,17 @@ export default function AirlineTagInput({
 
   const commitToken = (raw: string) => {
     if (!raw.trim()) return;
+    const allianceKey = resolveAllianceKey(raw);
+    if (allianceKey) {
+      if (maxTags === 1) {
+        onChange(allianceKey);
+      } else if (!tags.includes(allianceKey)) {
+        if (maxTags && tags.length >= maxTags) return;
+        onChange([...tags, allianceKey].join(', '));
+      }
+      return;
+    }
+
     const normalized = normalizeAirlineCode(raw);
     const clean = normalized && normalized !== 'UN' ? normalized : raw.trim().toUpperCase();
     if (clean) {
@@ -68,8 +87,12 @@ export default function AirlineTagInput({
 
       for (const token of rawTokens) {
         if (!token.trim()) continue;
-        const normalized = normalizeAirlineCode(token);
-        const clean = normalized && normalized !== 'UN' ? normalized : token.trim().toUpperCase();
+        const allianceKey = resolveAllianceKey(token);
+        const clean = allianceKey || (() => {
+          const normalized = normalizeAirlineCode(token);
+          return normalized && normalized !== 'UN' ? normalized : token.trim().toUpperCase();
+        })();
+
         if (clean && !currentTags.includes(clean)) {
           if (maxTags && currentTags.length >= maxTags) break;
           currentTags.push(clean);
@@ -110,55 +133,145 @@ export default function AirlineTagInput({
   };
 
   return (
-    <div
-      onClick={() => inputRef.current?.focus()}
-      className={`min-h-[42px] px-2.5 py-1.5 rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus-within:border-slate-500 flex flex-wrap items-center gap-1.5 cursor-text transition-colors ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      } ${className}`}
-    >
-      {tags.map((code, idx) => {
-        const theme = getAirlineTheme(code);
-        return (
-          <span
-            key={`${code}-${idx}`}
-            className="inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded text-xs font-medium bg-gunmetal-card border border-gunmetal-border text-slate-200 shadow-sm transition-all hover:border-slate-600 select-none"
-          >
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: theme.color }}
-            />
-            <span className="font-mono font-bold">{code}</span>
-            <span className="text-[11px] text-gunmetal-muted max-w-[85px] truncate font-sans">
-              {theme.shortName}
-            </span>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={e => {
-                e.stopPropagation();
-                removeTag(idx);
-              }}
-              className="p-0.5 text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas rounded transition-colors"
-              title={`Remove ${code}`}
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        );
-      })}
+    <div className="space-y-1.5">
+      <div
+        onClick={() => inputRef.current?.focus()}
+        className={`min-h-[42px] px-2.5 py-1.5 rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus-within:border-slate-500 flex flex-wrap items-center gap-1.5 cursor-text transition-colors ${
+          disabled ? 'opacity-50 cursor-not-allowed' : ''
+        } ${className}`}
+      >
+        {tags.map((code, idx) => {
+          const allianceKey = resolveAllianceKey(code);
+          if (allianceKey && AIRLINE_ALLIANCES[allianceKey]) {
+            const alliance = AIRLINE_ALLIANCES[allianceKey];
+            return (
+              <Tooltip
+                key={`${code}-${idx}`}
+                content={
+                  <div className="py-0.5 text-left">
+                    <span className="font-bold text-slate-100 flex items-center gap-1.5 text-xs">
+                      <Globe className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{alliance.name}</span>
+                    </span>
+                    <span className="text-[10px] text-gunmetal-muted block font-mono mt-1 max-w-[240px] whitespace-normal leading-relaxed">
+                      {alliance.memberCarriers.join(', ')}
+                    </span>
+                  </div>
+                }
+                align="center"
+              >
+                <span className="inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded text-xs font-semibold bg-sky-950/70 border border-sky-600 text-sky-200 shadow-sm select-none">
+                  <Globe className="w-3 h-3 text-sky-400 flex-shrink-0" />
+                  <span>{alliance.shortName}</span>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={e => {
+                      e.stopPropagation();
+                      removeTag(idx);
+                    }}
+                    className="p-0.5 text-sky-300 hover:text-white hover:bg-sky-900 rounded transition-colors"
+                    title={`Remove ${alliance.name}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              </Tooltip>
+            );
+          }
 
-      {(!maxTags || tags.length < maxTags) && (
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          disabled={disabled}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          placeholder={tags.length === 0 ? placeholder : 'Add carrier...'}
-          className="bg-transparent text-sm uppercase text-slate-200 placeholder-zinc-500 focus:outline-none flex-1 min-w-[70px] h-6 font-mono"
-        />
+          const theme = getAirlineTheme(code);
+          return (
+            <span
+              key={`${code}-${idx}`}
+              className="inline-flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded text-xs font-medium bg-gunmetal-card border border-gunmetal-border text-slate-200 shadow-sm transition-all hover:border-slate-600 select-none"
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: theme.color }}
+              />
+              <span className="font-mono font-bold">{code}</span>
+              <span className="text-[11px] text-gunmetal-muted max-w-[85px] truncate font-sans">
+                {theme.shortName}
+              </span>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={e => {
+                  e.stopPropagation();
+                  removeTag(idx);
+                }}
+                className="p-0.5 text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas rounded transition-colors"
+                title={`Remove ${code}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          );
+        })}
+
+        {(!maxTags || tags.length < maxTags) && (
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            disabled={disabled}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            placeholder={tags.length === 0 ? placeholder : 'Add carrier or alliance...'}
+            className="bg-transparent text-sm uppercase text-slate-200 placeholder-zinc-500 focus:outline-none flex-1 min-w-[70px] h-6 font-mono"
+          />
+        )}
+      </div>
+
+      {showAlliances && maxTags !== 1 && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span className="text-[10px] uppercase font-semibold text-gunmetal-muted mr-1">
+            Alliances:
+          </span>
+          {(['STAR_ALLIANCE', 'SKYTEAM', 'ONEWORLD'] as AirlineAllianceKey[]).map(key => {
+            const alliance = AIRLINE_ALLIANCES[key];
+            const isSelected = tags.includes(key);
+            return (
+              <Tooltip
+                key={key}
+                content={
+                  <div className="py-0.5 text-left">
+                    <span className="font-bold text-slate-100 flex items-center gap-1.5 text-xs">
+                      <Globe className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{alliance.name}</span>
+                    </span>
+                    <span className="text-[10px] text-gunmetal-muted block font-mono mt-1 max-w-[240px] whitespace-normal leading-relaxed">
+                      {alliance.memberCarriers.join(', ')}
+                    </span>
+                  </div>
+                }
+                align="left"
+              >
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (isSelected) {
+                      onChange(tags.filter(t => t !== key).join(', '));
+                    } else {
+                      onChange([...tags, key].join(', '));
+                    }
+                  }}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded border transition-colors flex items-center gap-1 cursor-pointer ${
+                    isSelected
+                      ? 'bg-sky-950/60 text-sky-300 border-sky-600 shadow-sm'
+                      : 'bg-gunmetal-canvas text-slate-300 border-gunmetal-border hover:border-slate-500 hover:text-white'
+                  }`}
+                >
+                  <span>{isSelected ? '✓' : '+'}</span>
+                  <span>{alliance.shortName}</span>
+                </button>
+              </Tooltip>
+            );
+          })}
+        </div>
       )}
     </div>
   );

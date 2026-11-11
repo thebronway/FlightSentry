@@ -235,3 +235,76 @@ export const AIRLINE_NAMES: Record<string, string> = Object.fromEntries(
 export const BRAND_COLORS: Record<string, string> = Object.fromEntries(
   Object.entries(AIRLINE_THEMES).map(([k, v]) => [k, v.color])
 );
+
+export type AirlineAllianceKey = 'STAR_ALLIANCE' | 'SKYTEAM' | 'ONEWORLD';
+
+export interface AllianceDefinition {
+  key: AirlineAllianceKey;
+  name: string;
+  shortName: string;
+  memberCarriers: string[];
+}
+
+export const AIRLINE_ALLIANCES: Record<AirlineAllianceKey, AllianceDefinition> = {
+  STAR_ALLIANCE: {
+    key: 'STAR_ALLIANCE',
+    name: 'Star Alliance',
+    shortName: 'Star Alliance',
+    memberCarriers: ['UA', 'AC', 'LH', 'SQ', 'NH', 'TK', 'LX', 'OS', 'TP', 'AV', 'CM', 'NZ', 'BR', 'OZ', 'A3', 'SN', 'LO', 'ET', 'AI', 'SA'],
+  },
+  SKYTEAM: {
+    key: 'SKYTEAM',
+    name: 'SkyTeam',
+    shortName: 'SkyTeam',
+    memberCarriers: ['DL', 'AF', 'KL', 'KE', 'AM', 'AZ', 'VS', 'SK', 'AR', 'CI', 'GA', 'ME', 'SV', 'RO', 'VN', 'MF'],
+  },
+  ONEWORLD: {
+    key: 'ONEWORLD',
+    name: 'oneworld',
+    shortName: 'oneworld',
+    memberCarriers: ['AA', 'AS', 'BA', 'CX', 'QR', 'QF', 'JL', 'IB', 'AY', 'MH', 'RJ', 'AT', 'UL', 'FJ'],
+  },
+};
+
+export const ALLIANCE_ALIASES: Record<string, AirlineAllianceKey> = {
+  STAR_ALLIANCE: 'STAR_ALLIANCE',
+  STARALLIANCE: 'STAR_ALLIANCE',
+  STAR: 'STAR_ALLIANCE',
+  SA: 'STAR_ALLIANCE',
+  'STAR ALLIANCE': 'STAR_ALLIANCE',
+
+  SKYTEAM: 'SKYTEAM',
+  SKY_TEAM: 'SKYTEAM',
+  'SKY TEAM': 'SKYTEAM',
+  ST: 'SKYTEAM',
+
+  ONEWORLD: 'ONEWORLD',
+  ONE_WORLD: 'ONEWORLD',
+  'ONE WORLD': 'ONEWORLD',
+  OW: 'ONEWORLD',
+};
+
+export function resolveAllianceKey(input?: string | null): AirlineAllianceKey | null {
+  if (!input) return null;
+  const upper = input.trim().toUpperCase();
+  return ALLIANCE_ALIASES[upper] || null;
+}
+
+export function isAllianceKey(input?: string | null): boolean {
+  return Boolean(resolveAllianceKey(input));
+}
+
+export function expandAlliancesToAirlines(alliancesOrAirlinesStr?: string | null): string[] {
+  if (!alliancesOrAirlinesStr) return [];
+  const tokens = alliancesOrAirlinesStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  const carriers = new Set<string>();
+  for (const token of tokens) {
+    const allianceKey = resolveAllianceKey(token);
+    if (allianceKey && AIRLINE_ALLIANCES[allianceKey]) {
+      AIRLINE_ALLIANCES[allianceKey].memberCarriers.forEach(c => carriers.add(c));
+    } else {
+      carriers.add(token);
+    }
+  }
+  return Array.from(carriers);
+}

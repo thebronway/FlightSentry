@@ -71,40 +71,41 @@ export async function POST(req: NextRequest) {
     }
     const isPointsFlight = Boolean(parsed.currency && pointsList.includes(parsed.currency));
 
-    // For points flights, automated searches are bypassed
-    if (isPointsFlight) {
-      const pointsAmount = isBooked ? (parsed.purchasePrice || 0) : (baselinePrice || 0);
-      const pointsNextCheckAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
+    // For points flights or manual tracking mode, automated searches are bypassed
+    if (isPointsFlight || parsed.isManual === 1) {
+      const initialAmount = isBooked ? (parsed.purchasePrice || 0) : (baselinePrice || 0);
+      const manualNextCheckAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
 
       const newFlightId = flightDb.create({
         ...parsed,
-        airline: parsed.airline || 'POINTS',
+        airline: parsed.airline || (isPointsFlight ? 'POINTS' : 'MANUAL'),
         flightNumber: parsed.flightNumber || null,
         cabinClass: parsed.cabinClass,
         fareTier: parsed.fareTier,
-        baselinePrice: pointsAmount,
+        baselinePrice: initialAmount,
         purchasePrice: parsed.purchasePrice ?? null,
         minDropDollar: parsed.minDropDollar ?? null,
         minDropPercent: parsed.minDropPercent ?? null,
         maxStops: parsed.maxStops ?? null,
-        currentPrice: pointsAmount,
+        currentPrice: initialAmount,
         currency: parsed.currency,
         status: 'Paused',
-        nextCheckAt: pointsNextCheckAt,
+        isManual: parsed.isManual ? 1 : 0,
+        nextCheckAt: manualNextCheckAt,
       });
 
       if (isBooked && parsed.purchasePrice && parsed.purchasePrice > 0) {
         historyDb.insert(newFlightId, parsed.purchasePrice, 'Booked', {
           airline: parsed.airline || null,
           flightNumber: parsed.flightNumber || null,
-          metadata: JSON.stringify({ milestone: 'Purchased Flight (Points)', pnr: parsed.pnr || null }),
+          metadata: JSON.stringify({ milestone: isPointsFlight ? 'Purchased Flight (Points)' : 'Purchased Flight (Manual)', pnr: parsed.pnr || null }),
           sourceUsed: 'Price Paid',
         });
       } else {
-        historyDb.insert(newFlightId, pointsAmount, 'Success', {
+        historyDb.insert(newFlightId, initialAmount, 'Success', {
           airline: parsed.airline || null,
           flightNumber: parsed.flightNumber || null,
-          metadata: JSON.stringify({ milestone: 'Initial Baseline (Points)' }),
+          metadata: JSON.stringify({ milestone: isPointsFlight ? 'Initial Baseline (Points)' : 'Initial Baseline (Manual)' }),
           sourceUsed: 'manual',
         });
       }
@@ -143,6 +144,13 @@ export async function POST(req: NextRequest) {
       minIncreasePercent: parsed.minIncreasePercent ?? null,
       maxStops: parsed.maxStops ?? null,
       monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
+      bookingDate: parsed.bookingDate ?? null,
+      isManual: parsed.isManual ?? 0,
+      maxLayoverMinutes: parsed.maxLayoverMinutes ?? null,
+      excludedConnectingAirports: parsed.excludedConnectingAirports ?? null,
+      maxTotalDurationMinutes: parsed.maxTotalDurationMinutes ?? null,
+      includedAlliances: parsed.includedAlliances ?? null,
+      excludedAlliances: parsed.excludedAlliances ?? null,
       nextCheckAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -210,6 +218,11 @@ export async function POST(req: NextRequest) {
       minDropPercent: parsed.minDropPercent ?? null,
       maxStops: parsed.maxStops ?? null,
       monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
+      maxLayoverMinutes: parsed.maxLayoverMinutes ?? null,
+      excludedConnectingAirports: parsed.excludedConnectingAirports ?? null,
+      maxTotalDurationMinutes: parsed.maxTotalDurationMinutes ?? null,
+      includedAlliances: parsed.includedAlliances ?? null,
+      excludedAlliances: parsed.excludedAlliances ?? null,
       currentPrice,
       status: initialStatus, 
       nextCheckAt 

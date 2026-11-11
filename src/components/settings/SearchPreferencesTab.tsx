@@ -1,7 +1,7 @@
 'use client';
 
 import { Settings, CabinClass, FareTier } from '@/types';
-import { Sliders, Moon, Layers, ChevronDown, ShieldAlert } from 'lucide-react';
+import { Sliders, Moon, Layers, ChevronDown, ShieldAlert, Timer } from 'lucide-react';
 import AirlineTagInput from '../common/AirlineTagInput';
 
 interface Props {
@@ -101,6 +101,30 @@ export default function SearchPreferencesTab({
     onChange(updated);
     if (onAutoSave) {
       await onAutoSave(updated, 'searchprefs', undefined, `Carrier diversity engine ${checked ? 'enabled' : 'disabled'}`);
+    }
+  };
+
+  const handleMaxLayoverChange = async (val: number | null) => {
+    const updated = { ...settings, defaultMaxLayoverMinutes: val };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(updated, 'searchprefs', undefined, 'Default maximum layover duration updated');
+    }
+  };
+
+  const handleExcludedConnectingAirportsChange = async (val: string) => {
+    const updated = { ...settings, defaultExcludedConnectingAirports: val || null };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(updated, 'searchprefs', undefined, 'Default excluded connecting airports updated');
+    }
+  };
+
+  const handleMaxTotalDurationChange = async (val: number | null) => {
+    const updated = { ...settings, defaultMaxTotalDurationMinutes: val };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(updated, 'searchprefs', undefined, 'Default maximum trip duration updated');
     }
   };
 
@@ -212,6 +236,88 @@ export default function SearchPreferencesTab({
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Layover & Trip Duration Defaults Card */}
+      <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-4 rounded-lg space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <Timer className="w-3.5 h-3.5 text-slate-400" />
+          <span>Layover & Trip Duration Defaults</span>
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              Default Max Layover Duration
+            </label>
+            <div className="relative">
+              <select
+                value={settings.defaultMaxLayoverMinutes !== null && settings.defaultMaxLayoverMinutes !== undefined ? String(settings.defaultMaxLayoverMinutes) : ''}
+                onChange={e => handleMaxLayoverChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+              >
+                <option value="">Any (No Layover Limit)</option>
+                <option value="90">1.5 Hours (90 mins)</option>
+                <option value="120">2 Hours (120 mins)</option>
+                <option value="180">3 Hours (180 mins)</option>
+                <option value="240">4 Hours (240 mins)</option>
+                <option value="300">5 Hours (300 mins)</option>
+                <option value="360">6 Hours (360 mins)</option>
+                <option value="480">8 Hours (480 mins)</option>
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+            </div>
+            <p className="text-[11px] text-gunmetal-muted mt-1">
+              Discards flight itineraries with connection layovers longer than this threshold.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              Default Max Total Trip Duration
+            </label>
+            <div className="relative">
+              <select
+                value={settings.defaultMaxTotalDurationMinutes !== null && settings.defaultMaxTotalDurationMinutes !== undefined ? String(settings.defaultMaxTotalDurationMinutes) : ''}
+                onChange={e => handleMaxTotalDurationChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+              >
+                <option value="">Any (No Trip Duration Limit)</option>
+                <option value="240">4 Hours (240 mins)</option>
+                <option value="360">6 Hours (360 mins)</option>
+                <option value="480">8 Hours (480 mins)</option>
+                <option value="600">10 Hours (600 mins)</option>
+                <option value="720">12 Hours (720 mins)</option>
+                <option value="960">16 Hours (960 mins)</option>
+                <option value="1200">20 Hours (1200 mins)</option>
+                <option value="1440">24 Hours (1440 mins)</option>
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
+            </div>
+            <p className="text-[11px] text-gunmetal-muted mt-1">
+              Filters out itineraries exceeding total travel time (flights + layovers).
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-gunmetal-border/70">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            Default Excluded Connecting Airports
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. ORD, DEN, MIA (comma-separated IATA codes)"
+            value={settings.defaultExcludedConnectingAirports || ''}
+            onChange={e => onChange({ ...settings, defaultExcludedConnectingAirports: e.target.value.toUpperCase() })}
+            onBlur={e => handleExcludedConnectingAirportsChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm font-mono uppercase"
+          />
+          <p className="text-[11px] text-gunmetal-muted mt-1">
+            Itineraries connecting through any of these intermediate airport hubs will be excluded by default.
+          </p>
         </div>
       </div>
 

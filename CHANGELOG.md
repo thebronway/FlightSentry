@@ -1,9 +1,21 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-09*  
-*Current Version: v0.7.4*
+*Current Version: v0.7.5*
 
 ## Changelog
+
+### Release v0.7.5
+- Redesigned flight modal into modular sub-components with isolated sticky header, scrollable body, and fixed footer.
+- Added three primary tracking modes: Watching Route, Watching Flight, and Booked Flight.
+- Added booking date field defaulting to current date with support for past calendar dates.
+- Added Points/Miles mode that hides price alerts, disables automated polling, and enforces manual tracking.
+- Added manual tracking mode toggle to bypass automated scraping engines and log price points manually.
+- Added unsaved changes protection dialog when attempting to dismiss dirty modal forms.
+- Added max layover duration, excluded connecting airports, and max total trip duration search preferences.
+- Integrated airline alliance recognition (Star Alliance, SkyTeam, oneworld) directly into airline input tags with member carrier tooltips and quick-add shortcut pills.
+- Added instance-wide defaults in Settings for layover duration, total trip duration, and excluded connecting hubs.
+- Standardized minimum 44x44px touch targets and full-height mobile viewport layout.
 
 ### Release v0.7.4
 - Added Manual Price Entry modal for cash and award points flights with past-or-present date/time validation.

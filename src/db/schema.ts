@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS flights (
     maxStops INTEGER,
     currency TEXT,
     monitorRouteAlternatives INTEGER NOT NULL DEFAULT 0,
+    bookingDate TEXT,
+    isManual INTEGER NOT NULL DEFAULT 0,
+    maxLayoverMinutes INTEGER,
+    excludedConnectingAirports TEXT,
+    maxTotalDurationMinutes INTEGER,
+    includedAlliances TEXT,
+    excludedAlliances TEXT,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL
 );
@@ -134,6 +141,9 @@ CREATE TABLE IF NOT EXISTS settings (
     defaultIncludedAirlines TEXT,
     defaultExcludedAirlines TEXT,
     maxStoredItineraries INTEGER NOT NULL DEFAULT 12,
-    carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1
+    carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1,
+    defaultMaxLayoverMinutes INTEGER,
+    defaultExcludedConnectingAirports TEXT,
+    defaultMaxTotalDurationMinutes INTEGER
 );
 `;

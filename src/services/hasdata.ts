@@ -1,6 +1,6 @@
 import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
-import { normalizeAirlineCode, getAirlineName, cleanFlightNumber } from '../utils/airline';
+import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToApiAirportCodes } from '../utils/coLocations';
 
@@ -55,6 +55,12 @@ export const checkHasDataPrice = async (
         url.searchParams.append('includeAirlines', flight.includedAirlines.replace(/\s+/g, ''));
       } else if (flight.excludedAirlines) {
         url.searchParams.append('excludeAirlines', flight.excludedAirlines.replace(/\s+/g, ''));
+      }
+      if (flight.excludedConnectingAirports) {
+        url.searchParams.append('excludeConnections', flight.excludedConnectingAirports.replace(/\s+/g, ''));
+      }
+      if (flight.maxTotalDurationMinutes) {
+        url.searchParams.append('maxDuration', String(flight.maxTotalDurationMinutes));
       }
     } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
       url.searchParams.append('includeAirlines', flight.airline.replace(/\s+/g, ''));
@@ -125,6 +131,8 @@ export const checkHasDataPrice = async (
             }).filter((c: string) => c.length === 3)
           : undefined;
 
+        const durationMins = typeof f.duration === 'number' ? f.duration : (typeof f.total_duration === 'number' ? f.total_duration : undefined);
+
         return {
           airline: code,
           airlineName: rawAirline || getAirlineName(code),
@@ -134,7 +142,8 @@ export const checkHasDataPrice = async (
           price: f.price,
           departureTime: depTime,
           arrivalTime: arrTime,
-          duration: f.duration ? `${Math.floor(f.duration / 60)}h ${f.duration % 60}m` : (f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined),
+          duration: durationMins ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m` : undefined,
+          durationMinutes: durationMins,
           stops,
           isNonstop: stops === 0,
           layoverAirports,
@@ -187,16 +196,16 @@ export const checkHasDataPrice = async (
 
     // Route Mode: filter candidates according to airline inclusion/exclusion criteria
     let candidates: RouteItinerary[] = parsedItineraries;
-    if (flight.airline) {
+    if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
       const target = flight.airline.toLowerCase();
       candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
     }
     if (flight.includedAirlines) {
-      const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+      const included = expandAlliancesToAirlines(flight.includedAirlines);
       candidates = candidates.filter((it: RouteItinerary) => included.includes(it.airline));
     }
     if (flight.excludedAirlines) {
-      const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+      const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
       candidates = candidates.filter((it: RouteItinerary) => !excluded.includes(it.airline));
     }
 

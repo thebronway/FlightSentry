@@ -46,7 +46,9 @@ export const flightDb = {
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
         earliestDeparture, latestDeparture, noRedeye, priceTrackingDirection,
         minIncreaseDollar, minIncreasePercent, maxStops, currency,
-        monitorRouteAlternatives, createdAt, updatedAt
+        monitorRouteAlternatives, bookingDate, isManual,
+        maxLayoverMinutes, excludedConnectingAirports, maxTotalDurationMinutes,
+        includedAlliances, excludedAlliances, createdAt, updatedAt
       ) VALUES (
         @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
@@ -54,7 +56,9 @@ export const flightDb = {
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
         @earliestDeparture, @latestDeparture, @noRedeye, @priceTrackingDirection,
         @minIncreaseDollar, @minIncreasePercent, @maxStops, @currency,
-        @monitorRouteAlternatives, @now, @now
+        @monitorRouteAlternatives, @bookingDate, @isManual,
+        @maxLayoverMinutes, @excludedConnectingAirports, @maxTotalDurationMinutes,
+        @includedAlliances, @excludedAlliances, @now, @now
       )
     `);
     
@@ -75,13 +79,21 @@ export const flightDb = {
     const maxStops = flight.maxStops ?? null;
     const currency = flight.currency || null;
     const monitorRouteAlternatives = flight.monitorRouteAlternatives ? 1 : 0;
+    const bookingDate = flight.bookingDate ?? null;
+    const isManual = flight.isManual ? 1 : 0;
+    const maxLayoverMinutes = flight.maxLayoverMinutes ?? null;
+    const excludedConnectingAirports = flight.excludedConnectingAirports ?? null;
+    const maxTotalDurationMinutes = flight.maxTotalDurationMinutes ?? null;
+    const includedAlliances = flight.includedAlliances ?? null;
+    const excludedAlliances = flight.excludedAlliances ?? null;
 
     const result = stmt.run({
       ...flight, 
       currentPrice, 
       purchasePrice, 
+      originalPurchasePrice,
       targetPrice, 
-      minDropDollar, 
+      minDropDollar,
       minDropPercent, 
       cabinClass,
       earliestDeparture,
@@ -93,6 +105,13 @@ export const flightDb = {
       maxStops,
       currency,
       monitorRouteAlternatives,
+      bookingDate,
+      isManual,
+      maxLayoverMinutes,
+      excludedConnectingAirports,
+      maxTotalDurationMinutes,
+      includedAlliances,
+      excludedAlliances,
       now 
     });
     return result.lastInsertRowid as number;
@@ -133,6 +152,13 @@ export const flightDb = {
         maxStops = @maxStops,
         currency = @currency,
         monitorRouteAlternatives = @monitorRouteAlternatives,
+        bookingDate = @bookingDate,
+        isManual = @isManual,
+        maxLayoverMinutes = @maxLayoverMinutes,
+        excludedConnectingAirports = @excludedConnectingAirports,
+        maxTotalDurationMinutes = @maxTotalDurationMinutes,
+        includedAlliances = @includedAlliances,
+        excludedAlliances = @excludedAlliances,
         updatedAt = @updatedAt
       WHERE id = @id
     `);

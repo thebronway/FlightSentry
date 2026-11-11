@@ -40,6 +40,13 @@ export const flightSchema = z.object({
   maxStops: z.number().int().min(0).max(2).optional().nullable(),
   currency: z.string().max(50).optional().nullable(),
   monitorRouteAlternatives: z.number().min(0).max(1).optional().default(0),
+  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional().nullable(),
+  isManual: z.number().min(0).max(1).optional().default(0),
+  maxLayoverMinutes: z.number().int().nonnegative().optional().nullable(),
+  excludedConnectingAirports: z.string().optional().nullable(),
+  maxTotalDurationMinutes: z.number().int().positive().optional().nullable(),
+  includedAlliances: z.string().optional().nullable(),
+  excludedAlliances: z.string().optional().nullable(),
 });
 
 export const flightStatusSchema = z.object({
@@ -98,6 +105,9 @@ export const settingsSchema = z.object({
   defaultExcludedAirlines: z.string().optional().nullable(),
   maxStoredItineraries: z.number().int().min(6).max(24).optional(),
   carrierDiversityEnabled: z.number().min(0).max(1).optional(),
+  defaultMaxLayoverMinutes: z.number().int().nonnegative().optional().nullable(),
+  defaultExcludedConnectingAirports: z.string().optional().nullable(),
+  defaultMaxTotalDurationMinutes: z.number().int().positive().optional().nullable(),
   fallbackStrategyMode: z.enum(['sequential-query', 'balanced-usage', 'exhaust-quota']).optional(),
   roundRobinIndex: z.number().int().nonnegative().optional(),
   serpApiEnabled: z.number().min(0).max(1).optional(),

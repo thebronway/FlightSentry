@@ -43,6 +43,13 @@ export interface Flight {
   maxStops?: number | null;
   currency?: string | null;
   monitorRouteAlternatives?: number; // 0 (false) or 1 (true)
+  bookingDate?: string | null; // YYYY-MM-DD
+  isManual?: number; // 0 (false) or 1 (true)
+  maxLayoverMinutes?: number | null;
+  excludedConnectingAirports?: string | null;
+  maxTotalDurationMinutes?: number | null;
+  includedAlliances?: string | null;
+  excludedAlliances?: string | null;
 }
 
 export interface RouteItinerary {
@@ -55,9 +62,11 @@ export interface RouteItinerary {
   departureTime?: string;
   arrivalTime?: string;
   duration?: string;
+  durationMinutes?: number;
   stops?: number;
   isNonstop?: boolean;
   layoverAirports?: string[];
+  maxLayoverMinutes?: number;
 }
 
 export interface PriceHistory {
@@ -142,4 +151,7 @@ export interface Settings {
   defaultExcludedAirlines?: string | null;
   maxStoredItineraries?: number;
   carrierDiversityEnabled?: number; // 0 (false) or 1 (true)
+  defaultMaxLayoverMinutes?: number | null;
+  defaultExcludedConnectingAirports?: string | null;
+  defaultMaxTotalDurationMinutes?: number | null;
 }
