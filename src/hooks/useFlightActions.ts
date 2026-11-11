@@ -11,10 +11,10 @@ export const CABIN_LABEL_MAP: Record<string, string> = {
 };
 
 export const CONDENSED_CABIN_LABEL_MAP: Record<string, string> = {
-  economy: 'Economy',
-  premium_economy: 'Prem Econ',
-  business: 'Business',
-  first: 'First',
+  economy: 'E',
+  premium_economy: 'E+',
+  business: 'B',
+  first: 'F',
 };
 
 export function useFlightActions(onRefresh: () => void) {

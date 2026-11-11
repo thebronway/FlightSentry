@@ -1,9 +1,22 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-11*  
-*Current Version: v0.7.7*
+*Current Version: v0.7.8*
 
 ## Changelog
+
+### Release v0.7.8
+- Refactored FlightCard and FlightCondensedView into shared domain components under `flightCardShared` and `flightCardCondensed`.
+- Renamed `FlightCondensedView` to `FlightCardCondensed`.
+- Added responsive stacked card layout for condensed view on viewports below 768px to eliminate horizontal scrolling.
+- Renamed condensed table header to "Baseline & Notifications" and expanded Cabin & Tier column width.
+- Abbreviated cabin class (E, E+, B, F) and fare tier (Std., Basic) badges in condensed view.
+- Applied blue styling to airport bubbles with vibrant blue for metropolitan clusters and subtle blue for single airports.
+- Harmonized route bubble and flight number badge dimensions across condensed view rows.
+- Standardized directional price delta indicators (▼, ▲) across card and condensed views.
+- Separated award points currency badge and check delta onto independent lines in condensed view.
+- Hid redundant Paused badge on flights in manual or points mode.
+- Added rebook savings badge to condensed table rows.
 
 ### Release v0.7.7
 - Replaced single status pill with a dual-badge layout separating lifecycle state (Watching, Booked, Past) from operational mode (Paused, Manual).

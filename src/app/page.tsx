@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Flight, Settings } from '@/types';
 import FlightCard from '@/components/FlightCard';
-import FlightCondensedView from '@/components/FlightCondensedView';
+import FlightCardCondensed from '@/components/FlightCardCondensed';
 import QuotaRibbon from '@/components/QuotaRibbon';
 import HistoryModal from '@/components/HistoryModal';
 import FlightModal from '@/components/FlightModal';
@@ -393,7 +393,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <FlightCondensedView 
+              <FlightCardCondensed 
                 flights={activeFlights} 
                 settings={settings}
                 onRefresh={handleRefreshAll} 
@@ -437,7 +437,7 @@ export default function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    <FlightCondensedView 
+                    <FlightCardCondensed 
                       flights={pastFlights} 
                       settings={settings}
                       onRefresh={handleRefreshAll} 

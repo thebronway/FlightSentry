@@ -1,31 +1,26 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-11*  
-*Current Version: v0.7.7*
+*Current Version: v0.7.8*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.7.8: Flight Card / Condensed Redesign / Refresh pt2
-- Rethink the layout of both flight card and condenseed and what is needed and what is not
-- Match themeing from flight card to flight card condensed (arrows used, etc.) Smaller font is okay.
-- Condesnced table headings dont make sense. 
-  - Redo layout and watch for vertical spacing
-- When applicable, give me options
-- Last step before documention is to break down the code for Flight Card condensed into multiple files (shared where applicable), as they are getting monothlthic
-
-### Release v0.7.9
+### Release v0.7.9: History Modal
 - Update the History Modal to use styling from flight card, from arrows to adding notifcation badges, to all bubbles and themeing.
+- Make the History Modal Mobile friendly, touch targets, the whole nine yards. 
 - Last step before documention: Break up history modal as its getting monolthic
 
-### Release v0.8.0
+### Release v0.8.0: Settings
 - Banners
-  - Update banner > look at the raw changlog github blob or whatever, and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page
+  - Add update banner > look at the raw changlog github blob or whatever (or I could host something), and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page. Give me an honest opinion on this, and options. 
 - Data Sources
-  - Add a way to manually log a used query, for example, if I use an api manually for soemthing else or whatever, I need to update that count somehow, so it activetly reflect the correct api upsage left. It will be done from the data soruces page
+  - Add a way to manually log a used query, for example, if I use an api manually for soemthing else or whatever, I need to update that count somehow, so it activetly reflect the correct api upsage left. It will be done from the data soruces page. maybe the easiest would be just to add a manual adjustment of the queries used. 
   - When opening logs for a data source, the background is faded, but the top 1/4 inch is not
+- Make sure all settings tabs are mobile friendly
+- Last step before documention: make sure all components for settings are not in any monothlic files and create shared files for shared components.
 
 ### Release v0.8.1
 - Flight Modal
@@ -33,6 +28,8 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Quota ribbon
   - When expanded, when a bar gets to 75% full, make it yellow, 95% make it red
   - When collasaped (make collasped the default), make the first number xxx / total, yellow at 75% used and 95% make it red.
+  - Make sure quota is mobile compatible
+  - Make sure quota is not monolithic
 - if all data sources are paused or not configured, the user should still be able to add a flight, but only in manual mode, so always allow the add flight button, but if all data sources are paused or not configured when they go to track the flight or route, that should be great out if manual mode is not selected with the appropriate messaging.
 
 ### Release v0.8.5: Mobile Optimization
