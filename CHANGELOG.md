@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-10*  
-*Current Version: v0.7.6*
+*Last updated: 2026-11-11*  
+*Current Version: v0.7.7*
 
 ## Changelog
+
+### Release v0.7.7
+- Replaced single status pill with a dual-badge layout separating lifecycle state (Watching, Booked, Past) from operational mode (Paused, Manual).
+- Standardized origin and destination display into a fixed 2-location bubble format with hover tooltips for metropolitan areas and regional clusters (e.g., LAX+).
+- Added branded airline flight bubbles displaying carrier theme colors and flight numbers.
+- Redesigned target alert display into a unified neutral metric chip with directional arrows and compact points formatting (e.g., 6k pts).
+- Implemented boundary-aware tooltips that measure container edges and dynamically clamp horizontal position to eliminate viewport and card clipping.
+- Anchored award points and currency badges directly adjacent to current price values.
+- Removed redundant surge and drop tracking direction badges from card and table attribute rows.
 
 ### Release v0.7.6
 - Fixed Fast-Flights error handling to track scraper exceptions and return RateLimited on anti-bot challenges or Error on connection failures instead of false SoldOut status.

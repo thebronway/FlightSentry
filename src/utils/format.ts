@@ -60,6 +60,20 @@ export const formatCurrency = (amount: number, currencyCode?: string | null): st
   }
 };
 
+export const formatCompactCurrency = (amount: number, currencyCode?: string | null): string => {
+  const code = currencyCode || getActiveCurrency();
+  if (isPointsCurrency(code)) {
+    const val = Math.round(amount || 0);
+    if (val >= 1000) {
+      const k = val / 1000;
+      const formatted = k >= 100 ? Math.round(k).toString() : k.toFixed(1).replace(/\.0$/, '');
+      return `${formatted}k pts`;
+    }
+    return `${val} pts`;
+  }
+  return formatCurrency(amount, code);
+};
+
 export const getCurrencySymbol = (currencyCode?: string | null): string => {
   const code = currencyCode || getActiveCurrency();
   if (isPointsCurrency(code)) {

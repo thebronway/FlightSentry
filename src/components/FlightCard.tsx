@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign, TrendingDown, TrendingUp, Wrench } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
-import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
+import { formatCurrency, formatCompactCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline } from '@/utils/airline';
+import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline, getAirlineTheme } from '@/utils/airline';
+import { resolveLocationDisplay } from '@/utils/coLocations';
 import AirlineBadge from './common/AirlineBadge';
 import Tooltip from './common/Tooltip';
 
@@ -73,36 +74,142 @@ export default function FlightCard({
       >
         <div>
           <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="text-2xl font-black text-slate-100 tracking-tight font-sans group-hover/card:text-white transition-colors">
-                {primaryHeadline}
-              </h3>
-              <p className="text-sm font-medium text-slate-300 mt-0.5">
-                {flight.departureDate}
-                {secondaryDetail && (
-                  <span className="text-xs text-gunmetal-muted font-normal ml-1.5">
-                    • {secondaryDetail}
-                  </span>
-                )}
-              </p>
+            <div className="min-w-0 pr-2">
+              {isFlightNumMode ? (
+                (() => {
+                  const theme = getAirlineTheme(flight.airline);
+                  const originDisplay = resolveLocationDisplay(flight.origin);
+                  const destDisplay = resolveLocationDisplay(flight.destination);
+
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border shadow-sm font-sans font-bold text-base"
+                          style={{
+                            backgroundColor: `${theme.color}15`,
+                            borderColor: `${theme.color}60`,
+                          }}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: theme.color }}
+                          />
+                          <span className="text-slate-100">{theme.shortName}</span>
+                          <span className="font-mono font-black" style={{ color: theme.color }}>
+                            {flight.flightNumber}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span className="text-xs text-gunmetal-muted font-medium">{flight.departureDate}</span>
+                        {flight.origin && flight.destination && (
+                          <>
+                            <span className="text-xs text-gunmetal-muted">•</span>
+                            <div className="inline-flex items-center gap-1.5">
+                              {originDisplay.isCluster && originDisplay.tooltipText ? (
+                                <Tooltip content={originDisplay.tooltipText} align="left">
+                                  <span className="px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-xs shadow-sm cursor-help">
+                                    {originDisplay.code}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-xs shadow-sm">
+                                  {originDisplay.code}
+                                </span>
+                              )}
+                              <span className="text-gunmetal-muted text-xs">→</span>
+                              {destDisplay.isCluster && destDisplay.tooltipText ? (
+                                <Tooltip content={destDisplay.tooltipText} align="center">
+                                  <span className="px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-xs shadow-sm cursor-help">
+                                    {destDisplay.code}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-xs shadow-sm">
+                                  {destDisplay.code}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                (() => {
+                  const originDisplay = resolveLocationDisplay(flight.origin);
+                  const destDisplay = resolveLocationDisplay(flight.destination);
+
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {originDisplay.isCluster && originDisplay.tooltipText ? (
+                          <Tooltip content={originDisplay.tooltipText} align="left">
+                            <span className="px-3 py-1 rounded-lg bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-black text-lg shadow-sm cursor-help">
+                              {originDisplay.code}
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <span className="px-3 py-1 rounded-lg bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-black text-lg shadow-sm">
+                            {originDisplay.code}
+                          </span>
+                        )}
+
+                        <span className="text-gunmetal-muted text-base font-bold">→</span>
+
+                        {destDisplay.isCluster && destDisplay.tooltipText ? (
+                          <Tooltip content={destDisplay.tooltipText} align="center">
+                            <span className="px-3 py-1 rounded-lg bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-black text-lg shadow-sm cursor-help">
+                              {destDisplay.code}
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <span className="px-3 py-1 rounded-lg bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-black text-lg shadow-sm">
+                            {destDisplay.code}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gunmetal-muted font-medium mt-1.5">
+                        {flight.departureDate}
+                      </p>
+                    </div>
+                  );
+                })()
+              )}
             </div>
-            {flight.status === 'Watching' ? (
-              <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <Tag className="w-3 h-3 text-sky-400" /> Watching
-              </span>
-            ) : flight.status === 'Booked' ? (
-              <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
-              </span>
-            ) : flight.status === 'Paused' ? (
-              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <Pause className="w-3 h-3 text-amber-400" /> Paused
-              </span>
-            ) : (
-              <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <Clock className="w-3 h-3 text-slate-400" /> Past
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+              {isPast ? (
+                <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-slate-400" /> Past
+                </span>
+              ) : isPurchased || flight.status === 'Booked' ? (
+                <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                  <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+                </span>
+              ) : (
+                <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-sky-400" /> Watching
+                </span>
+              )}
+
+              {/* Operational Sub-Badges (Option D: Only shown if Paused or Manual) */}
+              {!isPast && (flight.status === 'Paused' || flight.isManual === 1 || isPointsCurrency(flight.currency)) && (
+                <div className="flex items-center gap-1">
+                  {flight.status === 'Paused' && (
+                    <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.2 rounded text-[10px] font-semibold flex items-center gap-1">
+                      <Pause className="w-2.5 h-2.5 text-amber-400" /> Paused
+                    </span>
+                  )}
+                  {(flight.isManual === 1 || isPointsCurrency(flight.currency)) && (
+                    <span className="bg-slate-800/80 text-slate-300 border border-slate-700/80 px-1.5 py-0.2 rounded text-[10px] font-semibold flex items-center gap-1">
+                      <Wrench className="w-2.5 h-2.5 text-slate-400" /> Manual
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Dedicated Airlines Bubble Row (spans full width across the card) */}
@@ -135,11 +242,6 @@ export default function FlightCard({
                 +{formatCurrency(flight.baselinePrice - flight.purchasePrice!, flight.currency)} Rebook Savings
               </span>
             )}
-            {flight.currency && isPointsCurrency(flight.currency) && (
-              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
-                <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
-              </span>
-            )}
             <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
               {CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
             </span>
@@ -164,16 +266,6 @@ export default function FlightCard({
             {flight.maxStops === 2 && (
               <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-medium">
                 ≤ 2 Stops
-              </span>
-            )}
-            {!isPurchased && flight.priceTrackingDirection === 'increase' && (
-              <span className="bg-gunmetal-canvas text-rose-400 border border-rose-800/60 px-2 py-0.5 rounded text-xs font-medium">
-                Surges Only
-              </span>
-            )}
-            {!isPurchased && flight.priceTrackingDirection === 'both' && (
-              <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-2 py-0.5 rounded text-xs font-medium">
-                Drops & Surges
               </span>
             )}
             {flight.pnr && (
@@ -217,60 +309,80 @@ export default function FlightCard({
             const dir = isPurchased ? 'drop' : (flight.priceTrackingDirection || 'drop');
 
             return (
-              <div className="flex justify-between items-end mt-3 mb-2">
-                <div>
-                <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-3xl font-black text-slate-100">{formatCurrency(flight.currentPrice, flight.currency)}</span>
-                  {!isPurchased && currentPriceAirline && (
-                    <AirlineBadge
-                      code={currentPriceAirline.code}
-                      flightNumber={currentPriceAirline.flightNumber}
-                      showFlightNumber={false}
-                      size="xs"
-                    />
-                  )}
+              <div className="flex justify-between items-end gap-3 mt-3 mb-2">
+                <div className="flex-1 min-w-0 pr-1">
+                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">Current Price</p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <span className="text-3xl font-black text-slate-100 whitespace-nowrap">{formatCurrency(flight.currentPrice, flight.currency)}</span>
+                    {flight.currency && isPointsCurrency(flight.currency) && (
+                      <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0">
+                        <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+                      </span>
+                    )}
+                    {!isPurchased && currentPriceAirline && (
+                      <AirlineBadge
+                        code={currentPriceAirline.code}
+                        flightNumber={currentPriceAirline.flightNumber}
+                        showFlightNumber={false}
+                        size="xs"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-                <div className="text-right">
-                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold">{benchmarkLabel}: {formatCurrency(benchmarkPrice, flight.currency)}</p>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold whitespace-nowrap">{benchmarkLabel}: {formatCurrency(benchmarkPrice, flight.currency)}</p>
                   {delta !== 0 && (
-                    <div className={`text-sm font-bold flex items-center justify-end ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={`text-sm font-bold flex items-center justify-end whitespace-nowrap ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
                       {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
                     </div>
                   )}
                   {!isPast && (
-                    <p
-                      className={`text-[11px] font-medium mt-1 flex items-center justify-end gap-1 ${
-                        flight.disableNotifications === 1
-                          ? 'text-gunmetal-muted'
-                          : 'text-sky-400'
-                      }`}
-                      title={
-                        flight.disableNotifications === 1
-                          ? 'Notifications muted for this flight'
-                          : dir === 'both'
-                          ? `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}, surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                          : dir === 'increase'
-                          ? `Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                          : `Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`
-                      }
-                    >
+                    <div className="flex justify-end mt-1.5 whitespace-nowrap">
                       {flight.disableNotifications === 1 ? (
-                        <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-gunmetal-canvas border border-gunmetal-border text-gunmetal-muted shadow-sm"
+                          title="Notifications muted for this flight"
+                        >
+                          <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                          <span>Alerts Off</span>
+                        </span>
+                      ) : dir === 'both' ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm"
+                          title={`Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}, surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`}
+                        >
+                          <span className="flex items-center gap-1 text-emerald-300">
+                            <TrendingDown className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                            <Bell className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                            <span>≤ {formatCompactCurrency(dropTargets.effectiveTarget || 0, flight.currency)}</span>
+                          </span>
+                          <span className="text-gunmetal-muted font-normal">|</span>
+                          <span className="flex items-center gap-1 text-rose-300">
+                            <TrendingUp className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                            <Bell className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                            <span>≥ {formatCompactCurrency(incTargets.effectiveTarget || 0, flight.currency)}</span>
+                          </span>
+                        </span>
+                      ) : dir === 'increase' ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm"
+                          title={`Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`}
+                        >
+                          <TrendingUp className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                          <Bell className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                          <span className="text-rose-300">≥ {formatCompactCurrency(incTargets.effectiveTarget || 0, flight.currency)}</span>
+                        </span>
                       ) : (
-                        <Bell className="w-3 h-3 text-sky-400 flex-shrink-0" />
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm"
+                          title={`Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
+                        >
+                          <TrendingDown className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                          <Bell className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                          <span className="text-emerald-300">≤ {formatCompactCurrency(dropTargets.effectiveTarget || 0, flight.currency)}</span>
+                        </span>
                       )}
-                      <span>
-                        {flight.disableNotifications === 1
-                          ? 'Muted'
-                          : dir === 'both'
-                          ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                          : dir === 'increase'
-                          ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                          : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
-                      </span>
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -285,7 +397,7 @@ export default function FlightCard({
         className={`mt-auto grid ${(!isPurchased && onConvertToBooked) || (isPurchased && onRebook) ? 'grid-cols-7' : 'grid-cols-6'} gap-1 pt-3 border-t border-gunmetal-border`}
       >
         {isPast ? (
-          <Tooltip content="Checks disabled for past flights" align="left" className="w-full">
+          <Tooltip content="Checks disabled for past flights" align="center" className="w-full">
             <button
               disabled
               className="w-full flex justify-center items-center p-2 text-sky-400 rounded-md opacity-25 pointer-events-none"
@@ -294,7 +406,7 @@ export default function FlightCard({
             </button>
           </Tooltip>
         ) : (flight.status === 'Paused' || isPointsCurrency(flight.currency)) && onOpenManualCheck ? (
-          <Tooltip content="Log manual price check" align="left" className="w-full">
+          <Tooltip content="Log manual price check" align="center" className="w-full">
             <button
               onClick={(e) => { e.stopPropagation(); onOpenManualCheck(flight); }}
               className="w-full flex justify-center items-center p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 rounded-md transition-colors"
@@ -303,7 +415,7 @@ export default function FlightCard({
             </button>
           </Tooltip>
         ) : (
-          <Tooltip content="Check live price now" align="left" className="w-full">
+          <Tooltip content="Check live price now" align="center" className="w-full">
             <button
               onClick={(e) => { e.stopPropagation(); checkNow(flight.id); }}
               className="w-full flex justify-center items-center p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-950/40 rounded-md transition-colors"
@@ -398,7 +510,7 @@ export default function FlightCard({
         </Tooltip>
         <Tooltip
           content="Delete flight"
-          align="right"
+          align="center"
           className="w-full"
         >
           <button

@@ -443,3 +443,84 @@ export function getCorridorScopeOptions(
 
   return null;
 }
+
+export interface LocationDisplayResult {
+  code: string;
+  isCluster: boolean;
+  tooltipText?: string;
+}
+
+/**
+ * Resolves an airport string (single IATA code, Metro Area Code, or multi-airport cluster)
+ * into a standardized 3-to-4 character display code (e.g. DCA, WAS, LAX+) with hover tooltip info.
+ */
+export function resolveLocationDisplay(input?: string | null): LocationDisplayResult {
+  if (!input) return { code: '—', isCluster: false };
+  const cleaned = input.trim().toUpperCase();
+  const tokens = cleaned.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
+  if (tokens.length === 0) return { code: '—', isCluster: false };
+
+  // 1. Single token that is already an official IATA Metro code (e.g. WAS, NYC, CHI)
+  if (tokens.length === 1 && METRO_AIRPORT_MAP[tokens[0]]) {
+    const entry = METRO_AIRPORT_MAP[tokens[0]];
+    return {
+      code: entry.code,
+      isCluster: true,
+      tooltipText: `${entry.name} (${entry.airports.join(', ')})`,
+    };
+  }
+
+  // 2. Multi-airport tokens matching an entire official Metro area (e.g. DCA, IAD, BWI -> WAS)
+  for (const [metroKey, entry] of Object.entries(METRO_AIRPORT_MAP)) {
+    const isCompleteMetroMatch =
+      tokens.length === entry.airports.length &&
+      entry.airports.every(a => tokens.includes(a));
+
+    if (isCompleteMetroMatch) {
+      return {
+        code: metroKey,
+        isCluster: true,
+        tooltipText: `${entry.name} (${entry.airports.join(', ')})`,
+      };
+    }
+  }
+
+  // 3. Regional Cluster check (e.g. LAX, BUR, LGB, SNA, ONT -> LAX+, or DFW, DAL -> DFW+)
+  for (const cluster of Object.values(REGIONAL_CLUSTERS)) {
+    const matches = tokens.filter(t => cluster.airports.includes(t));
+    if (matches.length > 1) {
+      return {
+        code: `${cluster.airports[0]}+`,
+        isCluster: true,
+        tooltipText: `${cluster.name} (${tokens.join(', ')})`,
+      };
+    }
+  }
+
+  // 4. Custom subset of an official Metro area (e.g. DCA, BWI without IAD -> DCA+)
+  for (const entry of Object.values(METRO_AIRPORT_MAP)) {
+    const matches = tokens.filter(t => entry.airports.includes(t));
+    if (matches.length > 1) {
+      return {
+        code: `${tokens[0]}+`,
+        isCluster: true,
+        tooltipText: `${entry.name} (${tokens.join(', ')})`,
+      };
+    }
+  }
+
+  // 5. Any other multi-airport comma list: Primary + '+' (e.g. MSP, ORD -> MSP+)
+  if (tokens.length > 1) {
+    return {
+      code: `${tokens[0]}+`,
+      isCluster: true,
+      tooltipText: `Multi-Airport (${tokens.join(', ')})`,
+    };
+  }
+
+  // 6. Standard single airport code
+  return {
+    code: tokens[0],
+    isCluster: false,
+  };
+}

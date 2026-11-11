@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { Flight, Settings } from '@/types';
-import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign } from 'lucide-react';
+import { RefreshCw, Clock, Pause, Play, Trash2, Pencil, Bell, BellOff, ShoppingBag, Tag, Coins, RotateCcw, DollarSign, TrendingDown, TrendingUp, Wrench } from 'lucide-react';
 import GoogleIcon from './GoogleIcon';
-import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
+import { formatCurrency, formatCompactCurrency, computeAlertTargets, computeIncreaseAlertTargets, isPointsCurrency } from '@/utils/format';
 import { useFlightActions, CONDENSED_CABIN_LABEL_MAP } from '@/hooks/useFlightActions';
-import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline } from '@/utils/airline';
+import { getGoogleFlightsUrl, getOperatingAirlines, getCurrentPriceAirline, getAirlineTheme } from '@/utils/airline';
+import { resolveLocationDisplay } from '@/utils/coLocations';
 import AirlineBadge from './common/AirlineBadge';
 import Tooltip from './common/Tooltip';
 
@@ -87,38 +88,119 @@ export default function FlightCondensedView({
                         : 'border-l-sky-500/70 group-hover/row:border-l-sky-600'
                     }`}
                   >
-                    <div className="font-bold text-slate-100 font-sans group-hover/row:text-sky-400 transition-colors">
-                      {isFlightNumMode ? `${flight.airline} ${flight.flightNumber}` : `${flight.origin} → ${flight.destination}`}
-                    </div>
-                    <div className="text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 mt-0.5">
-                      {isFlightNumMode ? (
-                        <>
-                          <span>{flight.origin} → {flight.destination}</span>
-                          {flight.pnr && <span>• PNR: {flight.pnr}</span>}
-                        </>
-                      ) : (
-                        <>
-                          {operatingAirlines.length > 0 ? (
-                            operatingAirlines.map((code, idx) => (
-                              <AirlineBadge
-                                key={code}
-                                code={code}
-                                size="xs"
-                                showFlightNumber={false}
-                                align={idx === 0 ? 'left' : 'center'}
+                    {isFlightNumMode ? (
+                      (() => {
+                        const theme = getAirlineTheme(flight.airline);
+                        const originDisplay = resolveLocationDisplay(flight.origin);
+                        const destDisplay = resolveLocationDisplay(flight.destination);
+
+                        return (
+                          <div>
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-xs font-bold shadow-sm"
+                              style={{
+                                backgroundColor: `${theme.color}15`,
+                                borderColor: `${theme.color}60`,
+                              }}
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: theme.color }}
                               />
-                            ))
-                          ) : flight.airline ? (
-                            <AirlineBadge code={flight.airline} size="xs" showFlightNumber={false} align="left" />
-                          ) : flight.includedAirlines ? (
-                            <span>{flight.includedAirlines}</span>
-                          ) : (
-                            <span>All Airlines</span>
-                          )}
-                          {flight.pnr && <span>• PNR: {flight.pnr}</span>}
-                        </>
-                      )}
-                    </div>
+                              <span className="text-slate-100">{theme.shortName}</span>
+                              <span className="font-mono font-black" style={{ color: theme.color }}>
+                                {flight.flightNumber}
+                              </span>
+                            </span>
+                            <div className="text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 mt-1">
+                              {flight.origin && flight.destination && (
+                                <div className="inline-flex items-center gap-1">
+                                  {originDisplay.isCluster && originDisplay.tooltipText ? (
+                                    <Tooltip content={originDisplay.tooltipText} align="left">
+                                      <span className="px-1.5 py-0.2 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-[11px] cursor-help">
+                                        {originDisplay.code}
+                                      </span>
+                                    </Tooltip>
+                                  ) : (
+                                    <span className="px-1.5 py-0.2 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-[11px]">
+                                      {originDisplay.code}
+                                    </span>
+                                  )}
+                                  <span className="text-gunmetal-muted text-[11px]">→</span>
+                                  {destDisplay.isCluster && destDisplay.tooltipText ? (
+                                    <Tooltip content={destDisplay.tooltipText} align="center">
+                                      <span className="px-1.5 py-0.2 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-[11px] cursor-help">
+                                        {destDisplay.code}
+                                      </span>
+                                    </Tooltip>
+                                  ) : (
+                                    <span className="px-1.5 py-0.2 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-200 font-mono font-semibold text-[11px]">
+                                      {destDisplay.code}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {flight.pnr && <span>• PNR: {flight.pnr}</span>}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      (() => {
+                        const originDisplay = resolveLocationDisplay(flight.origin);
+                        const destDisplay = resolveLocationDisplay(flight.destination);
+
+                        return (
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              {originDisplay.isCluster && originDisplay.tooltipText ? (
+                                <Tooltip content={originDisplay.tooltipText} align="left">
+                                  <span className="px-2 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-bold text-xs shadow-sm cursor-help">
+                                    {originDisplay.code}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-bold text-xs shadow-sm">
+                                  {originDisplay.code}
+                                </span>
+                              )}
+                              <span className="text-gunmetal-muted text-xs">→</span>
+                              {destDisplay.isCluster && destDisplay.tooltipText ? (
+                                <Tooltip content={destDisplay.tooltipText} align="center">
+                                  <span className="px-2 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-bold text-xs shadow-sm cursor-help">
+                                    {destDisplay.code}
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-100 font-mono font-bold text-xs shadow-sm">
+                                  {destDisplay.code}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 mt-1">
+                              {operatingAirlines.length > 0 ? (
+                                operatingAirlines.map((code, idx) => (
+                                  <AirlineBadge
+                                    key={code}
+                                    code={code}
+                                    size="xs"
+                                    showFlightNumber={false}
+                                    align={idx === 0 ? 'left' : 'center'}
+                                  />
+                                ))
+                              ) : flight.airline ? (
+                                <AirlineBadge code={flight.airline} size="xs" showFlightNumber={false} align="left" />
+                              ) : flight.includedAirlines ? (
+                                <span>{flight.includedAirlines}</span>
+                              ) : (
+                                <span>All Airlines</span>
+                              )}
+                              {flight.pnr && <span>• PNR: {flight.pnr}</span>}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    )}
                   </td>
 
                   <td className="py-3 px-4 text-slate-200 font-medium whitespace-nowrap">
@@ -127,11 +209,6 @@ export default function FlightCondensedView({
 
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {flight.currency && isPointsCurrency(flight.currency) && (
-                        <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1">
-                          <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
-                        </span>
-                      )}
                       <span className="bg-gunmetal-canvas text-slate-300 border border-gunmetal-border px-1.5 py-0.5 rounded text-[11px] font-medium">
                         {CONDENSED_CABIN_LABEL_MAP[flight.cabinClass] || 'Economy'}
                       </span>
@@ -158,24 +235,19 @@ export default function FlightCondensedView({
                           ≤ 2 Stops
                         </span>
                       )}
-                      {!isPurchased && flight.priceTrackingDirection === 'increase' && (
-                        <span className="bg-gunmetal-canvas text-rose-400 border border-rose-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
-                          Surges Only
-                        </span>
-                      )}
-                      {!isPurchased && flight.priceTrackingDirection === 'both' && (
-                        <span className="bg-gunmetal-canvas text-sky-400 border border-sky-800/60 px-1.5 py-0.5 rounded text-[10px] font-medium">
-                          Drops & Surges
-                        </span>
-                      )}
                     </div>
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <span className="font-black text-slate-100">
                         {formatCurrency(flight.currentPrice, flight.currency)}
                       </span>
+                      {flight.currency && isPointsCurrency(flight.currency) && (
+                        <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1">
+                          <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+                        </span>
+                      )}
                       {!isPurchased && currentPriceAirline && (
                         <AirlineBadge
                           code={currentPriceAirline.code}
@@ -223,35 +295,52 @@ export default function FlightCondensedView({
                       const dir = isPurchased ? 'drop' : (flight.priceTrackingDirection || 'drop');
 
                       return (
-                        <span
-                          className={`text-[11px] font-mono flex items-center gap-1 mt-0.5 ${
-                            flight.disableNotifications === 1
-                              ? 'text-gunmetal-muted'
-                              : 'text-sky-400'
-                          }`}
-                          title={
-                            flight.disableNotifications === 1
-                              ? 'Muted'
-                              : dir === 'both'
-                              ? `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} or ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                              : dir === 'increase'
-                              ? `Alerts at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                              : `Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`
-                          }
-                        >
+                        <div className="mt-1">
                           {flight.disableNotifications === 1 ? (
-                            <BellOff className="w-3 h-3 text-gunmetal-muted" />
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-gunmetal-canvas border border-gunmetal-border text-gunmetal-muted shadow-sm whitespace-nowrap"
+                              title="Notifications muted for this flight"
+                            >
+                              <BellOff className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                              <span>Alerts Off</span>
+                            </span>
+                          ) : dir === 'both' ? (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-1.5 py-0.2 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm whitespace-nowrap"
+                              title={`Alerts at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} or ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`}
+                            >
+                              <span className="flex items-center gap-1 text-emerald-300">
+                                <TrendingDown className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                                <Bell className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                                <span>≤ {formatCompactCurrency(dropTargets.effectiveTarget || 0, flight.currency)}</span>
+                              </span>
+                              <span className="text-gunmetal-muted font-normal">|</span>
+                              <span className="flex items-center gap-1 text-rose-300">
+                                <TrendingUp className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                                <Bell className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                                <span>≥ {formatCompactCurrency(incTargets.effectiveTarget || 0, flight.currency)}</span>
+                              </span>
+                            </span>
+                          ) : dir === 'increase' ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm whitespace-nowrap"
+                              title={`Surge alert at ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`}
+                            >
+                              <TrendingUp className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                              <Bell className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                              <span className="text-rose-300">≥ {formatCompactCurrency(incTargets.effectiveTarget || 0, flight.currency)}</span>
+                            </span>
                           ) : (
-                            <Bell className="w-3 h-3 text-sky-400" />
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold font-mono bg-gunmetal-canvas border border-gunmetal-border text-slate-300 shadow-sm whitespace-nowrap"
+                              title={`Drop alert at ≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
+                            >
+                              <TrendingDown className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                              <Bell className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                              <span className="text-emerald-300">≤ {formatCompactCurrency(dropTargets.effectiveTarget || 0, flight.currency)}</span>
+                            </span>
                           )}
-                          <span>
-                            {dir === 'both'
-                              ? `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)} · ≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                              : dir === 'increase'
-                              ? `≥ ${formatCurrency(incTargets.effectiveTarget || 0, flight.currency)}`
-                              : `≤ ${formatCurrency(dropTargets.effectiveTarget || 0, flight.currency)}`}
-                          </span>
-                        </span>
+                        </div>
                       );
                     })()}
                   </td>
@@ -262,23 +351,36 @@ export default function FlightCondensedView({
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    {flight.status === 'Watching' ? (
-                      <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-sky-400" /> Watching
-                      </span>
-                    ) : flight.status === 'Booked' ? (
-                      <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
-                        <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
-                      </span>
-                    ) : flight.status === 'Paused' ? (
-                      <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
-                        <Pause className="w-3 h-3 text-amber-400" /> Paused
-                      </span>
-                    ) : (
-                      <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" /> Past
-                      </span>
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      {isPast ? (
+                        <span className="bg-slate-800/50 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" /> Past
+                        </span>
+                      ) : isPurchased || flight.status === 'Booked' ? (
+                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                          <ShoppingBag className="w-3 h-3 text-emerald-400" /> Booked
+                        </span>
+                      ) : (
+                        <span className="bg-sky-950/60 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-sky-400" /> Watching
+                        </span>
+                      )}
+
+                      {!isPast && (flight.status === 'Paused' || flight.isManual === 1 || isPointsCurrency(flight.currency)) && (
+                        <div className="flex items-center gap-1">
+                          {flight.status === 'Paused' && (
+                            <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.2 rounded text-[10px] font-semibold inline-flex items-center gap-1">
+                              <Pause className="w-2.5 h-2.5 text-amber-400" /> Paused
+                            </span>
+                          )}
+                          {(flight.isManual === 1 || isPointsCurrency(flight.currency)) && (
+                            <span className="bg-slate-800/80 text-slate-300 border border-slate-700/80 px-1.5 py-0.2 rounded text-[10px] font-semibold inline-flex items-center gap-1">
+                              <Wrench className="w-2.5 h-2.5 text-slate-400" /> Manual
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                   <td 
@@ -395,7 +497,7 @@ export default function FlightCondensedView({
                       </Tooltip>
                       <Tooltip
                         content="Delete flight"
-                        align="right"
+                        align="center"
                       >
                         <button
                           onClick={() => onDelete(flight)}

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 export interface TooltipProps {
   content: React.ReactNode;
@@ -19,35 +19,69 @@ export default function Tooltip({
   className = '',
   disabled = false,
 }: TooltipProps) {
+  const [shiftState, setShiftState] = useState<{ shiftX: number; arrowShift: number }>({ shiftX: 0, arrowShift: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const triggerRect = containerRef.current.getBoundingClientRect();
+    const tooltipWidth = tooltipRef.current.offsetWidth;
+    if (tooltipWidth === 0) return;
+
+    // Detect enclosing boundaries: Card container, Table row, Table, or Document
+    const boundaryEl = containerRef.current.closest('.group\\/card, tr, table, .bg-gunmetal-card') || document.body;
+    const boundaryRect = boundaryEl.getBoundingClientRect();
+
+    const padding = 8;
+    const triggerCenter = triggerRect.left + triggerRect.width / 2;
+    const idealLeft = triggerCenter - tooltipWidth / 2;
+    const idealRight = triggerCenter + tooltipWidth / 2;
+
+    const minLeft = boundaryRect.left + padding;
+    const maxRight = boundaryRect.right - padding;
+
+    let shift = 0;
+    if (idealLeft < minLeft) {
+      shift = minLeft - idealLeft;
+    } else if (idealRight > maxRight) {
+      shift = maxRight - idealRight;
+    }
+
+    const maxArrowOffset = Math.max(0, tooltipWidth / 2 - 12);
+    const arrow = Math.max(-maxArrowOffset, Math.min(maxArrowOffset, -shift));
+
+    setShiftState({ shiftX: shift, arrowShift: arrow });
+  }, []);
+
   if (!content || disabled) {
     return <>{children}</>;
   }
-
-  const alignContainerClasses = {
-    left: 'left-0 items-start',
-    center: 'left-1/2 -translate-x-1/2 items-center',
-    right: 'right-0 items-end',
-  }[align];
-
-  const caretAlignClasses = {
-    left: 'ml-3 self-start',
-    center: 'self-center',
-    right: 'mr-3 self-end',
-  }[align];
 
   const positionContainerClasses =
     position === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5';
 
   return (
-    <div className={`relative inline-flex group/tooltip hover:z-50 ${className}`}>
+    <div
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      className={`relative inline-flex group/tooltip hover:z-50 ${className}`}
+    >
       {children}
       <div
+        ref={tooltipRef}
         role="tooltip"
-        className={`pointer-events-none absolute ${positionContainerClasses} opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150 ease-out z-50 flex flex-col ${alignContainerClasses}`}
+        style={{
+          left: '50%',
+          transform: `translateX(calc(-50% + ${shiftState.shiftX}px))`,
+        }}
+        className={`pointer-events-none absolute ${positionContainerClasses} opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150 ease-out z-50 flex flex-col items-center`}
       >
         {position === 'bottom' && (
           <div
-            className={`w-1.5 h-1.5 bg-gunmetal-card border-l border-t border-slate-600 rotate-45 -mb-1 ${caretAlignClasses}`}
+            style={{ transform: `translateX(${shiftState.arrowShift}px) rotate(45deg)` }}
+            className="w-1.5 h-1.5 bg-gunmetal-card border-l border-t border-slate-600 -mb-1 flex-shrink-0"
           />
         )}
         <div className="bg-gunmetal-card/95 text-slate-100 text-[11px] font-sans font-semibold px-2.5 py-1 rounded shadow-2xl border border-slate-600 whitespace-nowrap backdrop-blur-sm">
@@ -55,7 +89,8 @@ export default function Tooltip({
         </div>
         {position === 'top' && (
           <div
-            className={`w-1.5 h-1.5 bg-gunmetal-card border-r border-b border-slate-600 rotate-45 -mt-1 ${caretAlignClasses}`}
+            style={{ transform: `translateX(${shiftState.arrowShift}px) rotate(45deg)` }}
+            className="w-1.5 h-1.5 bg-gunmetal-card border-r border-b border-slate-600 -mt-1 flex-shrink-0"
           />
         )}
       </div>
