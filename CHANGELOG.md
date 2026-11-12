@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-11*  
-*Current Version: v0.7.9*
+*Current Version: v0.8.0*
 
 ## Changelog
+
+### Release v0.8.0
+- Added `POST /api/settings/datasource-usage`, `manualUsageSchema`, and `settingsDb.adjustProviderUsage` to increment or set metered API query counts with `Manual` audit log entries.
+- Added manual query usage adjustment inputs, `+1 Query` buttons, and remaining quota indicators to metered provider cards in Data Sources settings.
+- Created `SettingsModalPortal` and rendered `DataSourceLogsModal`, `CurrencyWarningModal`, and `UnsavedChangesModal` via `document.body` portals to eliminate the top viewport gap.
+- Converted `DataSourceLogsModal` to full-screen on mobile viewports and added `Manual` status log badges.
+- Updated Settings navigation to wrapping segmented pills on mobile viewports and standardized 44px touch targets across all five settings tabs.
+- Extracted shared primitives (`SettingsIntroBanner`, `SettingsCard`, `SettingsSelect`, `cadenceOptions`) and decomposed General, Search Preferences, Data Sources, Scheduling, and Notifications tabs into domain card components.
 
 ### Release v0.7.9
 - Aligned History Modal header, status row, airport bubbles, directional arrows, and alert chips with FlightCard styling.

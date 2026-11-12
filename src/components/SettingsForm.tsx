@@ -174,17 +174,17 @@ export default function SettingsForm() {
       <div
         role="tablist"
         aria-label="Settings sections"
-        className="flex items-center overflow-x-auto border-b border-gunmetal-border -mx-1 px-1"
+        className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-0 bg-gunmetal-canvas/70 sm:bg-transparent border border-gunmetal-border sm:border-0 sm:border-b sm:border-gunmetal-border p-1.5 sm:p-0 rounded-lg sm:rounded-none"
       >
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'general'}
           onClick={() => setActiveTab('general')}
-          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
             activeTab === 'general'
-              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
-              : 'text-gunmetal-muted hover:text-slate-300'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
           }`}
         >
           General
@@ -194,10 +194,10 @@ export default function SettingsForm() {
           role="tab"
           aria-selected={activeTab === 'searchprefs'}
           onClick={() => setActiveTab('searchprefs')}
-          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
             activeTab === 'searchprefs'
-              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
-              : 'text-gunmetal-muted hover:text-slate-300'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
           }`}
         >
           Search Preferences
@@ -207,10 +207,10 @@ export default function SettingsForm() {
           role="tab"
           aria-selected={activeTab === 'datasources'}
           onClick={() => setActiveTab('datasources')}
-          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
             activeTab === 'datasources'
-              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
-              : 'text-gunmetal-muted hover:text-slate-300'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
           }`}
         >
           Data Sources
@@ -220,10 +220,10 @@ export default function SettingsForm() {
           role="tab"
           aria-selected={activeTab === 'scheduling'}
           onClick={() => setActiveTab('scheduling')}
-          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
             activeTab === 'scheduling'
-              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
-              : 'text-gunmetal-muted hover:text-slate-300'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
           }`}
         >
           Scheduling
@@ -233,10 +233,10 @@ export default function SettingsForm() {
           role="tab"
           aria-selected={activeTab === 'notifications'}
           onClick={() => setActiveTab('notifications')}
-          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
             activeTab === 'notifications'
-              ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
-              : 'text-gunmetal-muted hover:text-slate-300'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
           }`}
         >
           Notifications

@@ -2,6 +2,7 @@
 
 import { Settings } from '@/types';
 import { ChevronDown } from 'lucide-react';
+import { OVERRIDE_CADENCE_OPTIONS, formatCustomCadenceLabel } from '@/components/settings/shared/cadenceOptions';
 
 interface Props {
   overrideFarOut: string;
@@ -13,36 +14,16 @@ interface Props {
   onFinalStretchChange: (val: string) => void;
 }
 
-const OVERRIDE_OPTIONS = [
-  { value: '0', label: "Do not check (Paused)" },
-  { value: '1', label: "Every 1 hour" },
-  { value: '2', label: "Every 2 hours" },
-  { value: '3', label: "Every 3 hours" },
-  { value: '4', label: "Every 4 hours" },
-  { value: '6', label: "Every 6 hours" },
-  { value: '8', label: "Every 8 hours" },
-  { value: '10', label: "Every 10 hours" },
-  { value: '11', label: "Every 11 hours" },
-  { value: '12', label: "Every 12 hours" },
-  { value: '24', label: "Every day (24 hrs)" },
-  { value: '48', label: "Every 2 days (48 hrs)" },
-  { value: '72', label: "Every 3 days (72 hrs)" },
-  { value: '96', label: "Every 4 days (96 hrs)" },
-  { value: '168', label: "Every week (168 hrs)" },
-];
-
 const renderOverrideOptions = (currentValue: string) => {
-  const isCustom = currentValue !== '' && !OVERRIDE_OPTIONS.some(opt => opt.value === currentValue);
+  const isCustom = currentValue !== '' && !OVERRIDE_CADENCE_OPTIONS.some(opt => opt.value === currentValue);
   return (
     <>
       {isCustom && (
         <option key={currentValue} value={currentValue}>
-          {Number(currentValue) < 24
-            ? `Every ${currentValue} hours`
-            : `Every ${Math.round(Number(currentValue) / 24)} days (${currentValue} hrs)`}
+          {formatCustomCadenceLabel(Number(currentValue))}
         </option>
       )}
-      {OVERRIDE_OPTIONS.map(opt => (
+      {OVERRIDE_CADENCE_OPTIONS.map(opt => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
         </option>

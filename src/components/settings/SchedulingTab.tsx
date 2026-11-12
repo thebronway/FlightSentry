@@ -1,7 +1,9 @@
 'use client';
 
 import { Settings } from '@/types';
-import { Clock, ChevronDown } from 'lucide-react';
+import SettingsIntroBanner from './shared/SettingsIntroBanner';
+import CheckStartTimeCard from './scheduling/CheckStartTimeCard';
+import ProximityCadenceCard from './scheduling/ProximityCadenceCard';
 
 interface Props {
   settings: Settings;
@@ -48,46 +50,6 @@ function computeCheckSchedule(startTime: string, cadenceHours: number): string[]
   return times;
 }
 
-export const CADENCE_OPTIONS = [
-  { value: 0, label: "Do not check (Paused)" },
-  { value: 1, label: "Every 1 hour (24 checks/day)" },
-  { value: 2, label: "Every 2 hours (12 checks/day)" },
-  { value: 3, label: "Every 3 hours (8 checks/day)" },
-  { value: 4, label: "Every 4 hours (6 checks/day)" },
-  { value: 6, label: "Every 6 hours (4 checks/day)" },
-  { value: 8, label: "Every 8 hours (3 checks/day)" },
-  { value: 10, label: "Every 10 hours" },
-  { value: 11, label: "Every 11 hours" },
-  { value: 12, label: "Every 12 hours (2 checks/day)" },
-  { value: 24, label: "Every day (24 hrs)" },
-  { value: 48, label: "Every 2 days (48 hrs)" },
-  { value: 72, label: "Every 3 days (72 hrs)" },
-  { value: 96, label: "Every 4 days (96 hrs)" },
-  { value: 168, label: "Every week (168 hrs)" },
-];
-
-export const renderCadenceOptions = (currentValue: number) => {
-  const hasMatch = CADENCE_OPTIONS.some(opt => opt.value === currentValue);
-  return (
-    <>
-      {!hasMatch && currentValue !== undefined && currentValue !== null && (
-        <option key={currentValue} value={currentValue}>
-          {currentValue === 0
-            ? "Do not check (Paused)"
-            : currentValue < 24
-            ? `Every ${currentValue} hours (${currentValue} hrs)`
-            : `Every ${Math.round(currentValue / 24)} days (${currentValue} hrs)`}
-        </option>
-      )}
-      {CADENCE_OPTIONS.map(opt => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </>
-  );
-};
-
 export default function SchedulingTab({
   settings,
   onChange,
@@ -101,166 +63,55 @@ export default function SchedulingTab({
 
   return (
     <div className="space-y-6 pt-2">
-      <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3.5 rounded-lg text-xs text-slate-300">
-        <p className="font-semibold text-slate-200 mb-0.5">Global Check Cadence Defaults</p>
-        These cadences establish the global default check frequency for all tracked flights based on departure proximity. All flights inherit these intervals unless customized individually in flight settings.
-      </div>
+      <SettingsIntroBanner
+        title="Global Check Cadence Defaults"
+        description="These cadences establish the global default check frequency for all tracked flights based on departure proximity. All flights inherit these intervals unless customized individually in flight settings."
+      />
 
-      {/* Start Time Configuration */}
-      <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-4 rounded-lg space-y-2">
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-          <Clock className="w-4 h-4 text-slate-400" />
-          Daily Check Start Time (Local)
-        </label>
-        <div className="max-w-xs">
-          <input
-            type="time"
-            value={startTime}
-            onChange={e => onChange({ ...settings, checkStartTime: e.target.value })}
-            onBlur={() => {
-              if (onAutoSave) onAutoSave(settings, 'schedule', undefined, 'Daily check start time updated');
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-            }}
-            className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm [color-scheme:dark]"
-          />
-        </div>
-        <p className="text-[11px] text-gunmetal-muted">
-          The reference start time for automated checks. Daily intervals (24h/48h) run at this time; cadences under 24 hours anchor to this time and cycle throughout the day.
-        </p>
-      </div>
+      <CheckStartTimeCard
+        startTime={startTime}
+        onChangeStartTime={val => onChange({ ...settings, checkStartTime: val })}
+        onBlurStartTime={() => {
+          if (onAutoSave) onAutoSave(settings, 'schedule', undefined, 'Daily check start time updated');
+        }}
+      />
 
-      {/* 3 Proximity Cadences */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Far Out (>90 days) */}
-        <div className="bg-gunmetal-canvas/40 border border-gunmetal-border p-4 rounded-lg flex flex-col justify-between space-y-3">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Far Out (&gt;90 days)
-            </label>
-            <div className="relative">
-              <select
-                value={settings.scheduleFarOut}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  const updated = { ...settings, scheduleFarOut: val };
-                  onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Far out (>90d) check cadence updated');
-                }}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
-              >
-                {renderCadenceOptions(settings.scheduleFarOut)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
-            </div>
-          </div>
+        <ProximityCadenceCard
+          label="Far Out (>90 days)"
+          cadenceHours={settings.scheduleFarOut}
+          schedulePreview={farOutSchedule}
+          pausedMessage="No checks performed while >90 days out. Resumes when within 90 days."
+          onChangeCadence={val => {
+            const updated = { ...settings, scheduleFarOut: val };
+            onChange(updated);
+            if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Far out (>90d) check cadence updated');
+          }}
+        />
 
-          <div>
-            {settings.scheduleFarOut === 0 ? (
-              <p className="text-[11px] text-amber-400/90 font-medium">
-                No checks performed while &gt;90 days out. Resumes when within 90 days.
-              </p>
-            ) : settings.scheduleFarOut < 24 ? (
-              <div className="p-2.5 rounded bg-gunmetal-card border border-slate-700/60 text-[11px]">
-                <span className="text-slate-300 font-semibold block mb-1">Checks Done At:</span>
-                <span className="text-sky-400 font-mono leading-relaxed block">
-                  {farOutSchedule.join(' → ')}
-                </span>
-              </div>
-            ) : (
-              <p className="text-[11px] text-gunmetal-muted">
-                {farOutSchedule[0] || `Runs every ${Math.round(settings.scheduleFarOut / 24)} days`}
-              </p>
-            )}
-          </div>
-        </div>
+        <ProximityCadenceCard
+          label="Standard (14–90 days)"
+          cadenceHours={settings.scheduleStandard}
+          schedulePreview={standardSchedule}
+          pausedMessage="No checks performed between 14–90 days. Resumes when within 14 days."
+          onChangeCadence={val => {
+            const updated = { ...settings, scheduleStandard: val };
+            onChange(updated);
+            if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Standard (14–90d) check cadence updated');
+          }}
+        />
 
-        {/* Standard (14-90 days) */}
-        <div className="bg-gunmetal-canvas/40 border border-gunmetal-border p-4 rounded-lg flex flex-col justify-between space-y-3">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Standard (14–90 days)
-            </label>
-            <div className="relative">
-              <select
-                value={settings.scheduleStandard}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  const updated = { ...settings, scheduleStandard: val };
-                  onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Standard (14–90d) check cadence updated');
-                }}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
-              >
-                {renderCadenceOptions(settings.scheduleStandard)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
-            </div>
-          </div>
-
-          <div>
-            {settings.scheduleStandard === 0 ? (
-              <p className="text-[11px] text-amber-400/90 font-medium">
-                No checks performed between 14–90 days. Resumes when within 14 days.
-              </p>
-            ) : settings.scheduleStandard < 24 ? (
-              <div className="p-2.5 rounded bg-gunmetal-card border border-slate-700/60 text-[11px]">
-                <span className="text-slate-300 font-semibold block mb-1">Checks Done At:</span>
-                <span className="text-sky-400 font-mono leading-relaxed block">
-                  {standardSchedule.join(' → ')}
-                </span>
-              </div>
-            ) : (
-              <p className="text-[11px] text-gunmetal-muted">
-                {standardSchedule[0] || `Runs every ${Math.round(settings.scheduleStandard / 24)} days`}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Final Stretch (<14 days) */}
-        <div className="bg-gunmetal-canvas/40 border border-gunmetal-border p-4 rounded-lg flex flex-col justify-between space-y-3">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Final Stretch (&lt;14 days)
-            </label>
-            <div className="relative">
-              <select
-                value={settings.scheduleFinalStretch}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  const updated = { ...settings, scheduleFinalStretch: val };
-                  onChange(updated);
-                  if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Final stretch (<14d) check cadence updated');
-                }}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
-              >
-                {renderCadenceOptions(settings.scheduleFinalStretch)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gunmetal-muted pointer-events-none" />
-            </div>
-          </div>
-
-          <div>
-            {settings.scheduleFinalStretch === 0 ? (
-              <p className="text-[11px] text-amber-400/90 font-medium">
-                No checks performed within 14 days of departure.
-              </p>
-            ) : settings.scheduleFinalStretch < 24 ? (
-              <div className="p-2.5 rounded bg-gunmetal-card border border-slate-700/60 text-[11px]">
-                <span className="text-slate-300 font-semibold block mb-1">Checks Done At:</span>
-                <span className="text-sky-400 font-mono leading-relaxed block">
-                  {finalStretchSchedule.join(' → ')}
-                </span>
-              </div>
-            ) : (
-              <p className="text-[11px] text-gunmetal-muted">
-                {finalStretchSchedule[0] || `Runs every ${Math.round(settings.scheduleFinalStretch / 24)} days`}
-              </p>
-            )}
-          </div>
-        </div>
+        <ProximityCadenceCard
+          label="Final Stretch (<14 days)"
+          cadenceHours={settings.scheduleFinalStretch}
+          schedulePreview={finalStretchSchedule}
+          pausedMessage="No checks performed within 14 days of departure."
+          onChangeCadence={val => {
+            const updated = { ...settings, scheduleFinalStretch: val };
+            onChange(updated);
+            if (onAutoSave) onAutoSave(updated, 'schedule', undefined, 'Final stretch (<14d) check cadence updated');
+          }}
+        />
       </div>
     </div>
   );

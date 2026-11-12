@@ -8,13 +8,6 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ## Release Roadmap
 
-### Release v0.8.0: Settings
-- Data Sources
-  - Add a way to manually log a used query, for example, if I use an api manually for soemthing else or whatever, I need to update that count somehow, so it activetly reflect the correct api upsage left. It will be done from the data soruces page. maybe the easiest would be just to add a manual adjustment of the queries used. 
-  - When opening logs for a data source, the background is faded, but the top 1/4 inch is not
-- Make sure all settings tabs are mobile friendly
-- Last step before documention: make sure all components for settings are not in any monothlic files and create shared files for shared components.
-
 ### Release v0.8.1: Dashboard
 - Flight Modal
   - Thoughts on removing speificy route details manualually when just watching or booking a flight? Or maybe just removing co-lcoation option for when watching or booking a flight (and leaving it when the route option is added)
