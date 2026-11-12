@@ -9,21 +9,29 @@ This document tracks planned improvements, enhancements, and technical debt for 
 ## Release Roadmap
 
 ### Release v0.8.1: Dashboard
-- Flight Modal
-  - Thoughts on removing speificy route details manualually when just watching or booking a flight? Or maybe just removing co-lcoation option for when watching or booking a flight (and leaving it when the route option is added)
-- Quota ribbon
-  - When expanded, when a bar gets to 75% full, make it yellow, 95% make it red
-  - When collasaped (make collasped the default), make the first number xxx / total, yellow at 75% used and 95% make it red.
-  - Make sure quota is mobile compatible
-  - Make sure quota is not monolithic
-- if all data sources are paused or not configured, the user should still be able to add a flight, but only in manual mode, so always allow the add flight button, but if all data sources are paused or not configured when they go to track the flight or route, that should be great out if manual mode is not selected with the appropriate messaging.
-- Flight Card
-  - Manual Mode, points, sometimes it says airline next to miles currency. It should not. (I think it shows it if its watching a route, but for manual mode, lets not include it)
-  - Blue of single airport is a little too blue dim, it needs to be dimmer that the multi airport, but just need to adjust slightly.
+- **Flight Modal**
+  - Keep manual **Origin** and **Destination** airport overrides available in **Watching Flight** and **Booked Flight** modes (as a fallback when route auto-detection fails or in Manual Mode), but restrict them to single 3-letter IATA airports—enabling co-location cluster options only in **Watching Route** and **Also Monitor Route Alternatives**.
+  - Always keep the Dashboard **Add Flight** button enabled when all data sources are paused or unconfigured; allow creating flights in **Manual Mode** (or **Points/Miles** mode) while disabling automated tracking submission with clear guidance messaging until a data source is active or Manual Mode is selected.
+- **Quota Ribbon**
+  - Set the **collapsed** state as the default on initial load while preserving user expand/collapse state in `localStorage`.
+  - Apply threshold color states at `>= 75%` usage (yellow) and `>= 95%` usage (red) to both expanded provider progress bars and the collapsed `used / total` summary counter.
+  - Optimize layout and touch targets (`44px` minimum) for mobile viewports (`375px+`).
+  - Decompose `QuotaRibbon.tsx` into modular, single-responsibility sub-components.
+- **Flight Card**
+  - Hide the airline badge next to the points/miles currency badge on flights in **Manual Mode**.
+  - Slightly increase the contrast/brightness of single-airport location bubbles so they are easier to read while remaining visually dimmer than multi-airport co-location cluster bubbles.
 
-### Release v0.8.2
-- Banners
-  - Add update banner > look at the raw changlog github blob or whatever (or I could host something), and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page. Give me an honest opinion on this, and options. 
+### Release v0.8.2: Update & Announcement Banners
+- **Server-Side GitHub Sync & Settings Toggle**
+  - Perform server-side checks every 24 hours against `raw.githubusercontent.com/thebronway/FlightSentry/main/` (`CHANGELOG.md` and `.github/announcements.json`), caching results in SQLite with silent offline/air-gapped fallback.
+  - Add a toggle in **Settings → General** (enabled by default) to opt out of automatic 24-hour GitHub update/announcement checks, plus a manual **Check Now** button.
+- **Update Available Banner**
+  - Parse all `### Release vX.Y.Z` headings in `CHANGELOG.md`, resolve the maximum version using numeric SemVer (`major.minor.patch`) comparison, and compare against `package.json`.
+  - Show a top banner when an update is available with links to GitHub Release Notes and Docker Hub, along with **Dismiss for 24 hrs** and **Dismiss forever** (per version) stored in SQLite.
+  - Show an **Update available** badge and release/Docker links on the Application Version card in **Settings → General**, even after the top banner is dismissed.
+- **Announcement Banner (`.github/announcements.json`)**
+  - Validate `.github/announcements.json` via Zod supporting `id`, `active`, `severity` (`info` | `warning`), `title`, `message`, optional `linkUrl` / `linkText`, optional `expiresAt` (auto-hide after expiration date), and optional `maxVersion` (target instances running `<= maxVersion`).
+  - Render active, non-expired announcements as dismissible top banners and persist dismissed announcement IDs in SQLite.
 
 ### Release v0.8.5: Mobile Optimization
 - **Mobile Experience Optimization:**
