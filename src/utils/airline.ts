@@ -230,7 +230,10 @@ export function getOperatingAirlines(flight: {
     });
   }
   if (set.size === 0 && flight.airline) {
-    set.add(flight.airline.toUpperCase());
+    const upper = flight.airline.toUpperCase();
+    if (upper !== 'POINTS' && upper !== 'MANUAL') {
+      set.add(upper);
+    }
   }
   return Array.from(set).sort();
 }
@@ -266,7 +269,10 @@ export function getCurrentPriceAirline(flight: {
     }
   }
   if (flight.airline) {
-    return { code: flight.airline.toUpperCase(), flightNumber: null };
+    const upper = flight.airline.toUpperCase();
+    if (upper !== 'POINTS' && upper !== 'MANUAL') {
+      return { code: upper, flightNumber: null };
+    }
   }
   return null;
 }

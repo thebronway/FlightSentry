@@ -4,6 +4,7 @@ import { flightSchema } from '@/utils/validation';
 import { historyDb } from '@/db/history';
 import { settingsDb } from '@/db/settings';
 import { executeSearchStrategy } from '@/services/datasource';
+import { getDataSourceStatus } from '@/utils/airline';
 import { checkAndResetQuota } from '@/services/quota';
 import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
@@ -116,6 +117,13 @@ export async function POST(req: NextRequest) {
 
     // Trigger a live search on add for all flights to discover current market fare
     settings = checkAndResetQuota(settings);
+    const dsStatus = getDataSourceStatus(settings);
+    if (!dsStatus.available) {
+      return NextResponse.json(
+        { error: dsStatus.reason || 'No active data sources available. Enable Manual Mode or configure an active data source in Settings.' },
+        { status: 400 }
+      );
+    }
 
     const probeFlight = {
       id: 0,

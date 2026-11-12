@@ -42,17 +42,27 @@ export default function RouteSection({
     return null;
   }
 
-  const originInfo = getCoLocationInfo(origin);
-  const destInfo = getCoLocationInfo(destination);
+  const originInfo = isRouteWatch ? getCoLocationInfo(origin) : null;
+  const destInfo = isRouteWatch ? getCoLocationInfo(destination) : null;
+
+  const handleAirportInput = (raw: string, setter: (val: string) => void) => {
+    if (isRouteWatch) {
+      setter(raw.toUpperCase());
+    } else {
+      setter(raw.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase());
+    }
+  };
 
   return (
     <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
           Route & Airports
         </label>
         <span className="text-[11px] text-gunmetal-muted">
-          {isRouteWatch ? 'Origin and destination airport codes' : 'Customized route parameters'}
+          {isRouteWatch
+            ? 'Origin and destination airport or co-location codes'
+            : 'Single 3-letter IATA airport codes (use Route Alternatives below for co-location clusters)'}
         </span>
       </div>
 
@@ -81,10 +91,11 @@ export default function RouteSection({
           </label>
           <input
             required
-            maxLength={30}
+            maxLength={isRouteWatch ? 30 : 3}
+            pattern={isRouteWatch ? undefined : "[A-Za-z]{3}"}
             placeholder={isRouteWatch ? "e.g. DCA, WAS, or DFW, DAL" : "e.g. DCA"}
             value={origin}
-            onChange={e => onOriginChange(e.target.value.toUpperCase())}
+            onChange={e => handleAirportInput(e.target.value, onOriginChange)}
             className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
           />
           {originInfo && (
@@ -110,10 +121,11 @@ export default function RouteSection({
           </label>
           <input
             required
-            maxLength={30}
+            maxLength={isRouteWatch ? 30 : 3}
+            pattern={isRouteWatch ? undefined : "[A-Za-z]{3}"}
             placeholder={isRouteWatch ? "e.g. LAX, NYC, or MIA, FLL" : "e.g. LAX"}
             value={destination}
-            onChange={e => onDestinationChange(e.target.value.toUpperCase())}
+            onChange={e => handleAirportInput(e.target.value, onDestinationChange)}
             className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
           />
           {destInfo && (

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isMetroCode } from './coLocations';
 
 export const flightSchema = z.object({
   searchMode: z.enum(['Route', 'FlightNumber']),
@@ -47,6 +48,23 @@ export const flightSchema = z.object({
   maxTotalDurationMinutes: z.number().int().positive().optional().nullable(),
   includedAlliances: z.string().optional().nullable(),
   excludedAlliances: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.searchMode === 'FlightNumber' && data.monitorRouteAlternatives !== 1) {
+    if (data.origin && (!/^[A-Z]{3}$/.test(data.origin) || isMetroCode(data.origin))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['origin'],
+        message: 'Origin must be a single 3-letter IATA airport code unless monitoring route alternatives',
+      });
+    }
+    if (data.destination && (!/^[A-Z]{3}$/.test(data.destination) || isMetroCode(data.destination))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['destination'],
+        message: 'Destination must be a single 3-letter IATA airport code unless monitoring route alternatives',
+      });
+    }
+  }
 });
 
 export const flightStatusSchema = z.object({

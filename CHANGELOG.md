@@ -1,9 +1,19 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-11*  
-*Current Version: v0.8.0*
+*Last updated: 2026-11-12*  
+*Current Version: v0.8.1*
 
 ## Changelog
+
+### Release v0.8.1
+- Restricted manual Origin and Destination overrides in Watching Flight and Booked Flight modes to single 3-letter IATA airport codes on both client and Zod schema validation, limiting co-location clusters to Watching Route and Route Alternatives.
+- Kept the Dashboard Add Flight button enabled when data sources are paused, unconfigured, or exhausted, allowing Manual Mode and Points/Miles flight creation while blocking automated submissions until a source is active or Manual Mode is selected.
+- Set QuotaRibbon to collapsed by default with `localStorage` persistence and decomposed it into `QuotaRibbonHeader`, `QuotaCategorySummaryPill`, and `QuotaSourceCard`.
+- Added yellow (`>= 75%`) and red (`>= 95%`) quota threshold styling and remaining/exhausted indicators across QuotaRibbon and Data Sources settings.
+- Excluded paused sources from collapsed QuotaRibbon category totals, adding amber full-pause and partial-pause indicators with per-provider breakdown tooltips.
+- Updated QuotaRibbon touch targets to a 44px minimum and optimized layout for 375px+ mobile viewports.
+- Hid redundant airline badges next to points/miles currency badges on Manual Mode flight cards and condensed rows.
+- Increased contrast on single-airport location bubbles while keeping them visually dimmer than multi-airport co-location cluster bubbles.
 
 ### Release v0.8.0
 - Added `POST /api/settings/datasource-usage`, `manualUsageSchema`, and `settingsDb.adjustProviderUsage` to increment or set metered API query counts with `Manual` audit log entries.

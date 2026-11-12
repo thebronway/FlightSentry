@@ -39,6 +39,7 @@ export default function CondensedMobileCard({
   const isDrop = flight.currentPrice < benchmarkPrice;
   const delta = benchmarkPrice - flight.currentPrice;
   const isPast = flight.status === 'Past';
+  const isManualMode = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const currentPriceAirline = getCurrentPriceAirline(flight);
 
   return (
@@ -67,7 +68,7 @@ export default function CondensedMobileCard({
                 <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
               </span>
             )}
-            {!isPurchased && currentPriceAirline && (
+            {!isPurchased && !isManualMode && currentPriceAirline && (
               <AirlineBadge
                 code={currentPriceAirline.code}
                 flightNumber={currentPriceAirline.flightNumber}

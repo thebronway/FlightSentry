@@ -12,6 +12,7 @@ interface Props {
   fiatCurrency: string;
   pointsCurrencies: string[];
   isInitialFlight: boolean;
+  automatedUnavailable?: boolean;
   onTrackingTypeChange: (type: TrackingOption) => void;
   onPaymentTypeChange: (type: PaymentType) => void;
   onCurrencyChange: (currency: string) => void;
@@ -26,6 +27,7 @@ export default function TrackingModeSelector({
   fiatCurrency,
   pointsCurrencies,
   isInitialFlight,
+  automatedUnavailable = false,
   onTrackingTypeChange,
   onPaymentTypeChange,
   onCurrencyChange,
@@ -166,6 +168,9 @@ export default function TrackingModeSelector({
               <option value={fiatCurrency}>
                 {fiatCurrency} ({getCurrencySymbol(fiatCurrency)})
               </option>
+              {pointsCurrencies.length === 0 && (
+                <option value="PTS">PTS (Points)</option>
+              )}
               {pointsCurrencies.map(p => (
                 <option key={p} value={p}>
                   {p} (Points)
@@ -177,7 +182,13 @@ export default function TrackingModeSelector({
 
         {/* Manual Tracking Mode Toggle */}
         <div className="flex items-center">
-          <label className={`flex items-center gap-2 select-none ${paymentType === 'points' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <label className={`flex items-center gap-2 select-none px-2.5 py-1.5 rounded-lg border transition-colors ${
+            paymentType === 'points'
+              ? 'border-transparent opacity-60 cursor-not-allowed'
+              : automatedUnavailable && !isManual
+              ? 'border-amber-600/70 bg-amber-950/30 cursor-pointer'
+              : 'border-transparent cursor-pointer'
+          }`}>
             <input
               type="checkbox"
               disabled={paymentType === 'points'}
@@ -188,11 +199,15 @@ export default function TrackingModeSelector({
             <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <Wrench className="w-3.5 h-3.5 text-slate-400" />
               <span>Manual Tracking Mode</span>
-              {paymentType === 'points' && (
+              {paymentType === 'points' ? (
                 <span className="text-[10px] text-amber-400 font-normal">
                   (Locked for Points)
                 </span>
-              )}
+              ) : automatedUnavailable && !isManual ? (
+                <span className="text-[10px] text-amber-300 font-semibold">
+                  (Required while paused)
+                </span>
+              ) : null}
             </span>
           </label>
         </div>

@@ -295,20 +295,15 @@ export default function Dashboard() {
 
           <button 
             onClick={handleAddNew}
-            disabled={!dsStatus.available}
-            title={!dsStatus.available ? dsStatus.reason : 'Track New Flight'}
-            className={`h-[38px] border shadow-sm px-4 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
-              !dsStatus.available
-                ? 'bg-gunmetal-card border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
-                : 'bg-gunmetal-border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400'
-            }`}
+            title="Track New Flight"
+            className="h-[38px] border shadow-sm px-4 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors bg-gunmetal-border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Flight
           </button>
         </div>
       </div>
 
-      {/* Warning banner when Add Flight is disabled due to unconfigured or paused data sources */}
+      {/* Warning banner when data sources are unconfigured, paused, or exhausted */}
       {!dsStatus.available && (
         <div className="mb-6 p-4 rounded-lg bg-amber-950/30 border border-amber-800/60 flex items-start gap-3 text-amber-200 text-xs">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
@@ -321,7 +316,9 @@ export default function Dashboard() {
                   ? 'All Data Sources Paused'
                   : 'API Quotas Exhausted'}
               </span>
-              <span>{dsStatus.reason}</span>
+              <span>
+                {dsStatus.reason} Automated price checks are unavailable, though you can still add flights in Manual Mode or Points / Miles mode.
+              </span>
             </div>
             {dsStatus.allPaused ? (
               <button

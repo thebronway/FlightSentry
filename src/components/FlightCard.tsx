@@ -44,6 +44,7 @@ export default function FlightCard({
   const delta = benchmarkPrice - flight.currentPrice;
 
   const isFlightNumMode = flight.searchMode === 'FlightNumber' && Boolean(flight.flightNumber);
+  const isManualMode = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const operatingAirlines = useMemo(() => getOperatingAirlines(flight), [flight]);
   const currentPriceAirline = useMemo(() => getCurrentPriceAirline(flight), [flight]);
   const isPast = flight.status === 'Past';
@@ -113,7 +114,7 @@ export default function FlightCard({
                     <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
                   </span>
                 )}
-                {!isPurchased && currentPriceAirline && (
+                {!isPurchased && !isManualMode && currentPriceAirline && (
                   <AirlineBadge
                     code={currentPriceAirline.code}
                     flightNumber={currentPriceAirline.flightNumber}

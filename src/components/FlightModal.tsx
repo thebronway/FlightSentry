@@ -67,6 +67,7 @@ export default function FlightModal({
   const isBooked = formData.trackingType === 'flight_booked';
   const isRouteWatch = formData.trackingType === 'route_watch';
   const isFlightMode = formData.trackingType === 'flight_watch' || isBooked;
+  const isAutomatedSubmissionBlocked = !initialFlight && !dsStatus.available && !isPointsFlight && !formData.isManual;
   const isPurchasePriceLocked = Boolean(
     initialFlight &&
     (initialFlight.status === 'Booked' ||
@@ -99,13 +100,30 @@ export default function FlightModal({
             </div>
           )}
 
-          {!initialFlight && !dsStatus.available && !isPointsFlight && !formData.isManual && (
-            <div className="bg-amber-950/30 border border-amber-800/60 p-3.5 rounded-xl text-xs text-amber-200 flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-100 block mb-0.5">Automated Search Unavailable</span>
-                {dsStatus.reason}
+          {isAutomatedSubmissionBlocked && (
+            <div className="bg-amber-950/30 border border-amber-800/60 p-3.5 rounded-xl text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-amber-100 block mb-0.5">Automated Tracking Unavailable</span>
+                  <span>
+                    {dsStatus.reason} Select <strong>Manual Tracking Mode</strong> or <strong>Points / Miles</strong> below to add this flight manually, or activate a data source in Settings.
+                  </span>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() =>
+                  handleFieldChange({
+                    isManual: true,
+                    pauseTracking: true,
+                    showRouteDetails: isFlightMode ? true : formData.showRouteDetails,
+                  })
+                }
+                className="self-start sm:self-center flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-900/60 hover:bg-amber-800/70 border border-amber-600/70 text-amber-100 font-semibold transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Use Manual Mode
+              </button>
             </div>
           )}
 
@@ -118,10 +136,17 @@ export default function FlightModal({
             fiatCurrency={defaultSettings?.currency || 'USD'}
             pointsCurrencies={pointsList}
             isInitialFlight={Boolean(initialFlight)}
+            automatedUnavailable={!initialFlight && !dsStatus.available}
             onTrackingTypeChange={handleTrackingTypeChange}
             onPaymentTypeChange={handlePaymentTypeChange}
             onCurrencyChange={handleCurrencyChange}
-            onManualChange={val => handleFieldChange({ isManual: val, pauseTracking: val ? true : formData.pauseTracking })}
+            onManualChange={val =>
+              handleFieldChange({
+                isManual: val,
+                pauseTracking: val ? true : formData.pauseTracking,
+                showRouteDetails: val && isFlightMode ? true : formData.showRouteDetails,
+              })
+            }
           />
 
           {/* 2. Flight Details (Carrier & Flight #) for Flight Watch & Booked */}
@@ -318,13 +343,17 @@ export default function FlightModal({
 
         {/* Solid Footer: Placed outside the scrollable body so content can never bleed through */}
         <div className="bg-gunmetal-card border-t border-gunmetal-border px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 z-20 flex-shrink-0">
-          <div className="text-xs text-sky-400 flex items-center gap-1.5 font-medium">
-            {loading && !initialFlight && !isPointsFlight && !formData.isManual && (
-              <span className="flex items-center gap-2 animate-pulse">
+          <div className="text-xs flex items-center gap-1.5 font-medium">
+            {loading && !initialFlight && !isPointsFlight && !formData.isManual ? (
+              <span className="text-sky-400 flex items-center gap-2 animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-sky-400"></span>
                 Querying live fare data...
               </span>
-            )}
+            ) : isAutomatedSubmissionBlocked ? (
+              <span className="text-amber-300/90">
+                Enable Manual Mode, select Points / Miles, or activate a data source to submit.
+              </span>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -338,9 +367,10 @@ export default function FlightModal({
             <button
               form="flight-modal-form"
               type="submit"
-              disabled={loading || lookupFailed || (!initialFlight && !dsStatus.available && !isBooked && !isPointsFlight && !formData.isManual)}
+              disabled={loading || lookupFailed || isAutomatedSubmissionBlocked}
+              title={isAutomatedSubmissionBlocked ? 'Enable Manual Tracking Mode, select Points / Miles, or activate a data source in Settings to add a flight.' : undefined}
               className={`flex-1 sm:flex-none min-h-[44px] px-6 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 ${
-                loading || lookupFailed || (!initialFlight && !dsStatus.available && !isBooked && !isPointsFlight && !formData.isManual)
+                loading || lookupFailed || isAutomatedSubmissionBlocked
                   ? 'bg-gunmetal-card border border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
                   : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 cursor-pointer'
               }`}

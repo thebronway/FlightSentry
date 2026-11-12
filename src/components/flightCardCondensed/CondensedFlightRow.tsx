@@ -43,6 +43,7 @@ export default function CondensedFlightRow({
   const isDrop = flight.currentPrice < benchmarkPrice;
   const delta = benchmarkPrice - flight.currentPrice;
   const isPast = flight.status === 'Past';
+  const isManualMode = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const currentPriceAirline = getCurrentPriceAirline(flight);
 
   return (
@@ -93,7 +94,7 @@ export default function CondensedFlightRow({
           <span className="font-black text-slate-100">
             {formatCurrency(flight.currentPrice, flight.currency)}
           </span>
-          {!isPurchased && currentPriceAirline && (
+          {!isPurchased && !isManualMode && currentPriceAirline && (
             <AirlineBadge
               code={currentPriceAirline.code}
               flightNumber={currentPriceAirline.flightNumber}

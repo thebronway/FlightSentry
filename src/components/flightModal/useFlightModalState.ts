@@ -11,6 +11,7 @@ import {
 } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
 import { getDataSourceStatus } from '@/utils/airline';
+import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
 
 export type TrackingOption = 'route_watch' | 'flight_watch' | 'flight_booked';
@@ -141,7 +142,11 @@ export function useFlightModalState({
   }, [defaultSettings?.pointsCurrencies]);
 
   const isPointsFlight = useMemo(() => {
-    return formData.paymentType === 'points' || Boolean(formData.currency && pointsList.includes(formData.currency));
+    return (
+      formData.paymentType === 'points' ||
+      formData.currency === 'PTS' ||
+      Boolean(formData.currency && pointsList.includes(formData.currency))
+    );
   }, [formData.paymentType, formData.currency, pointsList]);
 
   // Route lookup for flight watching & booked flights
@@ -334,12 +339,25 @@ export function useFlightModalState({
     if (error) setError(null);
   }, [lookupFailed, error]);
 
+  const sanitizeSingleAirport = (code: string): string => {
+    const firstToken = code.split(',')[0]?.trim().toUpperCase() || '';
+    if (/^[A-Z]{3}$/.test(firstToken) && !isMetroCode(firstToken)) {
+      return firstToken;
+    }
+    return '';
+  };
+
   const handleTrackingTypeChange = useCallback((newType: TrackingOption) => {
-    setFormData(prev => ({
-      ...prev,
-      trackingType: newType,
-      showRouteDetails: newType === 'route_watch' ? true : prev.showRouteDetails,
-    }));
+    setFormData(prev => {
+      const restrictSingle = newType !== 'route_watch' && !prev.monitorRouteAlternatives;
+      return {
+        ...prev,
+        trackingType: newType,
+        showRouteDetails: newType === 'route_watch' ? true : prev.showRouteDetails,
+        origin: restrictSingle ? sanitizeSingleAirport(prev.origin) : prev.origin,
+        destination: restrictSingle ? sanitizeSingleAirport(prev.destination) : prev.destination,
+      };
+    });
   }, []);
 
   const handlePaymentTypeChange = useCallback((newPaymentType: PaymentType) => {
@@ -357,24 +375,32 @@ export function useFlightModalState({
         currency: nextCurrency,
         isManual: isPoints ? true : prev.isManual,
         pauseTracking: isPoints ? true : prev.pauseTracking,
+        showRouteDetails: isPoints && prev.trackingType !== 'route_watch' ? true : prev.showRouteDetails,
       };
     });
   }, [pointsList, defaultSettings]);
 
   const handleCurrencyChange = useCallback((newCurrency: string) => {
-    const isPoints = pointsList.includes(newCurrency);
+    const isPoints = newCurrency === 'PTS' || pointsList.includes(newCurrency);
     setFormData(prev => ({
       ...prev,
       currency: newCurrency,
       paymentType: isPoints ? 'points' : 'cash',
       isManual: isPoints ? true : prev.isManual,
       pauseTracking: isPoints ? true : prev.pauseTracking,
+      showRouteDetails: isPoints && prev.trackingType !== 'route_watch' ? true : prev.showRouteDetails,
     }));
   }, [pointsList]);
 
   const handleToggleRouteAlternatives = useCallback((enabled: boolean) => {
     setFormData(prev => {
       const updates: Partial<FlightFormState> = { monitorRouteAlternatives: enabled };
+      if (!enabled && prev.trackingType !== 'route_watch') {
+        const cleanOrigin = sanitizeSingleAirport(prev.origin);
+        const cleanDest = sanitizeSingleAirport(prev.destination);
+        updates.origin = cleanOrigin || detectedRoute?.origin || '';
+        updates.destination = cleanDest || detectedRoute?.destination || '';
+      }
       if (enabled && defaultSettings) {
         if (!prev.includedAirlines && defaultSettings.defaultIncludedAirlines) {
           updates.includedAirlines = defaultSettings.defaultIncludedAirlines;
@@ -391,7 +417,7 @@ export function useFlightModalState({
       }
       return { ...prev, ...updates };
     });
-  }, [defaultSettings]);
+  }, [defaultSettings, detectedRoute]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -451,8 +477,21 @@ export function useFlightModalState({
       }
     }
 
-    if (!initialFlight && !dsStatus.available && formData.trackingType !== 'flight_booked' && !isPointsFlight && !formData.isManual) {
-      setError(dsStatus.reason || 'No active data sources available. Please visit Settings.');
+    if (formData.trackingType !== 'route_watch' && !formData.monitorRouteAlternatives) {
+      const trimmedOrigin = formData.origin.trim().toUpperCase();
+      const trimmedDest = formData.destination.trim().toUpperCase();
+      if (trimmedOrigin && (!/^[A-Z]{3}$/.test(trimmedOrigin) || isMetroCode(trimmedOrigin))) {
+        setError('Origin must be a single 3-letter IATA airport code in Flight mode (enable "Also Monitor Route Alternatives" for co-location clusters).');
+        return;
+      }
+      if (trimmedDest && (!/^[A-Z]{3}$/.test(trimmedDest) || isMetroCode(trimmedDest))) {
+        setError('Destination must be a single 3-letter IATA airport code in Flight mode (enable "Also Monitor Route Alternatives" for co-location clusters).');
+        return;
+      }
+    }
+
+    if (!initialFlight && !dsStatus.available && !isPointsFlight && !formData.isManual) {
+      setError(`${dsStatus.reason || 'No active data sources available.'} Enable Manual Tracking Mode, switch to Points / Miles, or activate a data source in Settings.`);
       return;
     }
 

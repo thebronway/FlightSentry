@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronUp, ChevronDown, FileText, Plus } from 'lucide-react';
 import { calculateNextResetDate, formatOrdinalDay } from '@/utils/date';
+import { getQuotaThresholdLevel } from '@/components/quotaRibbon/types';
 import SettingsSelect from '../shared/SettingsSelect';
 
 export type MeteredProviderKey = 'serpapi' | 'searchapi' | 'hasdata';
@@ -63,6 +64,7 @@ export default function MeteredProviderCard({
 
   const remainingCount = monthlyQuota > 0 ? Math.max(0, monthlyQuota - usedCount) : null;
   const isExhausted = monthlyQuota > 0 && usedCount >= monthlyQuota;
+  const threshold = monthlyQuota > 0 ? getQuotaThresholdLevel(usedCount, monthlyQuota) : 'normal';
   const displayedUsage = usageDraft !== null ? usageDraft : String(usedCount);
 
   const commitUsageAdjustment = async (mode: 'increment' | 'set', value: number) => {
@@ -236,7 +238,15 @@ export default function MeteredProviderCard({
               Queries Used (Manual Adjustment)
             </label>
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-              <span className="text-slate-200 font-semibold">
+              <span
+                className={`font-semibold ${
+                  threshold === 'critical'
+                    ? 'text-red-400'
+                    : threshold === 'warning'
+                    ? 'text-yellow-300'
+                    : 'text-slate-200'
+                }`}
+              >
                 {usedCount} / {monthlyQuota === 0 ? 'Unlimited' : monthlyQuota} used
               </span>
               {remainingCount !== null && (
@@ -244,6 +254,10 @@ export default function MeteredProviderCard({
                   className={`px-2 py-0.5 rounded border text-[11px] font-semibold ${
                     isExhausted
                       ? 'bg-red-950/60 text-red-400 border-red-800/60'
+                      : threshold === 'critical'
+                      ? 'bg-red-950/50 text-red-300 border-red-500/70'
+                      : threshold === 'warning'
+                      ? 'bg-yellow-950/50 text-yellow-300 border-yellow-500/70'
                       : 'bg-gunmetal-card text-slate-300 border-gunmetal-border'
                   }`}
                 >

@@ -70,7 +70,7 @@ export default function FlightRouteDisplay({
                   </span>
                 </Tooltip>
               ) : (
-                <span className={`rounded font-mono font-bold shadow-sm bg-slate-900/80 border border-sky-900/50 text-slate-300 ${
+                <span className={`rounded font-mono font-bold shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
                   isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
                 }`}>
                   {originDisplay.code}
@@ -88,7 +88,7 @@ export default function FlightRouteDisplay({
                   </span>
                 </Tooltip>
               ) : (
-                <span className={`rounded font-mono font-bold shadow-sm bg-slate-900/80 border border-sky-900/50 text-slate-300 ${
+                <span className={`rounded font-mono font-bold shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
                   isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
                 }`}>
                   {destDisplay.code}
@@ -116,7 +116,7 @@ export default function FlightRouteDisplay({
             </span>
           </Tooltip>
         ) : (
-          <span className={`rounded font-mono shadow-sm bg-slate-900/80 border border-sky-900/50 text-slate-300 ${
+          <span className={`rounded font-mono shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
             isCondensed ? 'px-2 py-0.5 font-bold text-xs' : 'px-3 py-1 font-black text-lg rounded-lg'
           }`}>
             {originDisplay.code}
@@ -134,7 +134,7 @@ export default function FlightRouteDisplay({
             </span>
           </Tooltip>
         ) : (
-          <span className={`rounded font-mono shadow-sm bg-slate-900/80 border border-sky-900/50 text-slate-300 ${
+          <span className={`rounded font-mono shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
             isCondensed ? 'px-2 py-0.5 font-bold text-xs' : 'px-3 py-1 font-black text-lg rounded-lg'
           }`}>
             {destDisplay.code}

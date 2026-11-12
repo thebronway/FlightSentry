@@ -145,7 +145,7 @@ export default function FlightIdentitySection({
             className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
           />
           <span className="font-medium">
-            Specify route details manually (origin, destination, or co-location clusters)
+            Specify route details manually (origin &amp; destination airport)
           </span>
         </label>
       </div>
