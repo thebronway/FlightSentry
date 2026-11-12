@@ -34,9 +34,12 @@ export const checkSearchApiPrice = async (
       business: 'business',
       first: 'first_class',
     };
-    url.searchParams.append('travel_class', searchApiCabinMap[flight.cabinClass || 'economy'] || 'economy');
+    const resolvedCabin = searchApiCabinMap[flight.cabinClass || 'economy'] || 'economy';
+    url.searchParams.append('travel_class', resolvedCabin);
+    url.searchParams.append('show_hidden', 'true');
 
-    if (flight.fareTier === 'Standard') {
+    // SearchApi.io only supports exclude_basic_economy when travel_class is economy
+    if (flight.fareTier === 'Standard' && resolvedCabin === 'economy') {
       url.searchParams.append('exclude_basic_economy', 'true');
     }
 
@@ -53,18 +56,28 @@ export const checkSearchApiPrice = async (
         }
       }
 
-      if (flight.includedAirlines) {
-        const expandedIncluded = expandAlliancesToAirlines(flight.includedAirlines);
-        if (expandedIncluded.length > 0) {
-          url.searchParams.append('included_airlines', expandedIncluded.join(','));
+      const includeSet = new Set<string>([
+        ...expandAlliancesToAirlines(flight.includedAirlines),
+        ...expandAlliancesToAirlines(flight.includedAlliances),
+      ]);
+      if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
+        const normalizedTarget = normalizeAirlineCode(flight.airline);
+        if (normalizedTarget && normalizedTarget !== 'UN') {
+          includeSet.add(normalizedTarget);
         }
       }
-      if (flight.excludedAirlines) {
-        const expandedExcluded = expandAlliancesToAirlines(flight.excludedAirlines);
-        if (expandedExcluded.length > 0) {
-          url.searchParams.append('excluded_airlines', expandedExcluded.join(','));
-        }
+
+      const excludeSet = new Set<string>([
+        ...expandAlliancesToAirlines(flight.excludedAirlines),
+        ...expandAlliancesToAirlines(flight.excludedAlliances),
+      ]);
+
+      if (includeSet.size > 0) {
+        url.searchParams.append('included_airlines', Array.from(includeSet).join(','));
+      } else if (excludeSet.size > 0) {
+        url.searchParams.append('excluded_airlines', Array.from(excludeSet).join(','));
       }
+
       if (flight.excludedConnectingAirports) {
         url.searchParams.append('exclude_conns', flight.excludedConnectingAirports.replace(/\s+/g, ''));
       }
@@ -72,7 +85,10 @@ export const checkSearchApiPrice = async (
         url.searchParams.append('max_duration', String(flight.maxTotalDurationMinutes));
       }
     } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
-      url.searchParams.append('included_airlines', flight.airline.replace(/\s+/g, ''));
+      const normalizedTarget = normalizeAirlineCode(flight.airline, flight.flightNumber || undefined);
+      if (normalizedTarget && normalizedTarget !== 'UN') {
+        url.searchParams.append('included_airlines', normalizedTarget);
+      }
     }
 
     console.log(`[SearchApi] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
@@ -110,12 +126,28 @@ export const checkSearchApiPrice = async (
     console.log(`[SearchApi] Returned ${allFlights.length} itineraries (${bestFlights.length} best, ${otherFlights.length} other)`);
 
     if (allFlights.length === 0) {
+      if (data.error) {
+        const errStr = String(data.error);
+        if (errStr.toLowerCase().includes("hasn't returned any results") || errStr.toLowerCase().includes('no results')) {
+          return { price: null, status: 'SoldOut', errorMessage: `SearchApi.io: ${errStr}` };
+        }
+        return { price: null, status: 'Error', errorMessage: `SearchApi.io error: ${errStr}` };
+      }
       return { price: null, status: 'SoldOut', errorMessage: 'SearchApi.io returned 0 flight itineraries for this route and date' };
     }
 
+    const extractPrice = (raw: any): number => {
+      if (typeof raw === 'number' && !isNaN(raw) && raw > 0) return raw;
+      if (typeof raw === 'string') {
+        const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      return 0;
+    };
+
     // Parse and retain all structured competitor itineraries
     const parsedItineraries: RouteItinerary[] = allFlights
-      .filter((f: any) => typeof f.price === 'number' && f.price > 0)
+      .filter((f: any) => extractPrice(f.price) > 0)
       .map((f: any): RouteItinerary => {
         const firstLeg = f.flights?.[0] || {};
         const lastLeg = f.flights?.[f.flights.length - 1] || firstLeg;
@@ -146,7 +178,7 @@ export const checkSearchApiPrice = async (
           flightNumber: flightNum,
           origin: legOrigin,
           destination: legDestination,
-          price: f.price,
+          price: extractPrice(f.price),
           departureTime: firstLeg.departure_airport?.time,
           arrivalTime: lastLeg.arrival_airport?.time,
           duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
@@ -176,21 +208,22 @@ export const checkSearchApiPrice = async (
         });
       });
 
-      if (targetFlight && typeof targetFlight.price === 'number') {
+      const targetPrice = targetFlight ? extractPrice(targetFlight.price) : 0;
+      if (targetFlight && targetPrice > 0) {
         let alternatives: RouteItinerary[] | undefined = undefined;
         if (flight.monitorRouteAlternatives === 1) {
           alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
           if (flight.includedAirlines) {
-            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const included = expandAlliancesToAirlines(flight.includedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
           }
           if (flight.excludedAirlines) {
-            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
           }
         }
         return {
-          price: targetFlight.price,
+          price: targetPrice,
           status: 'Success',
           leadingAirline: targetCode,
           leadingFlightNumber: flight.flightNumber,
@@ -198,14 +231,22 @@ export const checkSearchApiPrice = async (
         };
       }
 
-      return { price: null, status: 'SoldOut' };
+      const fnMsg = `SearchApi.io returned ${allFlights.length} itineraries, but flight ${targetCode} ${targetNum} was not found`;
+      console.warn(`[SearchApi] ${fnMsg}`);
+      return { price: null, status: 'SoldOut', errorMessage: fnMsg };
     }
 
     // Route Mode: filter candidates according to airline inclusion/exclusion criteria
     let candidates: RouteItinerary[] = parsedItineraries;
     if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
+      const targetCode = normalizeAirlineCode(flight.airline);
       const target = flight.airline.toLowerCase();
-      candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
+      candidates = candidates.filter(
+        (it: RouteItinerary) =>
+          it.airline === targetCode ||
+          it.airline.toLowerCase() === target ||
+          (it.airlineName?.toLowerCase().includes(target) ?? false)
+      );
     }
     if (flight.includedAirlines) {
       const included = expandAlliancesToAirlines(flight.includedAirlines);
@@ -232,7 +273,9 @@ export const checkSearchApiPrice = async (
       };
     }
 
-    return { price: null, status: 'SoldOut', errorMessage: 'No flight itineraries found for this route and date' };
+    const filterSummary = `SearchApi.io returned ${parsedItineraries.length} priced itineraries, but 0 matched filters (airline=${flight.airline || 'ALL'}, included=${flight.includedAirlines || 'none'}, excluded=${flight.excludedAirlines || 'none'}, alliances=${flight.includedAlliances || 'none'}, maxStops=${flight.maxStops ?? 'any'}, window=${flight.earliestDeparture || '*'}-${flight.latestDeparture || '*'}, noRedeye=${flight.noRedeye ?? 0})`;
+    console.warn(`[SearchApi] ${filterSummary}`);
+    return { price: null, status: 'SoldOut', errorMessage: filterSummary };
   } catch (error: any) {
     const msg = error?.message || 'Network exception calling SearchApi.io';
     console.error("[SearchApi] Exception during request:", msg);

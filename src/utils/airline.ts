@@ -4,9 +4,9 @@ import { AIRLINE_NAMES, BRAND_COLORS, AIRLINE_THEMES, AIRLINE_ALIASES, getAirlin
 export function normalizeAirlineCode(rawNameOrCode: string, rawFlightNum?: string): string {
   if (!rawNameOrCode && !rawFlightNum) return 'UN';
 
-  // 1. Check if flight number string starts with a 2-character carrier code (e.g. "DL 523", "B6 142")
+  // 1. Check if flight number string starts with a 2-character carrier code containing at least one letter (e.g. "DL 523", "B6 142")
   if (rawFlightNum) {
-    const match = rawFlightNum.trim().match(/^([A-Z0-9]{2})\s*\d+/i);
+    const match = rawFlightNum.trim().match(/^((?:[A-Z]{2}|[A-Z]\d|\d[A-Z]))\s*\d+/i);
     if (match) return match[1].toUpperCase();
   }
 

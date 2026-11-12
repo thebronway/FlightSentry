@@ -1,6 +1,6 @@
 import { Flight, RouteItinerary } from '../types';
 import { DataSourceResult } from './datasource';
-import { getFlights, createQuery, Passengers } from 'fast-flights-ts';
+import { fetchFlightsHtml, parse, createQuery, Passengers, Integration, CaptchaError, HttpError, type Query, type IntegrationOptions } from 'fast-flights-ts';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToAirportList } from '../utils/coLocations';
@@ -43,6 +43,114 @@ const formatSimpleDatetime = (dt: any): string | undefined => {
   return undefined;
 };
 
+class GoogleFlightsHtmlIntegration extends Integration {
+  async fetchHtml(q: Query | string, opts?: IntegrationOptions): Promise<string> {
+    const targetUrl = typeof q === 'string' ? q : q.url();
+    const res = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Cookie: 'SOCS=CAESHAgBEhJnd3NfMjAyMzA4MTAtMF9SQzIaAmVuIAEaBgiAo_CmBg; CONSENT=YES+cb.20210720-07-p0.en+FX+410',
+      },
+      signal: opts?.signal ?? AbortSignal.timeout(opts?.timeout ?? 15000),
+    });
+
+    const html = await res.text();
+
+    if (
+      res.status === 429 ||
+      res.url.includes('consent.google.com') ||
+      html.includes('unusual traffic') ||
+      html.includes('/sorry/index')
+    ) {
+      throw new CaptchaError(html.length);
+    }
+
+    if (!res.ok) {
+      throw new HttpError(res.status, html.length, `Google Flights HTTP ${res.status}`);
+    }
+
+    return html;
+  }
+}
+
+const googleFlightsHtmlIntegration = new GoogleFlightsHtmlIntegration();
+
+const parseDs1Itineraries = (html: string): any[] => {
+  const classMarker = 'class="ds:1"';
+  const classIdx = html.indexOf(classMarker);
+  if (classIdx !== -1) {
+    const tagClose = html.indexOf('>', classIdx + classMarker.length);
+    const endIdx = tagClose !== -1 ? html.indexOf('</script>', tagClose + 1) : -1;
+    if (tagClose !== -1 && endIdx !== -1) {
+      const js = html.slice(tagClose + 1, endIdx);
+      const dataIdx = js.indexOf('data:');
+      const lastComma = js.lastIndexOf(',');
+      if (dataIdx !== -1 && lastComma > dataIdx + 5) {
+        try {
+          const payload = JSON.parse(js.slice(dataIdx + 5, lastComma));
+          if (Array.isArray(payload)) {
+            const rawBuckets = [
+              ...(Array.isArray(payload[2]?.[0]) ? payload[2][0] : []),
+              ...(Array.isArray(payload[3]?.[0]) ? payload[3][0] : []),
+            ];
+            const parsed: any[] = [];
+            for (const k of rawBuckets) {
+              const flightArr = k?.[0];
+              if (!Array.isArray(flightArr)) continue;
+              const price = k?.[1]?.[0]?.[1] ?? 0;
+              const airlineNames = Array.isArray(flightArr[1]) ? flightArr[1] : [];
+              const rawLegs = Array.isArray(flightArr[2]) ? flightArr[2] : [];
+              const legs = rawLegs
+                .filter((sf: any) => Array.isArray(sf))
+                .map((sf: any) => {
+                  const carrierInfo = Array.isArray(sf[22]) ? sf[22] : [];
+                  const legCarrierCode = typeof carrierInfo[0] === 'string' ? carrierInfo[0].trim() : '';
+                  const legFlightNum = carrierInfo[1] !== undefined && carrierInfo[1] !== null ? String(carrierInfo[1]).trim() : '';
+                  const legCarrierName = typeof carrierInfo[3] === 'string' ? carrierInfo[3].trim() : '';
+                  return {
+                    airline: legCarrierCode || legCarrierName || airlineNames[0] || '',
+                    flight_number: legFlightNum,
+                    from_airport: { code: sf[3] ?? '', name: sf[4] ?? '' },
+                    to_airport: { code: sf[6] ?? '', name: sf[5] ?? '' },
+                    departure: {
+                      date: sf[20] ?? [0, 0, 0],
+                      time: [sf[8]?.[0] ?? 0, sf[8]?.[1] ?? 0],
+                    },
+                    arrival: {
+                      date: sf[21] ?? [0, 0, 0],
+                      time: [sf[10]?.[0] ?? 0, sf[10]?.[1] ?? 0],
+                    },
+                    duration: typeof sf[11] === 'number' ? sf[11] : 0,
+                    plane_type: sf[17] ?? '',
+                  };
+                });
+
+              parsed.push({
+                type: flightArr[0] ?? '',
+                price,
+                airlines: airlineNames,
+                total_duration: typeof flightArr[9] === 'number' ? flightArr[9] : undefined,
+                flights: legs,
+              });
+            }
+            if (parsed.length > 0) {
+              return parsed;
+            }
+          }
+        } catch {
+          // Fall back to fast-flights-ts built-in parser
+        }
+      }
+    }
+  }
+
+  return Array.from(parse(html));
+};
+
 export const checkFastFlightsPrice = async (
   flight: Flight,
   currency: string = 'USD'
@@ -80,10 +188,18 @@ export const checkFastFlightsPrice = async (
             trip: 'one-way',
             passengers: new Passengers({ adults: 1 }),
             max_stops: flight.searchMode === 'Route' && flight.maxStops !== undefined && flight.maxStops !== null ? flight.maxStops : undefined,
+            language: 'en-US',
             currency: (currency || 'USD') as any,
           });
 
-          const legResults = await getFlights(query);
+          const html = await fetchFlightsHtml(query, {
+            integration: googleFlightsHtmlIntegration,
+            timeout: 15000,
+            maxRetries: 1,
+            retryDelay: 2000,
+          });
+          const legResults = parseDs1Itineraries(html);
+          console.log(`[FastFlights] Pair ${fromAirport} -> ${toAirport} returned ${legResults.length} itineraries`);
           if (Array.isArray(legResults) && legResults.length > 0) {
             results.push(...legResults);
           }
@@ -109,6 +225,13 @@ export const checkFastFlightsPrice = async (
             price: null,
             status: 'RateLimited',
             errorMessage: `Google Flights anti-bot / CAPTCHA challenge detected (${pairErrors[0]})`,
+          };
+        }
+        if (sampleError.includes('missing flight data at') || sampleError.includes('rpc response missing')) {
+          return {
+            price: null,
+            status: 'Error',
+            errorMessage: `Google Flights RPC response missing flight payload (${pairErrors[0]})`,
           };
         }
         return {
@@ -152,7 +275,14 @@ export const checkFastFlightsPrice = async (
             }).filter((c: string) => c.length === 3)
           : undefined;
 
-        const durationMins = typeof f.total_duration === 'number' ? f.total_duration : undefined;
+        const summedLegMins = Array.isArray(f.flights)
+          ? f.flights.reduce((sum: number, leg: any) => sum + (typeof leg.duration === 'number' ? leg.duration : 0), 0)
+          : 0;
+        const durationMins = typeof f.total_duration === 'number'
+          ? f.total_duration
+          : summedLegMins > 0
+          ? summedLegMins
+          : undefined;
 
         return {
           airline: code,
@@ -180,16 +310,16 @@ export const checkFastFlightsPrice = async (
         const apiAirlineCodes = (f.airlines || []).map((a: string) => normalizeAirlineCode(a, ''));
         const hasAirline = targetCode ? apiAirlineCodes.includes(targetCode) : true;
 
-        const legNums = (f.flights || [])
-          .map((leg: any) => {
-            const rawNum = (leg.flight_number || leg.flightNumber || '').toString();
-            const legCode = normalizeAirlineCode(leg.airline || '', rawNum);
-            return cleanFlightNumber(rawNum, legCode);
-          })
-          .filter(Boolean);
-
-        const hasFlightNumber = legNums.includes(targetNum);
-        return hasAirline && (legNums.length === 0 || hasFlightNumber);
+        const legs = f.flights || [];
+        return legs.some((leg: any) => {
+          const rawNum = (leg.flight_number || leg.flightNumber || '').toString();
+          const legCode = normalizeAirlineCode(leg.airline || '', rawNum);
+          const legNum = cleanFlightNumber(rawNum, legCode);
+          const matchesAirline = targetCode
+            ? (legCode === targetCode || (legCode === 'UN' && hasAirline))
+            : true;
+          return matchesAirline && legNum === targetNum;
+        });
       });
 
       if (targetFlight && typeof targetFlight.price === 'number') {
@@ -197,11 +327,11 @@ export const checkFastFlightsPrice = async (
         if (flight.monitorRouteAlternatives === 1) {
           alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
           if (flight.includedAirlines) {
-            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const included = expandAlliancesToAirlines(flight.includedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
           }
           if (flight.excludedAirlines) {
-            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
           }
         }
@@ -213,14 +343,24 @@ export const checkFastFlightsPrice = async (
           itineraries: alternatives,
         };
       }
-      return { price: null, status: 'SoldOut' };
+      return {
+        price: null,
+        status: 'SoldOut',
+        errorMessage: `Fast-Flights returned ${results.length} itineraries, but flight ${targetCode} ${targetNum} was not found`,
+      };
     }
 
     // 2. Route Mode: candidate filtering
     let candidates: RouteItinerary[] = parsedItineraries;
     if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
+      const targetCode = normalizeAirlineCode(flight.airline);
       const target = flight.airline.toLowerCase();
-      candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
+      candidates = candidates.filter(
+        (it: RouteItinerary) =>
+          it.airline === targetCode ||
+          it.airline.toLowerCase() === target ||
+          (it.airlineName?.toLowerCase().includes(target) ?? false)
+      );
     }
     if (flight.includedAirlines) {
       const included = expandAlliancesToAirlines(flight.includedAirlines);

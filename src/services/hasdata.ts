@@ -36,7 +36,13 @@ export const checkHasDataPrice = async (
       business: 'business',
       first: 'first',
     };
-    url.searchParams.append('travelClass', travelClassMap[flight.cabinClass || 'economy'] || 'economy');
+    const resolvedCabin = travelClassMap[flight.cabinClass || 'economy'] || 'economy';
+    url.searchParams.append('travelClass', resolvedCabin);
+    url.searchParams.append('showHidden', 'true');
+
+    if (flight.fareTier === 'Standard' && resolvedCabin === 'economy') {
+      url.searchParams.append('bags', '1');
+    }
 
     if (flight.searchMode === 'Route') {
       if (flight.maxStops !== undefined && flight.maxStops !== null) {
@@ -51,17 +57,29 @@ export const checkHasDataPrice = async (
         }
       }
 
-      if (flight.includedAirlines) {
-        const expandedIncluded = expandAlliancesToAirlines(flight.includedAirlines);
-        if (expandedIncluded.length > 0) {
-          url.searchParams.append('includeAirlines', expandedIncluded.join(','));
-        }
-      } else if (flight.excludedAirlines) {
-        const expandedExcluded = expandAlliancesToAirlines(flight.excludedAirlines);
-        if (expandedExcluded.length > 0) {
-          url.searchParams.append('excludeAirlines', expandedExcluded.join(','));
+      const includeSet = new Set<string>([
+        ...expandAlliancesToAirlines(flight.includedAirlines),
+        ...expandAlliancesToAirlines(flight.includedAlliances),
+      ]);
+      if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
+        const normalizedTarget = normalizeAirlineCode(flight.airline);
+        if (normalizedTarget && normalizedTarget !== 'UN') {
+          includeSet.add(normalizedTarget);
         }
       }
+
+      const excludeSet = new Set<string>([
+        ...expandAlliancesToAirlines(flight.excludedAirlines),
+        ...expandAlliancesToAirlines(flight.excludedAlliances),
+      ]);
+
+      // HasData prohibits combining includeAirlines and excludeAirlines
+      if (includeSet.size > 0) {
+        url.searchParams.append('includeAirlines', Array.from(includeSet).join(','));
+      } else if (excludeSet.size > 0) {
+        url.searchParams.append('excludeAirlines', Array.from(excludeSet).join(','));
+      }
+
       if (flight.excludedConnectingAirports) {
         url.searchParams.append('excludeConnections', flight.excludedConnectingAirports.replace(/\s+/g, ''));
       }
@@ -69,7 +87,10 @@ export const checkHasDataPrice = async (
         url.searchParams.append('maxDuration', String(flight.maxTotalDurationMinutes));
       }
     } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
-      url.searchParams.append('includeAirlines', flight.airline.replace(/\s+/g, ''));
+      const normalizedTarget = normalizeAirlineCode(flight.airline, flight.flightNumber || undefined);
+      if (normalizedTarget && normalizedTarget !== 'UN') {
+        url.searchParams.append('includeAirlines', normalizedTarget);
+      }
     }
 
     console.log(`[HasData] Querying ${flight.origin} -> ${flight.destination} on ${flight.departureDate}`);
@@ -105,12 +126,42 @@ export const checkHasDataPrice = async (
     console.log(`[HasData] Returned ${allFlights.length} itineraries`);
 
     if (allFlights.length === 0) {
+      if (data.error) {
+        const errStr = String(data.error);
+        if (errStr.toLowerCase().includes('returned no flights') || errStr.toLowerCase().includes('no results')) {
+          return { price: null, status: 'SoldOut', errorMessage: `HasData: ${errStr}` };
+        }
+        return { price: null, status: 'Error', errorMessage: `HasData error: ${errStr}` };
+      }
       return { price: null, status: 'SoldOut', errorMessage: 'HasData returned 0 flight itineraries for this route and date' };
     }
 
+    const extractPrice = (raw: any): number => {
+      if (typeof raw === 'number' && !isNaN(raw) && raw > 0) return raw;
+      if (typeof raw === 'string') {
+        const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''));
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      return 0;
+    };
+
+    const isBasicFareTagged = (f: any): boolean => {
+      const topExt = Array.isArray(f.extensions) ? f.extensions.join(' ') : '';
+      const legExt = Array.isArray(f.flights)
+        ? f.flights.flatMap((leg: any) => (Array.isArray(leg.extensions) ? leg.extensions : [])).join(' ')
+        : '';
+      const combined = `${topExt} ${legExt} ${f.fareClass || ''} ${f.fare_class || ''}`.toLowerCase();
+      return combined.includes('basic economy') || combined.includes('saver fare') || /\bsaver\b/.test(combined);
+    };
+
+    const tierFilteredFlights =
+      flight.fareTier === 'Standard' && resolvedCabin === 'economy'
+        ? allFlights.filter((f: any) => !isBasicFareTagged(f))
+        : allFlights;
+
     // Parse and retain all structured competitor itineraries
-    const parsedItineraries: RouteItinerary[] = allFlights
-      .filter((f: any) => typeof f.price === 'number' && f.price > 0)
+    const parsedItineraries: RouteItinerary[] = tierFilteredFlights
+      .filter((f: any) => extractPrice(f.price) > 0)
       .map((f: any): RouteItinerary => {
         const firstLeg = f.flights?.[0] || {};
         const lastLeg = f.flights?.[f.flights.length - 1] || firstLeg;
@@ -150,7 +201,7 @@ export const checkHasDataPrice = async (
           flightNumber: flightNum || undefined,
           origin: legOrigin,
           destination: legDestination,
-          price: f.price,
+          price: extractPrice(f.price),
           departureTime: depTime,
           arrivalTime: arrTime,
           duration: durationMins ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m` : undefined,
@@ -179,21 +230,22 @@ export const checkHasDataPrice = async (
         });
       });
 
-      if (targetFlight && typeof targetFlight.price === 'number') {
+      const targetPrice = targetFlight ? extractPrice(targetFlight.price) : 0;
+      if (targetFlight && targetPrice > 0) {
         let alternatives: RouteItinerary[] | undefined = undefined;
         if (flight.monitorRouteAlternatives === 1) {
           alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
           if (flight.includedAirlines) {
-            const included = flight.includedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const included = expandAlliancesToAirlines(flight.includedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
           }
           if (flight.excludedAirlines) {
-            const excluded = flight.excludedAirlines.split(',').map(s => s.trim().toUpperCase());
+            const excluded = expandAlliancesToAirlines(flight.excludedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => !excluded.includes(it.airline));
           }
         }
         return {
-          price: targetFlight.price,
+          price: targetPrice,
           status: 'Success',
           leadingAirline: targetCode,
           leadingFlightNumber: flight.flightNumber,
@@ -201,14 +253,22 @@ export const checkHasDataPrice = async (
         };
       }
 
-      return { price: null, status: 'SoldOut' };
+      const fnMsg = `HasData returned ${allFlights.length} itineraries, but flight ${targetCode} ${targetNum} was not found`;
+      console.warn(`[HasData] ${fnMsg}`);
+      return { price: null, status: 'SoldOut', errorMessage: fnMsg };
     }
 
     // Route Mode: filter candidates according to airline inclusion/exclusion criteria
     let candidates: RouteItinerary[] = parsedItineraries;
     if (flight.airline && flight.airline.toUpperCase() !== 'ALL') {
+      const targetCode = normalizeAirlineCode(flight.airline);
       const target = flight.airline.toLowerCase();
-      candidates = candidates.filter((it: RouteItinerary) => it.airline.toLowerCase() === target || (it.airlineName?.toLowerCase().includes(target) ?? false));
+      candidates = candidates.filter(
+        (it: RouteItinerary) =>
+          it.airline === targetCode ||
+          it.airline.toLowerCase() === target ||
+          (it.airlineName?.toLowerCase().includes(target) ?? false)
+      );
     }
     if (flight.includedAirlines) {
       const included = expandAlliancesToAirlines(flight.includedAirlines);
@@ -235,7 +295,9 @@ export const checkHasDataPrice = async (
       };
     }
 
-    return { price: null, status: 'SoldOut' };
+    const filterSummary = `HasData returned ${parsedItineraries.length} priced itineraries, but 0 matched filters (airline=${flight.airline || 'ALL'}, included=${flight.includedAirlines || 'none'}, excluded=${flight.excludedAirlines || 'none'}, alliances=${flight.includedAlliances || 'none'}, maxStops=${flight.maxStops ?? 'any'}, window=${flight.earliestDeparture || '*'}-${flight.latestDeparture || '*'}, noRedeye=${flight.noRedeye ?? 0})`;
+    console.warn(`[HasData] ${filterSummary}`);
+    return { price: null, status: 'SoldOut', errorMessage: filterSummary };
   } catch (error: any) {
     const msg = error?.message || String(error);
     console.error('[HasData] Request exception:', msg);

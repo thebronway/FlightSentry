@@ -39,17 +39,21 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     return false;
   }) as ('fastflights')[];
 
+  const serpKey = (settings.serpApiKey || '').trim();
+  const searchKey = (settings.searchApiKey || '').trim();
+  const hasdataKey = (settings.hasdataApiKey || '').trim();
+
   const activeMetered = configuredOrder.filter(api => {
     if (api === 'serpapi') {
-      return isEnabled(settings.serpApiEnabled) && !isPaused(settings.serpApiPaused) && Boolean(settings.serpApiKey) &&
+      return isEnabled(settings.serpApiEnabled) && !isPaused(settings.serpApiPaused) && Boolean(serpKey) &&
         (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
     }
     if (api === 'searchapi') {
-      return isEnabled(settings.searchApiEnabled) && !isPaused(settings.searchApiPaused) && Boolean(settings.searchApiKey) &&
+      return isEnabled(settings.searchApiEnabled) && !isPaused(settings.searchApiPaused) && Boolean(searchKey) &&
         (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
     }
     if (api === 'hasdata') {
-      return isEnabled(settings.hasdataEnabled) && !isPaused(settings.hasdataPaused) && Boolean(settings.hasdataApiKey) &&
+      return isEnabled(settings.hasdataEnabled) && !isPaused(settings.hasdataPaused) && Boolean(hasdataKey) &&
         (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
     }
     return false;
@@ -57,7 +61,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
   console.log(`[Router] Active Unmetered/Scrapers: [${activeUnmetered.join(', ')}] | Active Metered: [${activeMetered.join(', ')}]`);
   if (activeMetered.length === 0) {
-    console.log(`[Router] Metered breakdown: SerpAPI(enabled=${isEnabled(settings.serpApiEnabled)}, hasKey=${Boolean(settings.serpApiKey)}), SearchApi(enabled=${isEnabled(settings.searchApiEnabled)}, hasKey=${Boolean(settings.searchApiKey)}), HasData(enabled=${isEnabled(settings.hasdataEnabled)}, hasKey=${Boolean(settings.hasdataApiKey)})`);
+    console.log(`[Router] Metered breakdown: SerpAPI(enabled=${isEnabled(settings.serpApiEnabled)}, paused=${isPaused(settings.serpApiPaused)}, hasKey=${Boolean(serpKey)}, used=${settings.serpApiUsed}/${settings.serpApiQuota}), SearchApi(enabled=${isEnabled(settings.searchApiEnabled)}, paused=${isPaused(settings.searchApiPaused)}, hasKey=${Boolean(searchKey)}, used=${settings.searchApiUsed}/${settings.searchApiQuota}), HasData(enabled=${isEnabled(settings.hasdataEnabled)}, paused=${isPaused(settings.hasdataPaused)}, hasKey=${Boolean(hasdataKey)}, used=${settings.hasdataUsed}/${settings.hasdataQuota})`);
   }
 
   const executeProvider = async (strategy: DataSourceProvider): Promise<DataSourceResult> => {
@@ -76,12 +80,12 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
     try {
       const activeCurrency = settings.currency || 'USD';
-      if (strategy === 'serpapi' && settings.serpApiKey) {
-        result = { ...(await querySerpApi(flight, settings.serpApiKey, activeCurrency)), sourceUsed: strategy };
-      } else if (strategy === 'searchapi' && settings.searchApiKey) {
-        result = { ...(await querySearchApi(flight, settings.searchApiKey, activeCurrency)), sourceUsed: strategy };
-      } else if (strategy === 'hasdata' && settings.hasdataApiKey) {
-        result = { ...(await queryHasData(flight, settings.hasdataApiKey, activeCurrency)), sourceUsed: strategy };
+      if (strategy === 'serpapi' && serpKey) {
+        result = { ...(await querySerpApi(flight, serpKey, activeCurrency)), sourceUsed: strategy };
+      } else if (strategy === 'searchapi' && searchKey) {
+        result = { ...(await querySearchApi(flight, searchKey, activeCurrency)), sourceUsed: strategy };
+      } else if (strategy === 'hasdata' && hasdataKey) {
+        result = { ...(await queryHasData(flight, hasdataKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'fastflights') {
         result = { ...(await queryFastFlights(flight, activeCurrency)), sourceUsed: strategy };
       }
@@ -171,7 +175,11 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   // 3. Fall back to Metered APIs if unmetered failed or none were active
   if (activeMetered.length === 0) {
     console.warn(`[Router] No metered strategies eligible or available to run.`);
-    return { price: null, status: 'Error' };
+    return {
+      price: null,
+      status: 'Error',
+      errorMessage: 'No eligible metered API providers available (check enabled state, pause status, API key, and monthly quota)',
+    };
   }
 
   // Determine execution order across metered providers
@@ -203,15 +211,19 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   }
 
   // 4. Execute Metered Providers with Failover
+  let lastErrorMessage: string | null = null;
   for (const strategy of orderedMetered) {
     const result = await executeProvider(strategy);
     if (result.status === 'Success' || result.status === 'SoldOut') {
       return result;
+    }
+    if (result.errorMessage) {
+      lastErrorMessage = result.errorMessage;
     }
     if (result.status === 'RateLimited') {
       console.warn(`[Router] Rate limit detected on ${strategy}. Failing over to next provider.`);
     }
   }
 
-  return { price: null, status: 'Error' };
+  return { price: null, status: 'Error', errorMessage: lastErrorMessage || 'All active metered providers failed' };
 };
