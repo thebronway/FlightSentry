@@ -9,8 +9,6 @@ This document tracks planned improvements, enhancements, and technical debt for 
 ## Release Roadmap
 
 ### Release v0.8.0: Settings
-- Banners
-  - Add update banner > look at the raw changlog github blob or whatever (or I could host something), and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page. Give me an honest opinion on this, and options. 
 - Data Sources
   - Add a way to manually log a used query, for example, if I use an api manually for soemthing else or whatever, I need to update that count somehow, so it activetly reflect the correct api upsage left. It will be done from the data soruces page. maybe the easiest would be just to add a manual adjustment of the queries used. 
   - When opening logs for a data source, the background is faded, but the top 1/4 inch is not
@@ -29,6 +27,10 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Flight Card
   - Manual Mode, points, sometimes it says airline next to miles currency. It should not. (I think it shows it if its watching a route, but for manual mode, lets not include it)
   - Blue of single airport is a little too blue dim, it needs to be dimmer that the multi airport, but just need to adjust slightly.
+
+### Release v0.8.2
+- Banners
+  - Add update banner > look at the raw changlog github blob or whatever (or I could host something), and if version is less than what the max version in the doc is, show a banner with there is an update available. Link to github release notes, docker and a dissmiss for 24 hrs, and a dismiss forever. check should be done every 24 hrs. update availble links on the app version page. Give me an honest opinion on this, and options. 
 
 ### Release v0.8.5: Mobile Optimization
 - **Mobile Experience Optimization:**

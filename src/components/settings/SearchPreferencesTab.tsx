@@ -150,7 +150,7 @@ export default function SearchPreferencesTab({
               <select
                 value={cabinClass}
                 onChange={e => handleCabinClassChange(e.target.value as CabinClass)}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+                className="w-full min-h-[44px] appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 <option value="economy">Economy</option>
                 <option value="premium_economy">Premium Economy</option>
@@ -172,7 +172,7 @@ export default function SearchPreferencesTab({
               <select
                 value={fareTier}
                 onChange={e => handleFareTierChange(e.target.value as FareTier)}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+                className="w-full min-h-[44px] appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 <option value="Standard">Standard (No Basic Economy)</option>
                 <option value="Basic Economy">Basic Economy / Unbundled</option>
@@ -201,7 +201,7 @@ export default function SearchPreferencesTab({
               <select
                 value={maxStops !== null && maxStops !== undefined ? String(maxStops) : ''}
                 onChange={e => handleMaxStopsChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+                className="w-full min-h-[44px] appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 <option value="">Any (No Stop Limit)</option>
                 <option value="0">Nonstop Only (0 Stops)</option>
@@ -219,7 +219,7 @@ export default function SearchPreferencesTab({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Default Redeye Filter
             </label>
-            <div className="p-3 rounded-md bg-gunmetal-canvas border border-gunmetal-border flex items-center justify-between">
+            <label className="min-h-[44px] p-3 rounded-md bg-gunmetal-canvas border border-gunmetal-border flex items-center justify-between gap-3 cursor-pointer select-none">
               <div>
                 <span className="text-xs font-semibold text-slate-200 block">
                   Exclude Redeye Flights
@@ -232,9 +232,9 @@ export default function SearchPreferencesTab({
                 type="checkbox"
                 checked={noRedeye}
                 onChange={e => handleNoRedeyeToggle(e.target.checked)}
-                className="w-4 h-4 accent-slate-500 rounded cursor-pointer ml-3 flex-shrink-0"
+                className="w-5 h-5 sm:w-4 sm:h-4 accent-slate-500 rounded cursor-pointer flex-shrink-0"
               />
-            </div>
+            </label>
           </div>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function SearchPreferencesTab({
               <select
                 value={settings.defaultMaxLayoverMinutes !== null && settings.defaultMaxLayoverMinutes !== undefined ? String(settings.defaultMaxLayoverMinutes) : ''}
                 onChange={e => handleMaxLayoverChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+                className="w-full min-h-[44px] appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 <option value="">Any (No Layover Limit)</option>
                 <option value="90">1.5 Hours (90 mins)</option>
@@ -280,7 +280,7 @@ export default function SearchPreferencesTab({
               <select
                 value={settings.defaultMaxTotalDurationMinutes !== null && settings.defaultMaxTotalDurationMinutes !== undefined ? String(settings.defaultMaxTotalDurationMinutes) : ''}
                 onChange={e => handleMaxTotalDurationChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                className="w-full appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
+                className="w-full min-h-[44px] appearance-none border border-gunmetal-border p-2.5 pr-10 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 text-sm cursor-pointer"
               >
                 <option value="">Any (No Trip Duration Limit)</option>
                 <option value="240">4 Hours (240 mins)</option>
@@ -313,7 +313,7 @@ export default function SearchPreferencesTab({
             onKeyDown={e => {
               if (e.key === 'Enter') e.currentTarget.blur();
             }}
-            className="w-full border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm font-mono uppercase"
+            className="w-full min-h-[44px] border border-gunmetal-border p-2.5 rounded-md bg-gunmetal-canvas text-slate-200 placeholder-zinc-500 focus:outline-none focus:border-slate-500 text-sm font-mono uppercase"
           />
           <p className="text-[11px] text-gunmetal-muted mt-1">
             Itineraries connecting through any of these intermediate airport hubs will be excluded by default.
@@ -396,7 +396,7 @@ export default function SearchPreferencesTab({
                   const chosen = ITINERARY_PRESETS[Number((e.target as HTMLInputElement).value)] ?? 12;
                   handleMaxStoredChange(chosen);
                 }}
-                className="w-full accent-sky-500 cursor-pointer"
+                className="w-full h-7 accent-sky-500 cursor-pointer"
               />
             </div>
             <div className="flex justify-between text-[10px] text-gunmetal-muted font-mono mt-1">
@@ -413,7 +413,7 @@ export default function SearchPreferencesTab({
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Carrier Diversity Algorithm
             </label>
-            <div className="p-3 rounded-md bg-gunmetal-canvas border border-gunmetal-border flex items-center justify-between">
+            <label className="min-h-[44px] p-3 rounded-md bg-gunmetal-canvas border border-gunmetal-border flex items-center justify-between gap-3 cursor-pointer select-none">
               <div>
                 <span className="text-xs font-semibold text-slate-200 block">
                   Guarantee Operating Airline Representation
@@ -426,9 +426,9 @@ export default function SearchPreferencesTab({
                 type="checkbox"
                 checked={carrierDiversity === 1}
                 onChange={e => handleCarrierDiversityToggle(e.target.checked)}
-                className="w-4 h-4 accent-slate-500 rounded cursor-pointer ml-3 flex-shrink-0"
+                className="w-5 h-5 sm:w-4 sm:h-4 accent-slate-500 rounded cursor-pointer flex-shrink-0"
               />
-            </div>
+            </label>
           </div>
         </div>
       </div>

@@ -53,6 +53,19 @@ export const flightStatusSchema = z.object({
   status: z.enum(['Watching', 'Booked', 'Paused', 'Past']),
 });
 
+export const manualUsageSchema = z.discriminatedUnion('mode', [
+  z.object({
+    provider: z.enum(['serpapi', 'searchapi', 'hasdata']),
+    mode: z.literal('increment'),
+    value: z.number().int().min(1).max(10000).optional().default(1),
+  }),
+  z.object({
+    provider: z.enum(['serpapi', 'searchapi', 'hasdata']),
+    mode: z.literal('set'),
+    value: z.number().int().min(0).max(1000000),
+  }),
+]);
+
 export const settingsSchema = z.object({
   serpApiKey: z.string().optional().nullable().or(z.literal('')),
   searchApiKey: z.string().optional().nullable().or(z.literal('')),

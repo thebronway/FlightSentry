@@ -84,6 +84,53 @@ export default function SettingsForm() {
     }
   };
 
+  const handleAdjustUsage = async (
+    provider: 'serpapi' | 'searchapi' | 'hasdata',
+    mode: 'increment' | 'set',
+    value: number
+  ) => {
+    const providerLabels: Record<'serpapi' | 'searchapi' | 'hasdata', string> = {
+      serpapi: 'SerpAPI',
+      searchapi: 'SearchApi.io',
+      hasdata: 'HasData',
+    };
+    setProviderStatus(prev => ({ ...prev, [provider]: null }));
+    try {
+      const res = await fetch('/api/settings/datasource-usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, mode, value }),
+      });
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        showToast(
+          `Error updating usage: API endpoint returned HTTP ${res.status} (ensure src/app/api/settings/datasource-usage/route.ts exists and rebuild container)`,
+          'error'
+        );
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        setSettings(data);
+        setProviderStatus(prev => ({
+          ...prev,
+          [provider]: { type: 'success', message: 'Saved!' },
+        }));
+        setTimeout(() => setProviderStatus(prev => ({ ...prev, [provider]: null })), 3500);
+        const label = providerLabels[provider];
+        const msg =
+          mode === 'increment'
+            ? `${label}: logged +${value} ${value === 1 ? 'query' : 'queries'}`
+            : `${label}: queries used set to ${value}`;
+        showToast(msg, 'success');
+      } else {
+        showToast('Error updating usage: ' + (data.error || 'Failed to update'), 'error');
+      }
+    } catch (err: any) {
+      showToast('Network error updating usage: ' + err.message, 'error');
+    }
+  };
+
   const handleTestChannel = async (channelKey: 'discord' | 'slack' | 'generic' | 'smtp') => {
     if (!settings) return;
     setTestingChannel(channelKey);
@@ -123,12 +170,18 @@ export default function SettingsForm() {
   if (!settings) return <div className="text-center py-10 dark:text-gray-400">Loading settings...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex border-b border-gunmetal-border">
+    <div className="space-y-5 sm:space-y-6">
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="flex items-center overflow-x-auto border-b border-gunmetal-border -mx-1 px-1"
+      >
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'general'}
           onClick={() => setActiveTab('general')}
-          className={`px-4 py-2 font-medium text-sm transition-colors ${
+          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
             activeTab === 'general'
               ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
               : 'text-gunmetal-muted hover:text-slate-300'
@@ -138,8 +191,10 @@ export default function SettingsForm() {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'searchprefs'}
           onClick={() => setActiveTab('searchprefs')}
-          className={`px-4 py-2 font-medium text-sm transition-colors ${
+          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
             activeTab === 'searchprefs'
               ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
               : 'text-gunmetal-muted hover:text-slate-300'
@@ -149,8 +204,10 @@ export default function SettingsForm() {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'datasources'}
           onClick={() => setActiveTab('datasources')}
-          className={`px-4 py-2 font-medium text-sm transition-colors ${
+          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
             activeTab === 'datasources'
               ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
               : 'text-gunmetal-muted hover:text-slate-300'
@@ -160,8 +217,10 @@ export default function SettingsForm() {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'scheduling'}
           onClick={() => setActiveTab('scheduling')}
-          className={`px-4 py-2 font-medium text-sm transition-colors ${
+          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
             activeTab === 'scheduling'
               ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
               : 'text-gunmetal-muted hover:text-slate-300'
@@ -171,8 +230,10 @@ export default function SettingsForm() {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={activeTab === 'notifications'}
           onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-2 font-medium text-sm transition-colors ${
+          className={`min-h-[44px] px-3.5 sm:px-4 py-2.5 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${
             activeTab === 'notifications'
               ? 'border-b-2 border-slate-300 text-slate-100 font-semibold'
               : 'text-gunmetal-muted hover:text-slate-300'
@@ -204,6 +265,7 @@ export default function SettingsForm() {
           onChange={setSettings}
           providerStatus={providerStatus}
           onAutoSave={handleAutoSave}
+          onAdjustUsage={handleAdjustUsage}
         />
       )}
 
@@ -228,9 +290,9 @@ export default function SettingsForm() {
 
       {/* Floating In-App Toast */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-5 sm:right-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl shadow-black/80 backdrop-blur-md text-sm font-semibold ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl shadow-black/80 backdrop-blur-md text-xs sm:text-sm font-semibold max-w-full sm:max-w-md ${
               toast.type === 'success'
                 ? 'bg-gunmetal-card/95 border-emerald-500/80 text-slate-100 ring-1 ring-emerald-500/40'
                 : 'bg-gunmetal-card/95 border-rose-500/80 text-slate-100 ring-1 ring-rose-500/40'

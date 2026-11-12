@@ -108,6 +108,29 @@ export const settingsDb = {
     if (source === 'hasdata') db.prepare('UPDATE settings SET hasdataUsed = hasdataUsed + 1 WHERE id = 1').run();
     if (source === 'fastflights') db.prepare('UPDATE settings SET fastFlightsUsed = fastFlightsUsed + 1 WHERE id = 1').run();
   },
+  adjustProviderUsage: (
+    source: 'serpapi' | 'searchapi' | 'hasdata',
+    mode: 'increment' | 'set',
+    value: number
+  ): { previousUsed: number; newUsed: number } => {
+    const columnMap: Record<'serpapi' | 'searchapi' | 'hasdata', 'serpApiUsed' | 'searchApiUsed' | 'hasdataUsed'> = {
+      serpapi: 'serpApiUsed',
+      searchapi: 'searchApiUsed',
+      hasdata: 'hasdataUsed',
+    };
+    const column = columnMap[source];
+    const adjustTx = db.transaction(() => {
+      const row = db.prepare(`SELECT ${column} as used FROM settings WHERE id = 1`).get() as { used: number } | undefined;
+      const previousUsed = row?.used ?? 0;
+      const sanitizedValue = Math.max(0, Math.round(value));
+      const newUsed = mode === 'increment'
+        ? Math.max(0, previousUsed + sanitizedValue)
+        : sanitizedValue;
+      db.prepare(`UPDATE settings SET ${column} = ? WHERE id = 1`).run(newUsed);
+      return { previousUsed, newUsed };
+    });
+    return adjustTx();
+  },
   resetApiUsage: (newResetDate: string): void => {
     const stmt = db.prepare('UPDATE settings SET serpApiUsed = 0, searchApiUsed = 0, hasdataUsed = 0, fastFlightsUsed = 0, quotaResetDate = @newResetDate WHERE id = 1');
     stmt.run({ newResetDate });
