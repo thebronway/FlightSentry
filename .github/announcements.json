@@ -28,8 +28,8 @@
   },
   {
     "id": "example-feature-spotlight-info",
-    "active": false,
-    "severity": "true",
+    "active": true,
+    "severity": "info",
     "title": "New Feature Spotlight: Update & Announcement Banners",
     "message": "FlightSentry now checks GitHub every 24 hours for new releases and important notices. Supports **bold**, *italic*, `inline code`, and [inline links](https://github.com/thebronway/FlightSentry). Manage sync preferences in **Settings → General**.",
     "linkUrl": "https://github.com/thebronway/FlightSentry/blob/main/README.md",
