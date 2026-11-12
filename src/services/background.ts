@@ -3,10 +3,12 @@ import { settingsDb } from '../db/settings';
 import { initDb } from '../db/init';
 import { getCurrentLocalHour } from '../utils/date';
 import { processNextFlight, expireOldFlights } from './scheduler';
+import { syncGitHubMetadata } from './githubSync';
 
 // 1. Ensure DB exists before background worker starts querying it
 initDb();
 console.log("FlightSentry Background Worker initialized.");
+void syncGitHubMetadata({ force: false });
 
 // 2. Main Queue Loop (Strict Single Queue)
 const startWorkerLoop = async () => {
@@ -41,4 +43,9 @@ cron.schedule('0 0 * * *', () => {
   } catch (error) {
     console.error("Worker error during expiration sweep:", error);
   }
+});
+
+// 4. GitHub Release & Announcement Sync Check (Evaluated hourly; fetches at most once every 24h)
+cron.schedule('15 * * * *', () => {
+  void syncGitHubMetadata({ force: false });
 });

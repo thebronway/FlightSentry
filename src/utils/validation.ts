@@ -156,6 +156,7 @@ export const settingsSchema = z.object({
   fastFlightsPaused: z.number().min(0).max(1).optional(),
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
+  githubSyncEnabled: z.number().min(0).max(1).optional(),
 });
 
 export const manualPriceEntrySchema = z.object({
@@ -178,3 +179,50 @@ export const manualPriceEntrySchema = z.object({
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
   notes: z.string().optional().nullable(),
 });
+
+const safeHttpUrlSchema = z
+  .string()
+  .trim()
+  .url('Must be a valid URL')
+  .refine((val) => {
+    try {
+      const parsed = new URL(val);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, 'URL must use http or https protocol');
+
+export const announcementItemSchema = z.object({
+  id: z.string().trim().min(1).max(128),
+  active: z.boolean(),
+  severity: z.enum(['info', 'warning']).default('info'),
+  title: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(2000),
+  linkUrl: safeHttpUrlSchema.optional().nullable(),
+  linkText: z.string().trim().max(80).optional().nullable(),
+  expiresAt: z
+    .string()
+    .refine((val) => !Number.isNaN(Date.parse(val)), 'expiresAt must be a valid ISO date string')
+    .optional()
+    .nullable(),
+  maxVersion: z
+    .string()
+    .regex(/^v?\d+\.\d+\.\d+$/, 'maxVersion must be numeric SemVer X.Y.Z')
+    .optional()
+    .nullable(),
+});
+
+export const announcementsFileSchema = z.array(announcementItemSchema).max(50);
+
+export const bannerDismissSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('update'),
+    version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must be X.Y.Z'),
+    mode: z.enum(['24h', 'forever']),
+  }),
+  z.object({
+    type: z.literal('announcement'),
+    id: z.string().trim().min(1).max(128),
+  }),
+]);

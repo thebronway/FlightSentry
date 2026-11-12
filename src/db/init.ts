@@ -69,6 +69,7 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN defaultMaxLayoverMinutes INTEGER",
         "ALTER TABLE settings ADD COLUMN defaultExcludedConnectingAirports TEXT",
         "ALTER TABLE settings ADD COLUMN defaultMaxTotalDurationMinutes INTEGER",
+        "ALTER TABLE settings ADD COLUMN githubSyncEnabled INTEGER NOT NULL DEFAULT 1",
     ];
     for (const migration of migrations) {
         try {
@@ -110,6 +111,30 @@ export function initDb() {
                 queriedAt TEXT NOT NULL
             )
         `);
+    } catch {
+        // Ignored
+    }
+
+    // Ensure release_sync_state table and singleton row exist
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS release_sync_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                latestVersion TEXT,
+                announcementsJson TEXT NOT NULL DEFAULT '[]',
+                lastCheckedAt TEXT,
+                lastSyncStatus TEXT NOT NULL DEFAULT 'never',
+                dismissedUpdateVersion TEXT,
+                dismissedUpdateUntil TEXT,
+                dismissedAnnouncementIds TEXT NOT NULL DEFAULT '[]'
+            )
+        `);
+        db.prepare(`
+            INSERT OR IGNORE INTO release_sync_state (
+                id, latestVersion, announcementsJson, lastCheckedAt, lastSyncStatus,
+                dismissedUpdateVersion, dismissedUpdateUntil, dismissedAnnouncementIds
+            ) VALUES (1, NULL, '[]', NULL, 'never', NULL, NULL, '[]')
+        `).run();
     } catch {
         // Ignored
     }
@@ -196,13 +221,13 @@ export function initDb() {
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
                 defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
-                maxStoredItineraries, carrierDiversityEnabled
+                maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
                 'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0,
-                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1
+                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1
             )
         `);
         insertSettings.run();

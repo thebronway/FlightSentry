@@ -1,9 +1,19 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-12*  
-*Current Version: v0.8.1*
+*Current Version: v0.8.2*
 
 ## Changelog
+
+### Release v0.8.2
+- Added server-side 24-hour GitHub sync for `CHANGELOG.md` and `.github/announcements.json` with SQLite caching in `release_sync_state` and silent offline fallback.
+- Added `GET`/`POST /api/updates` and `POST /api/updates/dismiss` endpoints with numeric SemVer heading parsing and Zod announcement schema validation.
+- Added automatic 24-hour check toggle, manual **Check Now** button, **Update available** badge, and **Release Notes** / **Docker Hub** buttons in **Settings → General**.
+- Added dismissible top update banner with **Dismiss for 24 hrs** and **Dismiss forever** persistence per version.
+- Added dismissible announcement banners with `info` and `warning` styling, `expiresAt` and `maxVersion` filtering, inline `SafeRichText` rendering, and 5-minute visibility-aware polling.
+- Added `.github/announcements.json` with inactive example entries covering warning and informational configurations.
+
+### Release v0.8.1
 
 ### Release v0.8.1
 - Restricted manual Origin and Destination overrides in Watching Flight and Booked Flight modes to single 3-letter IATA airport codes on both client and Zod schema validation, limiting co-location clusters to Watching Route and Route Alternatives.

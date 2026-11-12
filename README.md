@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.8.2-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.

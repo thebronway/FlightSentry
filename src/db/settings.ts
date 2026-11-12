@@ -86,7 +86,8 @@ export const settingsDb = {
         carrierDiversityEnabled = @carrierDiversityEnabled,
         defaultMaxLayoverMinutes = @defaultMaxLayoverMinutes,
         defaultExcludedConnectingAirports = @defaultExcludedConnectingAirports,
-        defaultMaxTotalDurationMinutes = @defaultMaxTotalDurationMinutes
+        defaultMaxTotalDurationMinutes = @defaultMaxTotalDurationMinutes,
+        githubSyncEnabled = @githubSyncEnabled
       WHERE id = 1
     `);
     stmt.run(updated);

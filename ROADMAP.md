@@ -1,24 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-12*  
-*Current Version: v0.8.1*
+*Current Version: v0.8.2*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.8.2: Update & Announcement Banners
-- **Server-Side GitHub Sync & Settings Toggle**
-  - Perform server-side checks every 24 hours against `raw.githubusercontent.com/thebronway/FlightSentry/main/` (`CHANGELOG.md` and `.github/announcements.json`), caching results in SQLite with silent offline/air-gapped fallback. Create an exmaple annoucemnt. Will rich text formatting work?
-  - Add a toggle in **Settings → General** (enabled by default) to opt out of automatic 24-hour GitHub update/announcement checks, plus a manual **Check Now** button.
-- **Update Available Banner**
-  - Parse all `### Release vX.Y.Z` headings in `CHANGELOG.md`, resolve the maximum version using numeric SemVer (`major.minor.patch`) comparison, and compare against `package.json`.
-  - Show a top banner when an update is available with links to GitHub Release Notes and Docker Hub, along with **Dismiss for 24 hrs** and **Dismiss forever** (per version) stored in SQLite.
-  - Show an **Update available** badge and release/Docker links on the Application Version card in **Settings → General**, even after the top banner is dismissed.
-- **Announcement Banner (`.github/announcements.json`)**
-  - Validate `.github/announcements.json` via Zod supporting `id`, `active`, `severity` (`info` | `warning`), `title`, `message`, optional `linkUrl` / `linkText`, optional `expiresAt` (auto-hide after expiration date), and optional `maxVersion` (target instances running `<= maxVersion`).
-  - Render active, non-expired announcements as dismissible top banners and persist dismissed announcement IDs in SQLite.
 
 ### Release v0.8.3
 - Data Sources can be one time or monthly, need to support both modes per data source.
@@ -108,4 +96,8 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - README finalize
 
 ### Release v1.0.0
-- Production Release
+- GitHub, Docker, Railway and PikaPods Release
+
+PikaPods: Non-technical users pick an app from their catalog and PikaPods spins up a private, isolated container with persistent storage, SSL, and automatic image updates starting around $1.80–$3.00/month (billed hourly from prepaid credit, with a $5 welcome credit for new users). Each user still gets their own private single-user FlightSentry instance and plugs in their own API keys, while PikaPods handles all servers, billing, and uptime. If you reach out to them (hello@pikapods.com) once FlightSentry is ready for a wider audience, they offer a developer agreement that pays 20% of the hosting revenue your app generates.
+
+Railway: Self-serve—you can publish a 1-click Docker template with a persistent volume for SQLite without waiting for catalog approval.

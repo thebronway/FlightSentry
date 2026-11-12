@@ -154,4 +154,41 @@ export interface Settings {
   defaultMaxLayoverMinutes?: number | null;
   defaultExcludedConnectingAirports?: string | null;
   defaultMaxTotalDurationMinutes?: number | null;
+  githubSyncEnabled?: number; // 0 (false) or 1 (true)
+}
+
+export type AnnouncementSeverity = 'info' | 'warning';
+
+export interface AnnouncementItem {
+  id: string;
+  active: boolean;
+  severity: AnnouncementSeverity;
+  title: string;
+  message: string;
+  linkUrl?: string | null;
+  linkText?: string | null;
+  expiresAt?: string | null;
+  maxVersion?: string | null;
+}
+
+export interface ReleaseSyncState {
+  id: number;
+  latestVersion?: string | null;
+  announcementsJson: string;
+  lastCheckedAt?: string | null;
+  lastSyncStatus: 'never' | 'ok' | 'offline' | 'error';
+  dismissedUpdateVersion?: string | null;
+  dismissedUpdateUntil?: string | null;
+  dismissedAnnouncementIds: string;
+}
+
+export interface UpdateBannerStatus {
+  currentVersion: string;
+  latestVersion: string | null;
+  updateAvailable: boolean;
+  showUpdateBanner: boolean;
+  githubSyncEnabled: boolean;
+  lastCheckedAt: string | null;
+  lastSyncStatus: 'never' | 'ok' | 'offline' | 'error';
+  announcements: AnnouncementItem[];
 }

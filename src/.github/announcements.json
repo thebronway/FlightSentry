@@ -1,0 +1,64 @@
+[
+  {
+    "id": "example-security-outdated-warning",
+    "active": false,
+    "severity": "warning",
+    "title": "Security Advisory: Your FlightSentry Version Is Out of Date",
+    "message": "You are running an outdated release of FlightSentry. Please pull the latest container image (`docker compose pull && docker compose up -d`) as soon as possible to receive **critical security patches** and stability fixes.",
+    "linkUrl": "https://github.com/thebronway/FlightSentry/blob/main/CHANGELOG.md",
+    "linkText": "Review Security & Release Notes",
+    "maxVersion": "0.8.1"
+  },
+  {
+    "id": "example-scraper-advisory-warning",
+    "active": false,
+    "severity": "warning",
+    "title": "Temporary Upstream Changes Affecting Unmetered Scrapers",
+    "message": "Recent upstream changes may cause intermittent rate limits on **Fast-Flights**. If you experience missed checks, enable a free metered API provider such as *SerpAPI*, *SearchApi.io*, or *HasData* under **Settings → Data Sources**.",
+    "linkUrl": "https://github.com/thebronway/FlightSentry/issues",
+    "linkText": "Track Issue Status",
+    "expiresAt": "2027-06-01T00:00:00Z"
+  },
+  {
+    "id": "example-minimal-warning",
+    "active": false,
+    "severity": "warning",
+    "title": "Backup Your SQLite Database Before Major Upgrades",
+    "message": "Before upgrading across minor releases, back up your `./data/flightsentry.db` volume to preserve tracked flights and historical fare charts."
+  },
+  {
+    "id": "example-feature-spotlight-info",
+    "active": false,
+    "severity": "true",
+    "title": "New Feature Spotlight: Update & Announcement Banners",
+    "message": "FlightSentry now checks GitHub every 24 hours for new releases and important notices. Supports **bold**, *italic*, `inline code`, and [inline links](https://github.com/thebronway/FlightSentry). Manage sync preferences in **Settings → General**.",
+    "linkUrl": "https://github.com/thebronway/FlightSentry/blob/main/README.md",
+    "linkText": "Read Documentation"
+  },
+  {
+    "id": "example-version-targeted-info",
+    "active": true,
+    "severity": "info",
+    "title": "Upgrade Tip for v0.8.x Installations",
+    "message": "This announcement only displays on instances running `v0.8.2` or earlier because `maxVersion` is set to `0.8.2`. Newer releases automatically hide this banner.",
+    "linkUrl": "https://hub.docker.com/r/thebronway/flightsentry",
+    "linkText": "View on Docker Hub",
+    "maxVersion": "0.8.2"
+  },
+  {
+    "id": "example-expiring-community-info",
+    "active": true,
+    "severity": "info",
+    "title": "Share Feedback or Request Features for v0.9.0",
+    "message": "Have an idea for upcoming releases? Open a feature request or upvote existing proposals on GitHub before this notice automatically expires.",
+    "linkUrl": "https://github.com/thebronway/FlightSentry/issues",
+    "expiresAt": "2026-11-13T15:00:00-05:00"
+  },
+  {
+    "id": "example-minimal-info",
+    "active": false,
+    "severity": "info",
+    "title": "Enjoying FlightSentry?",
+    "message": "Check out the [Project Roadmap](https://github.com/thebronway/FlightSentry/blob/main/ROADMAP.md) to see what is planned next, or star the repository on GitHub."
+  }
+]

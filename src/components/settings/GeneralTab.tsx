@@ -110,6 +110,21 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
     setShowWarningModal(false);
   };
 
+  const handleToggleGithubSync = async (enabled: boolean) => {
+    const updated = { ...settings, githubSyncEnabled: enabled ? 1 : 0 };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(
+        updated,
+        'general',
+        undefined,
+        enabled
+          ? 'Automatic GitHub update & announcement checks enabled'
+          : 'Automatic GitHub update & announcement checks disabled'
+      );
+    }
+  };
+
   return (
     <div className="space-y-6 pt-2">
       <SettingsIntroBanner
@@ -130,7 +145,10 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
 
       <SystemTimezoneCard timezone={timezone} />
 
-      <AppVersionSupportCard />
+      <AppVersionSupportCard
+        githubSyncEnabled={(settings.githubSyncEnabled ?? 1) === 1}
+        onToggleGithubSync={handleToggleGithubSync}
+      />
 
       <CurrencyWarningModal
         isOpen={showWarningModal}

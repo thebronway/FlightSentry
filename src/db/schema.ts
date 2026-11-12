@@ -144,6 +144,18 @@ CREATE TABLE IF NOT EXISTS settings (
     carrierDiversityEnabled INTEGER NOT NULL DEFAULT 1,
     defaultMaxLayoverMinutes INTEGER,
     defaultExcludedConnectingAirports TEXT,
-    defaultMaxTotalDurationMinutes INTEGER
+    defaultMaxTotalDurationMinutes INTEGER,
+    githubSyncEnabled INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS release_sync_state (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    latestVersion TEXT,
+    announcementsJson TEXT NOT NULL DEFAULT '[]',
+    lastCheckedAt TEXT,
+    lastSyncStatus TEXT NOT NULL DEFAULT 'never',
+    dismissedUpdateVersion TEXT,
+    dismissedUpdateUntil TEXT,
+    dismissedAnnouncementIds TEXT NOT NULL DEFAULT '[]'
 );
 `;

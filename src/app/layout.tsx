@@ -2,6 +2,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ThemeProvider from '@/components/ThemeProvider';
+import SystemBanners from '@/components/SystemBanners';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased min-h-screen flex flex-col">
         <ThemeProvider>
           <Navbar />
+          <SystemBanners />
           <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </main>
