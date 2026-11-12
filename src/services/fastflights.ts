@@ -173,18 +173,26 @@ export const checkFastFlightsPrice = async (
 
     // 1. Specific Flight Number matching
     if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
+      const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
+      const targetNum = cleanFlightNumber(flight.flightNumber, targetCode);
+
       const targetFlight = results.find((f: any) => {
-        const apiAirlines = f.airlines?.map((a: string) => a.toLowerCase()) || [];
-        const hasAirline = flight.airline ? apiAirlines.some((a: string) => a.includes(flight.airline.toLowerCase())) : true;
-        const apiFlightNumbers = f.flights?.map((leg: any) => 
-          (leg.flight_number || leg.flightNumber || '').toString().toLowerCase()
-        ) || [];
-        const hasFlightNumber = apiFlightNumbers.includes(flight.flightNumber!.toLowerCase());
-        return hasAirline && (apiFlightNumbers.length === 0 || hasFlightNumber);
+        const apiAirlineCodes = (f.airlines || []).map((a: string) => normalizeAirlineCode(a, ''));
+        const hasAirline = targetCode ? apiAirlineCodes.includes(targetCode) : true;
+
+        const legNums = (f.flights || [])
+          .map((leg: any) => {
+            const rawNum = (leg.flight_number || leg.flightNumber || '').toString();
+            const legCode = normalizeAirlineCode(leg.airline || '', rawNum);
+            return cleanFlightNumber(rawNum, legCode);
+          })
+          .filter(Boolean);
+
+        const hasFlightNumber = legNums.includes(targetNum);
+        return hasAirline && (legNums.length === 0 || hasFlightNumber);
       });
 
       if (targetFlight && typeof targetFlight.price === 'number') {
-        const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
         let alternatives: RouteItinerary[] | undefined = undefined;
         if (flight.monitorRouteAlternatives === 1) {
           alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);

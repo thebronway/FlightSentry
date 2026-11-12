@@ -10,20 +10,32 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v0.8.3
 - Data Sources can be one time or monthly, need to support both modes per data source.
-- If selecting any miles (ex AA miles, must be oneworld, etc.) should be within airline alliance. Not hard stop, just warning message.
+- If selecting any miles (ex AA miles, must be a oneworld airline, etc.) airline or airline alliance (or partership like UA and JB) should be selected as carrier. Not hard stop, just warning message. Also we can change Carrier Code to Carrier. And add booking carrier, if not specified used carrier. Need a way to differentiate for non-aviation people. 
 - Add more jitter/delay for fastflights, account for manual queries
 - Old flights cleanup worth it? maybe keep 1 year, but user changeable in settings? performance implications? Maybe a cleanup button in settings? Okay with just keeping everything archived. 
+- Add DISABLE_UPDATE_BANNER optional docker env. if set to true disable update banner.
+- it is sometimes auto-checking for route and putting in the route before I finish typing in the number, so maybe don't auto-check until I get to four numbers or until time has passed or until like focus like it's you're out of the cell or something, you know what I mean. Need to come up with a good solution
 
-### Release v0.8.4
--
+### Release v0.8.4: Dev API
+- **Env-Gated Internal Test Page (`/api-test`)**
+  - Build a dedicated `/api-test` UI page and `POST /api/dev/provider-test` endpoint directly into the main FlightSentry image, gated by `ENABLE_API_TESTER=true` (returning `404` when unset or `false`).
+- **Saved & Temporary Provider Key Testing**
+  - Use existing API keys and scraper URLs saved in SQLite by default (resolved server-side without exposing stored secrets in the UI, and incrementing that provider's quota counter so usage tracking stays accurate).
+  - Allow an optional temporary key override per provider (never saved to SQLite and excluded from saved key quota counters).
+  - Execute FlightSentry's actual production provider adapters (`SerpAPI`, `SearchApi.io`, `HasData`, `Fast-Flights`, `FlightSentry-Scraper`) against configurable origin, destination, date, cabin class, and optional flight number inputs.
+- **Result Parity & Raw Payload Inspection**
+  - Run selected providers side-by-side and flag mismatches across normalized fields (carrier, flight number, price, stops, departure/arrival times) to verify all providers return consistent results.
+  - Display per-provider latency, parsed flight count, error details, and collapsible raw upstream JSON responses to quickly catch breaking API or scraper changes.
 
 ### Release v0.8.5
--
+- TBD (Fixes, Updates)
+- Quick add
 
 ### Release v0.8.6a: Brand Optimization
 - go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.
 
 ### Release v0.8.6: Brand Optimization Application
+- Brand Optimization Application
 
 ### Release v0.8.7: Mobile Optimization
 - **Mobile Experience Optimization:**
@@ -63,34 +75,52 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - API Playwright hosted scrapper integration into the app as a free optional scraper
 
 ### Release v0.9.0: Production Prep
-- Docker Compose Example
+- **Single-Container Consolidation**
+  - Combine `web` and `worker` into one container via a startup entrypoint script with clean `SIGTERM` shutdown handling and automatic worker restart on exit.
+  - Respect dynamic `PORT` environment variables and ensure `/app/data` initializes with writable permissions on first boot.
+- **Docker Compose & Environment Config**
+  - Update `docker-compose.yml` to a standard single-service example (`thebronway/flightsentry:latest`, `./data:/app/data`, port `4000:4000`).
+  - Add a minimal `.env.example` documenting optional overrides (`PORT`, `TZ`, `DATABASE_PATH`, `HOSTING_PLATFORM`, `DISABLE_UPDATE_BANNER`) while keeping `.env` optional.
+- **Railway & PikaPods Prep**
+  - Add `HOSTING_PLATFORM` env support so managed hosts (like PikaPods) can be identified by the app.
+  - Prepare one-click Railway template config (single `/app/data` volume) and PikaPods catalog requirements (including optional basic login auth for public pod URLs).
 
-### Release v0.9.1: Dev API
-- API monitor, script or function to test the apis, make sure all apis are returning the same result to verify api is still working.
+### Release v0.9.1
+- TBD
 
 ### Release v0.9.2: Public API
-- Expose API endpoint, for external apps to add, read flights (with api key authentication)
+- **API Key Management & Authentication**
+  - Add named API key generation and revocation in Settings (stored hashed in SQLite and displayed once upon creation).
+  - Authenticate external requests via `Authorization: Bearer <key>` (or `X-API-Key`) header with clean JSON `401`/`403` error responses.
+- **Versioned Flight Endpoints (`/api/v1/flights`)**
+  - `GET /api/v1/flights` & `GET /api/v1/flights/:id`: Return tracked flights including route, dates, airline, flight number, cabin class, booked/baseline price, current lowest price, price delta, status, and price history.
+  - `POST /api/v1/flights`: Add a flight to track with full itinerary details, booked price, optional external reference/notes, and an option to trigger an immediate initial price check.
+  - `PATCH /api/v1/flights/:id` & `DELETE /api/v1/flights/:id`: Update flight details (such as resetting the booked price after rebooking or pausing tracking) and delete tracked flights.
+  - Anyother endpoints needed.
+- **Link to API Reference on website**
 
 ### Release v0.9.3
--
+- New API providers
+  - Links to get API keys
+  - Referral links
 
 ### Release v0.9.4
--
+- TBD
 
 ### Release v0.9.5
 - Site Launch
     - User Guide
     - Quickstart Guide
-    - API Guide
+    - API Documentation
   
 ### Release v0.9.6
--
+- TBD
 
 ### Release v0.9.7
--
+- TBD
 
 ### Release v0.9.8
--
+- TBD
 
 ### Release v0.9.9
 - README finalize
