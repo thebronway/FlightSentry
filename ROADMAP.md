@@ -1,17 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-11*  
-*Current Version: v0.7.8*
+*Current Version: v0.7.9*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.7.9: History Modal
-- Update the History Modal to use styling from flight card, from arrows to adding notifcation badges, to all bubbles and themeing.
-- Make the History Modal Mobile friendly, touch targets, the whole nine yards. 
-- Last step before documention: Break up history modal as its getting monolthic
 
 ### Release v0.8.0: Settings
 - Banners
@@ -22,7 +17,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Make sure all settings tabs are mobile friendly
 - Last step before documention: make sure all components for settings are not in any monothlic files and create shared files for shared components.
 
-### Release v0.8.1
+### Release v0.8.1: Dashboard
 - Flight Modal
   - Thoughts on removing speificy route details manualually when just watching or booking a flight? Or maybe just removing co-lcoation option for when watching or booking a flight (and leaving it when the route option is added)
 - Quota ribbon
@@ -31,12 +26,14 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Make sure quota is mobile compatible
   - Make sure quota is not monolithic
 - if all data sources are paused or not configured, the user should still be able to add a flight, but only in manual mode, so always allow the add flight button, but if all data sources are paused or not configured when they go to track the flight or route, that should be great out if manual mode is not selected with the appropriate messaging.
+- Flight Card
+  - Manual Mode, points, sometimes it says airline next to miles currency. It should not. (I think it shows it if its watching a route, but for manual mode, lets not include it)
+  - Blue of single airport is a little too blue dim, it needs to be dimmer that the multi airport, but just need to adjust slightly.
 
 ### Release v0.8.5: Mobile Optimization
 - **Mobile Experience Optimization:**
   - Convert or confirm all modals to responsive full-height bottom-sheets on mobile viewports (use whatever flightmodal uses as a standard).
   - Standardize touch targets across all form inputs, toggles, tags, and action buttons.
-  - Add touch-friendly crosshair scrubbing on the Price History chart with viewport-bounded tooltips.
   - Add touch-friendly everything across that app
 - go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
 
@@ -83,6 +80,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Site Launch
     - User Guide
     - Quickstart Guide
+    - API Guide
 
 ### Release v1.0.0
 - Production Release

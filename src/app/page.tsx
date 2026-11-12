@@ -455,6 +455,7 @@ export default function Dashboard() {
 
       <HistoryModal 
         flight={activeHistoryFlight} 
+        settings={settings}
         onClose={() => setHistoryFlight(null)} 
         onUpdateFlight={handleRefreshAll}
       />

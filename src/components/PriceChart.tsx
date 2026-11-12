@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { PriceChartProps } from './priceChart/types';
 import { usePriceChartScales } from './priceChart/usePriceChartScales';
 import CarrierFilterPills from './priceChart/CarrierFilterPills';
@@ -14,6 +15,11 @@ export default function PriceChart({
   currency,
   overlayRouteFloor = false,
 }: PriceChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const isTouchScrubbingRef = useRef(false);
+  const [isTouchPinned, setIsTouchPinned] = useState(false);
+
   const {
     sorted,
     allOperatingAirlines,
@@ -29,6 +35,7 @@ export default function PriceChart({
     plotHeight,
     getY,
     xCoords,
+    getNearestCheckIndex,
     yTicks,
     benchmarkY,
     benchmarkPrice,
@@ -52,6 +59,34 @@ export default function PriceChart({
     overlayRouteFloor,
   });
 
+  const scrubToClientX = useCallback(
+    (clientX: number) => {
+      const svgEl = svgRef.current;
+      if (!svgEl) return;
+      const rect = svgEl.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const svgX = ((clientX - rect.left) / rect.width) * width;
+      const nearest = getNearestCheckIndex(svgX);
+      if (nearest !== null) {
+        setHoveredIndex(nearest);
+      }
+    },
+    [width, getNearestCheckIndex, setHoveredIndex]
+  );
+
+  // Dismiss pinned touch tooltip when tapping outside the chart container
+  useEffect(() => {
+    if (!isTouchPinned || hoveredIndex === null) return;
+    const handleOutsidePointerDown = (e: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsTouchPinned(false);
+        setHoveredIndex(null);
+      }
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, [isTouchPinned, hoveredIndex, setHoveredIndex]);
+
   if (sorted.length === 0) {
     return (
       <div className="h-52 flex flex-col items-center justify-center border border-dashed border-gunmetal-border rounded-lg bg-gunmetal-canvas/40 text-gunmetal-muted text-xs">
@@ -72,11 +107,52 @@ export default function PriceChart({
         />
       )}
 
-      <div className="relative w-full overflow-hidden bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3">
+      <div
+        ref={containerRef}
+        className="relative w-full bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-2.5 sm:p-3"
+      >
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto select-none"
-          onMouseLeave={() => setHoveredIndex(null)}
+          style={{ touchAction: 'pan-y' }}
+          className="w-full h-auto select-none cursor-crosshair"
+          onPointerDown={e => {
+            if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+              isTouchScrubbingRef.current = true;
+              setIsTouchPinned(true);
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch {}
+              scrubToClientX(e.clientX);
+            }
+          }}
+          onPointerMove={e => {
+            if (e.pointerType === 'mouse' || isTouchScrubbingRef.current) {
+              if (e.pointerType === 'mouse' && isTouchPinned) {
+                setIsTouchPinned(false);
+              }
+              scrubToClientX(e.clientX);
+            }
+          }}
+          onPointerUp={e => {
+            if (isTouchScrubbingRef.current) {
+              isTouchScrubbingRef.current = false;
+              try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              } catch {}
+            }
+          }}
+          onPointerCancel={e => {
+            isTouchScrubbingRef.current = false;
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {}
+          }}
+          onPointerLeave={e => {
+            if (e.pointerType === 'mouse') {
+              setHoveredIndex(null);
+            }
+          }}
         >
           <defs>
             <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
@@ -176,9 +252,9 @@ export default function PriceChart({
               y1={padTop}
               x2={activeX}
               y2={padTop + plotHeight}
-              stroke="#94a3b8"
-              strokeDasharray="2 2"
-              strokeWidth="1"
+              stroke="#38bdf8"
+              strokeDasharray="3 3"
+              strokeWidth="1.5"
               opacity="0.85"
             />
           )}
@@ -187,6 +263,15 @@ export default function PriceChart({
             const isHoveredCheck = hoveredIndex === dot.checkIdx;
             return (
               <g key={dot.id} className="cursor-pointer">
+                {isHoveredCheck && (
+                  <circle
+                    cx={dot.x}
+                    cy={dot.y}
+                    r={12}
+                    fill={isMultiAirlineMode ? dot.color : '#38bdf8'}
+                    opacity={0.22}
+                  />
+                )}
                 <circle
                   cx={dot.x}
                   cy={dot.y}
@@ -252,7 +337,13 @@ export default function PriceChart({
             isMultiAirlineMode={isMultiAirlineMode}
             activeSummaries={activeSummaries}
             chartWidth={width}
+            chartHeight={height}
             currency={currency}
+            isTouchPinned={isTouchPinned}
+            onDismiss={() => {
+              setIsTouchPinned(false);
+              setHoveredIndex(null);
+            }}
           />
         )}
       </div>

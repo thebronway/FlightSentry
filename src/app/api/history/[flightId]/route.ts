@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { historyDb } from '@/db/history';
 import { flightDb } from '@/db/flights';
 import { manualPriceEntrySchema } from '@/utils/validation';
+import { expandAlliancesToAirlines } from '@/utils/airlineThemes';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: { flightId: s
       const updatedFlight = flightDb.rebook(flightId, parsed.price, {
         airline: cleanAirline,
         flightNumber: cleanFlightNumber,
+        origin: parsed.origin ? parsed.origin.trim().toUpperCase() : null,
+        destination: parsed.destination ? parsed.destination.trim().toUpperCase() : null,
         pnr: parsed.pnr || flight.pnr,
         notes: parsed.notes !== undefined ? parsed.notes : flight.notes,
         checkedAt,
@@ -63,15 +66,34 @@ export async function POST(req: NextRequest, { params }: { params: { flightId: s
     // 2. Flight & Route Association Logic
     const flightAirline = (flight.airline || '').trim().toUpperCase();
     const flightNum = (flight.flightNumber || '').trim();
+    const allowedCarriers = expandAlliancesToAirlines(flight.includedAirlines);
+    const excludedCarriers = expandAlliancesToAirlines(flight.excludedAirlines);
+
+    const isRouteCarrierMatch = flightAirline
+      ? cleanAirline === flightAirline
+      : allowedCarriers.length > 0
+      ? allowedCarriers.includes(cleanAirline)
+      : !excludedCarriers.includes(cleanAirline);
 
     const isSameCarrier = cleanAirline === flightAirline;
     const isSameFlightNumber = (cleanFlightNumber || '') === flightNum;
-    const isDirectMatch = isSameCarrier && (flight.searchMode === 'Route' || isSameFlightNumber);
+    const isDirectMatch = flight.searchMode === 'Route'
+      ? isRouteCarrierMatch
+      : isSameCarrier && isSameFlightNumber;
+
+    const itineraryPayload = [{
+      airline: cleanAirline,
+      flightNumber: cleanFlightNumber || undefined,
+      origin: parsed.origin ? parsed.origin.trim().toUpperCase() : flight.origin || undefined,
+      destination: parsed.destination ? parsed.destination.trim().toUpperCase() : flight.destination || undefined,
+      price: parsed.price,
+    }];
 
     if (isDirectMatch) {
       historyDb.insert(flightId, parsed.price, 'Success', {
         airline: cleanAirline,
         flightNumber: cleanFlightNumber || flight.flightNumber,
+        metadata: flight.searchMode === 'Route' ? JSON.stringify(itineraryPayload) : null,
         sourceUsed: 'manual',
         checkedAt,
       });
@@ -81,18 +103,10 @@ export async function POST(req: NextRequest, { params }: { params: { flightId: s
         flightDb.updatePrice(flightId, parsed.price);
       }
     } else {
-      const competingItinerary = [{
-        airline: cleanAirline,
-        flightNumber: cleanFlightNumber || undefined,
-        origin: parsed.origin ? parsed.origin.trim().toUpperCase() : flight.origin || undefined,
-        destination: parsed.destination ? parsed.destination.trim().toUpperCase() : flight.destination || undefined,
-        price: parsed.price,
-      }];
-
       historyDb.insert(flightId, parsed.price, 'Success', {
         airline: cleanAirline,
         flightNumber: cleanFlightNumber,
-        metadata: JSON.stringify(competingItinerary),
+        metadata: JSON.stringify(itineraryPayload),
         sourceUsed: 'manual',
         checkedAt,
       });

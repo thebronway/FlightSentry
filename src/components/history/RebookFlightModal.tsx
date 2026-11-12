@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Flight } from '@/types';
-import { X, Calendar, RotateCcw, AlertCircle } from 'lucide-react';
+import { X, Calendar, RotateCcw, AlertCircle, ArrowRight } from 'lucide-react';
 import { getCurrencySymbol, isPointsCurrency, formatCurrency } from '@/utils/format';
+import { resolveLocationDisplay } from '@/utils/coLocations';
+import { getCurrentPriceAirline, expandAlliancesToAirlines } from '@/utils/airline';
+import AirlineBadge from '../common/AirlineBadge';
 import AirlineTagInput from '../common/AirlineTagInput';
 
 interface Props {
@@ -23,6 +26,8 @@ export default function RebookFlightModal({
   const [entryDate, setEntryDate] = useState('');
   const [airline, setAirline] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
   const [pnr, setPnr] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,9 +45,17 @@ export default function RebookFlightModal({
 
   useEffect(() => {
     if (isOpen && flight) {
+      const includedList = expandAlliancesToAirlines(flight.includedAirlines);
+      const resolvedAirline =
+        (flight.airline || '').trim().toUpperCase() ||
+        getCurrentPriceAirline(flight)?.code ||
+        (includedList.length === 1 ? includedList[0] : '');
+
       setEntryDate(getNowLocalDatetime());
-      setAirline(flight.airline || '');
+      setAirline(resolvedAirline);
       setFlightNumber(flight.flightNumber || '');
+      setOrigin(flight.origin || '');
+      setDestination(flight.destination || '');
       setPnr(flight.pnr || '');
       setNotes(flight.notes || '');
       setPrice('');
@@ -96,6 +109,8 @@ export default function RebookFlightModal({
         date: new Date(entryDate).toISOString(),
         airline: airline.trim().toUpperCase(),
         flightNumber: flightNumber.trim() || null,
+        origin: origin.trim() ? origin.trim().toUpperCase() : null,
+        destination: destination.trim() ? destination.trim().toUpperCase() : null,
         isRebook: true,
         pnr: pnr.trim().toUpperCase() || null,
         notes: notes.trim() || null,
@@ -123,10 +138,14 @@ export default function RebookFlightModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 sm:p-6 transition-colors">
-      <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto flex flex-col">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 md:p-6 transition-colors"
+    >
+      <div className="bg-gunmetal-card border border-gunmetal-border w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl max-w-4xl overflow-y-auto flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gunmetal-border flex items-center justify-between">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gunmetal-border flex items-center justify-between sticky top-0 bg-gunmetal-card z-10">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg border bg-emerald-950/60 border-emerald-800/60 text-emerald-400">
               <RotateCcw className="w-5 h-5" />
@@ -135,23 +154,47 @@ export default function RebookFlightModal({
               <h3 className="font-bold text-lg text-slate-100">
                 Log Rebooked Flight / Price Adjustment
               </h3>
-              <p className="text-xs text-gunmetal-muted">
-                {flight.origin} → {flight.destination} · {flight.departureDate}
-              </p>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-gunmetal-muted mt-0.5">
+                {(() => {
+                  const origDisp = resolveLocationDisplay(flight.origin);
+                  const destDisp = resolveLocationDisplay(flight.destination);
+                  return (
+                    <>
+                      <span className={`px-1.5 py-0.2 rounded font-mono text-[11px] font-bold ${
+                        origDisp.isCluster
+                          ? 'bg-sky-950/60 border border-sky-500/70 text-sky-200'
+                          : 'bg-slate-900/80 border border-sky-900/50 text-slate-300'
+                      }`}>
+                        {origDisp.code}
+                      </span>
+                      <ArrowRight className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                      <span className={`px-1.5 py-0.2 rounded font-mono text-[11px] font-bold ${
+                        destDisp.isCluster
+                          ? 'bg-sky-950/60 border border-sky-500/70 text-sky-200'
+                          : 'bg-slate-900/80 border border-sky-900/50 text-slate-300'
+                      }`}>
+                        {destDisp.code}
+                      </span>
+                      <span>· {flight.departureDate}</span>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
           <button
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="p-1.5 text-gunmetal-muted hover:text-slate-200 hover:bg-gunmetal-canvas rounded transition-colors"
+            aria-label="Close rebook modal"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2 text-gunmetal-muted hover:text-slate-200 hover:bg-gunmetal-canvas rounded-full transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 flex-1">
           {error && (
             <div className="bg-red-950/40 border border-red-800/70 p-3.5 rounded-md text-xs text-red-300 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -167,7 +210,18 @@ export default function RebookFlightModal({
             <p>
               Your initial purchase price ({formatCurrency(originalPurchasePrice, flight.currency)}) remains permanently locked in history for benchmark tracking. Logging a rebook updates what you paid, secures savings, and shifts future price drop alert thresholds to this new lower fare.
             </p>
-            <div className="flex items-center gap-3 text-[11px] font-mono text-slate-300 pt-1">
+            <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono text-slate-300 pt-1">
+              {flight.airline && (
+                <>
+                  <AirlineBadge
+                    code={flight.airline}
+                    flightNumber={flight.flightNumber}
+                    size="xs"
+                    align="left"
+                  />
+                  <span>•</span>
+                </>
+              )}
               <span>Original Paid: <strong>{formatCurrency(originalPurchasePrice, flight.currency)}</strong></span>
               <span>•</span>
               <span>Active Prior Benchmark: <strong>{formatCurrency(currentPurchasePrice, flight.currency)}</strong></span>
@@ -257,18 +311,44 @@ export default function RebookFlightModal({
             </div>
           </div>
 
-          {/* PNR Confirmation Code */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-              Updated Confirmation Code / PNR (Optional)
-            </label>
-            <input
-              maxLength={10}
-              placeholder="e.g. K9XZ4B"
-              value={pnr}
-              onChange={e => setPnr(e.target.value.toUpperCase())}
-              className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
-            />
+          {/* Route Airports & PNR Confirmation Code */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Origin Airport(s)
+              </label>
+              <input
+                placeholder="e.g. ORD or MSP, ORD"
+                value={origin}
+                onChange={e => setOrigin(e.target.value.toUpperCase())}
+                className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Destination Airport(s)
+              </label>
+              <input
+                placeholder="e.g. LAX"
+                value={destination}
+                onChange={e => setDestination(e.target.value.toUpperCase())}
+                className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Updated PNR (Optional)
+              </label>
+              <input
+                maxLength={10}
+                placeholder="e.g. K9XZ4B"
+                value={pnr}
+                onChange={e => setPnr(e.target.value.toUpperCase())}
+                className="w-full h-10 px-3 py-2 text-sm uppercase rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+              />
+            </div>
           </div>
 
           {/* Notes */}
@@ -291,14 +371,14 @@ export default function RebookFlightModal({
               type="button"
               disabled={loading}
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md transition-colors disabled:opacity-50"
+              className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-lg sm:rounded-md transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/80"
+              className="flex-1 sm:flex-none min-h-[44px] px-5 py-2 text-xs font-semibold rounded-lg sm:rounded-md transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/80 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>{loading ? 'Recording...' : 'Record Rebook'}</span>

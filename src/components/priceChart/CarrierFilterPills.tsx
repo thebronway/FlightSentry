@@ -29,7 +29,7 @@ export default function CarrierFilterPills({
               key={code}
               type="button"
               onClick={() => onToggleAirline(code)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all border ${
+              className={`flex items-center gap-1.5 min-h-[44px] sm:min-h-[30px] px-3 sm:px-2.5 py-2 sm:py-1 rounded-md text-xs font-semibold transition-all border cursor-pointer ${
                 isSelected
                   ? 'bg-gunmetal-card text-white border-slate-600 shadow-sm'
                   : 'bg-gunmetal-canvas text-gunmetal-muted border-gunmetal-border/60 opacity-40 hover:opacity-75'
@@ -52,19 +52,19 @@ export default function CarrierFilterPills({
         })}
       </div>
 
-      <div className="flex items-center gap-2 text-[11px] text-gunmetal-muted ml-auto">
+      <div className="flex items-center gap-1.5 text-[11px] text-gunmetal-muted ml-auto">
         <button
           type="button"
           onClick={() => onToggleAll(true)}
-          className="hover:text-slate-200 transition-colors"
+          className="min-h-[44px] sm:min-h-[28px] px-2.5 sm:px-1.5 inline-flex items-center justify-center rounded border border-gunmetal-border/60 sm:border-0 bg-gunmetal-card/60 sm:bg-transparent hover:text-slate-200 transition-colors cursor-pointer"
         >
           All
         </button>
-        <span>•</span>
+        <span className="hidden sm:inline">•</span>
         <button
           type="button"
           onClick={() => onToggleAll(false)}
-          className="hover:text-slate-200 transition-colors"
+          className="min-h-[44px] sm:min-h-[28px] px-2.5 sm:px-1.5 inline-flex items-center justify-center rounded border border-gunmetal-border/60 sm:border-0 bg-gunmetal-card/60 sm:bg-transparent hover:text-slate-200 transition-colors cursor-pointer"
         >
           None
         </button>

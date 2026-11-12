@@ -300,6 +300,21 @@ export function usePriceChartScales({
   const benchmarkY = benchmarkPrice > 0 ? getY(benchmarkPrice) : null;
   const yTicks = [0, 0.33, 0.66, 1].map(ratio => yMin + yRange * ratio);
 
+  const getNearestCheckIndex = (svgX: number): number | null => {
+    if (xCoords.length === 0) return null;
+    if (svgX < padLeft - 24 || svgX > padLeft + plotWidth + 24) return null;
+    let nearestIdx = 0;
+    let minDist = Math.abs(svgX - xCoords[0]);
+    for (let i = 1; i < xCoords.length; i++) {
+      const dist = Math.abs(svgX - xCoords[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearestIdx = i;
+      }
+    }
+    return nearestIdx;
+  };
+
   // Active hovered check details
   const activeRecord = hoveredIndex !== null ? sorted[hoveredIndex] : null;
   const activeX = hoveredIndex !== null ? xCoords[hoveredIndex] : null;
@@ -326,6 +341,7 @@ export function usePriceChartScales({
     plotHeight,
     getY,
     xCoords,
+    getNearestCheckIndex,
     yTicks,
     benchmarkY,
     benchmarkPrice,

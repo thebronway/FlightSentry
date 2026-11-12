@@ -8,12 +8,14 @@ interface FlightStatusBadgesProps {
   flight: Flight;
   size?: 'sm' | 'xs';
   align?: 'start' | 'end';
+  layout?: 'column' | 'row';
 }
 
 export default function FlightStatusBadges({
   flight,
   size = 'sm',
   align = 'start',
+  layout = 'column',
 }: FlightStatusBadgesProps) {
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const isPast = flight.status === 'Past';
@@ -24,9 +26,12 @@ export default function FlightStatusBadges({
   const subBadgePadding = size === 'xs' ? 'px-1.5 py-0.2 text-[10px]' : 'px-1.5 py-0.2 text-[10px]';
   const iconSize = size === 'xs' ? 'w-2.5 h-2.5' : 'w-3 h-3';
   const alignClass = align === 'end' ? 'items-end' : 'items-start';
+  const containerClass = layout === 'row'
+    ? 'flex flex-wrap items-center gap-1.5 flex-shrink-0'
+    : `flex flex-col ${alignClass} gap-1 flex-shrink-0`;
 
   return (
-    <div className={`flex flex-col ${alignClass} gap-1 flex-shrink-0`}>
+    <div className={containerClass}>
       {isPast ? (
         <span className={`bg-slate-800/50 text-slate-400 border border-slate-700/50 rounded font-semibold inline-flex items-center gap-1 ${badgePadding}`}>
           <Clock className={iconSize} /> Past

@@ -1,7 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Flight } from '@/types';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, isPointsCurrency } from '@/utils/format';
+import { getCurrentPriceAirline } from '@/utils/airline';
+import AirlineBadge from '../common/AirlineBadge';
+import { Coins } from 'lucide-react';
 
 interface Props {
   flight: Flight;
@@ -15,6 +19,9 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
   const originalPaid = flight.baselinePrice > 0 ? flight.baselinePrice : benchmarkPrice;
   const isRebooked = isBooked && flight.baselinePrice > 0 && flight.baselinePrice > flight.purchasePrice!;
   const lifetimeCredits = isRebooked ? flight.baselinePrice - flight.purchasePrice! : 0;
+  const delta = benchmarkPrice - flight.currentPrice;
+  const isDrop = flight.currentPrice < benchmarkPrice;
+  const currentPriceAirline = useMemo(() => getCurrentPriceAirline(flight), [flight]);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -22,9 +29,29 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
           Current Fare
         </span>
-        <span className="text-xl font-black text-slate-100 block mt-0.5">
-          {formatCurrency(flight.currentPrice, flight.currency)}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+          <span className="text-xl font-black text-slate-100">
+            {formatCurrency(flight.currentPrice, flight.currency)}
+          </span>
+          {flight.currency && isPointsCurrency(flight.currency) && (
+            <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.5 rounded text-[10px] font-semibold inline-flex items-center gap-1">
+              <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+            </span>
+          )}
+          {!isBooked && currentPriceAirline && (
+            <AirlineBadge
+              code={currentPriceAirline.code}
+              flightNumber={currentPriceAirline.flightNumber}
+              showFlightNumber={false}
+              size="xs"
+            />
+          )}
+        </div>
+        {delta !== 0 && (
+          <span className={`text-xs font-bold block mt-0.5 ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+            {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
+          </span>
+        )}
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">

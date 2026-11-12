@@ -7,9 +7,10 @@ import { ArrowDown, ArrowUp, Gauge } from 'lucide-react';
 interface Props {
   metrics: RouteCorridorMetrics;
   compact?: boolean;
+  currency?: string | null;
 }
 
-export default function RouteCorridorSummary({ metrics, compact = false }: Props) {
+export default function RouteCorridorSummary({ metrics, compact = false, currency }: Props) {
   const { currentFloor, allTimeLow, allTimeHigh, spreadPercent, hasSpread } = metrics;
 
   // Resolve human-readable deal label
@@ -37,8 +38,8 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
           </span>
           <span className="font-bold text-slate-200">
             {hasSpread
-              ? `${formatCurrency(allTimeLow)} – ${formatCurrency(allTimeHigh)}`
-              : `${formatCurrency(currentFloor)} (1 Check)`}
+              ? `${formatCurrency(allTimeLow, currency)} – ${formatCurrency(allTimeHigh, currency)}`
+              : `${formatCurrency(currentFloor, currency)} (1 Check)`}
           </span>
         </div>
 
@@ -58,7 +59,7 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
               left: `${pinPositionPercent}%`,
               transform: 'translate(-50%, -50%)',
             }}
-            title={hasSpread ? `Current: ${formatCurrency(currentFloor)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor)}`}
+            title={hasSpread ? `Current: ${formatCurrency(currentFloor, currency)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor, currency)}`}
           >
             <div className="w-1 h-1 rounded-full bg-slate-900" />
           </div>
@@ -68,41 +69,41 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
   }
 
   return (
-    <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-4 space-y-4">
+    <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 sm:p-4 space-y-4">
       {/* 3 Corridor Stat Cards */}
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-1">
-            <ArrowDown className="w-3 h-3" /> All-Time Low
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+        <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-0.5 sm:gap-1">
+            <ArrowDown className="w-3 h-3 flex-shrink-0" /> <span className="truncate">Low</span>
           </span>
-          <span className="text-lg font-black text-slate-100 block mt-0.5">
-            {formatCurrency(allTimeLow)}
-          </span>
-        </div>
-
-        <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-slate-600/70 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 flex items-center justify-center gap-1">
-            <Gauge className="w-3 h-3" /> Current Floor
-          </span>
-          <span className="text-lg font-black text-white block mt-0.5">
-            {formatCurrency(currentFloor)}
+          <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
+            {formatCurrency(allTimeLow, currency)}
           </span>
         </div>
 
-        <div className="p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center justify-center gap-1">
-            <ArrowUp className="w-3 h-3" /> All-Time High
+        <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-slate-600/70 shadow-sm min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-400 flex items-center justify-center gap-0.5 sm:gap-1">
+            <Gauge className="w-3 h-3 flex-shrink-0" /> <span className="truncate">Current</span>
           </span>
-          <span className="text-lg font-black text-slate-100 block mt-0.5">
-            {formatCurrency(allTimeHigh)}
+          <span className="text-base sm:text-lg font-black text-white block mt-0.5 truncate">
+            {formatCurrency(currentFloor, currency)}
+          </span>
+        </div>
+
+        <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center justify-center gap-0.5 sm:gap-1">
+            <ArrowUp className="w-3 h-3 flex-shrink-0" /> <span className="truncate">High</span>
+          </span>
+          <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
+            {formatCurrency(allTimeHigh, currency)}
           </span>
         </div>
       </div>
 
       {/* Visual Market Spread Bar */}
       <div className="space-y-2">
-        <div className="flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-slate-300">Market Spread Corridor</span>
             <span
               className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${
@@ -125,7 +126,7 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
               ? 'Monitoring route to plot market spread'
               : currentFloor === allTimeLow
               ? 'Lowest recorded fare available today!'
-              : `${formatCurrency(currentFloor - allTimeLow)} above route low`}
+              : `${formatCurrency(currentFloor - allTimeLow, currency)} above route low`}
           </span>
         </div>
 
@@ -145,18 +146,18 @@ export default function RouteCorridorSummary({ metrics, compact = false }: Props
               left: `${pinPositionPercent}%`,
               transform: 'translate(-50%, -50%)',
             }}
-            title={hasSpread ? `Current: ${formatCurrency(currentFloor)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor)}`}
+            title={hasSpread ? `Current: ${formatCurrency(currentFloor, currency)} (${spreadPercent}%)` : `Recorded: ${formatCurrency(currentFloor, currency)}`}
           >
             <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
           </div>
         </div>
 
         <div className="flex justify-between text-[10px] text-gunmetal-muted font-mono px-0.5">
-          <span className="text-green-400 font-semibold">{formatCurrency(allTimeLow)} (Low)</span>
+          <span className="text-green-400 font-semibold">{formatCurrency(allTimeLow, currency)} (Low)</span>
           {hasSpread && (
-            <span className="text-slate-300 font-semibold">Current: {formatCurrency(currentFloor)}</span>
+            <span className="text-slate-300 font-semibold">Current: {formatCurrency(currentFloor, currency)}</span>
           )}
-          <span>{formatCurrency(allTimeHigh)} (High)</span>
+          <span>{formatCurrency(allTimeHigh, currency)} (High)</span>
         </div>
       </div>
     </div>

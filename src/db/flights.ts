@@ -185,6 +185,8 @@ export const flightDb = {
     details?: {
       airline?: string | null;
       flightNumber?: string | null;
+      origin?: string | null;
+      destination?: string | null;
       pnr?: string | null;
       notes?: string | null;
       checkedAt?: string | null;
@@ -207,6 +209,8 @@ export const flightDb = {
           currentPrice = @newPrice,
           airline = COALESCE(@airline, airline),
           flightNumber = COALESCE(@flightNumber, flightNumber),
+          origin = COALESCE(@origin, origin),
+          destination = COALESCE(@destination, destination),
           pnr = COALESCE(@pnr, pnr),
           notes = COALESCE(@notes, notes),
           updatedAt = @now
@@ -218,6 +222,8 @@ export const flightDb = {
         newPrice,
         airline: details?.airline ? details.airline.trim().toUpperCase() : null,
         flightNumber: details?.flightNumber ? details.flightNumber.trim() : null,
+        origin: details?.origin ? details.origin.trim().toUpperCase() : null,
+        destination: details?.destination ? details.destination.trim().toUpperCase() : null,
         pnr: details?.pnr ? details.pnr.trim().toUpperCase() : null,
         notes: details?.notes !== undefined ? details.notes : null,
         now,

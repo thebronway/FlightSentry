@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-11*  
-*Current Version: v0.7.8*
+*Current Version: v0.7.9*
 
 ## Changelog
+
+### Release v0.7.9
+- Aligned History Modal header, status row, airport bubbles, directional arrows, and alert chips with FlightCard styling.
+- Added vertical boundary auto-flip to tooltips to prevent top-edge clipping.
+- Converted History, Manual Price Entry, and Rebook modals to full-screen mobile layouts with 44px touch targets.
+- Added mobile stacked cards and sorting controls for Carrier Breakdown below 768px.
+- Added touch-friendly crosshair scrubbing and viewport-bounded tooltips to PriceChart.
+- Fixed carrier and airport resolution in Manual Price Entry and Rebook modals for route-tracked and multi-airport flights.
+- Extracted `useFlightHistory`, `HistoryChartSection`, `HistoryCheckBadges`, and `HistoryCheckRow` from HistoryModal.
 
 ### Release v0.7.8
 - Refactored FlightCard and FlightCondensedView into shared domain components under `flightCardShared` and `flightCardCondensed`.
