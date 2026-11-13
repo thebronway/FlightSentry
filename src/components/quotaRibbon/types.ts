@@ -2,7 +2,7 @@ export type QuotaPauseKey =
   | 'serpApiPaused'
   | 'searchApiPaused'
   | 'hasdataPaused'
-  | 'fastFlightsPaused';
+  | 'flightsentryScraperPaused';
 
 export type QuotaThresholdLevel = 'normal' | 'warning' | 'critical';
 
@@ -11,9 +11,17 @@ export interface QuotaSourceItem {
   name: string;
   enabled: number;
   paused: number;
+  remotePaused?: boolean;
+  remoteState?: 'ready' | 'rate_limited' | 'cooldown' | 'paused';
+  remoteStatusReason?: string | null;
   pauseKey: QuotaPauseKey;
   used: number;
   quota: number;
+  hourlyUsed?: number;
+  hourlyLimit?: number;
+  dailyUsed?: number;
+  dailyLimit?: number;
+  queueDepth?: number;
   resetDate: string | null;
   isScraper: boolean;
 }
@@ -40,7 +48,7 @@ export function summarizeQuotaCategory(
   sources: QuotaSourceItem[],
   isGloballyPaused: boolean
 ): QuotaCategorySummary {
-  const isSourcePaused = (s: QuotaSourceItem) => isGloballyPaused || s.paused === 1;
+  const isSourcePaused = (s: QuotaSourceItem) => isGloballyPaused || s.paused === 1 || s.remotePaused === true;
   const activeSources = sources.filter(s => !isSourcePaused(s));
   const pausedSources = sources.filter(s => isSourcePaused(s));
   const activeUsed = activeSources.reduce((sum, s) => sum + s.used, 0);

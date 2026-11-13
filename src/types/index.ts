@@ -52,6 +52,18 @@ export interface Flight {
   excludedAlliances?: string | null;
 }
 
+export type CheckResultStatus = 'Success' | 'SoldOut' | 'Error' | 'RateLimited' | 'Paused';
+
+export interface RouteSegment {
+  airline: string;
+  flightNumber: string;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  arrivalTime: string;
+  durationMinutes: number;
+}
+
 export interface RouteItinerary {
   airline: string;
   airlineName?: string;
@@ -66,14 +78,15 @@ export interface RouteItinerary {
   stops?: number;
   isNonstop?: boolean;
   layoverAirports?: string[];
-  maxLayoverMinutes?: number;
+  maxLayoverMinutes?: number | null;
+  legs?: RouteSegment[];
 }
 
 export interface PriceHistory {
   id: number;
   flightId: number;
   price: number;
-  status: string; // e.g., 'Success', 'SoldOut', 'Error'
+  status: CheckResultStatus | 'Booked' | string; // e.g., 'Success', 'SoldOut', 'Error', 'RateLimited', 'Paused'
   checkedAt: string; // ISO DateTime
   airline?: string | null;
   flightNumber?: string | null;
@@ -85,7 +98,7 @@ export interface Settings {
   id: number;
   serpApiKey?: string | null;
   searchApiKey?: string | null;
-  dataSourceStrategy: string; // e.g., "serpapi,searchapi,fastflights"
+  dataSourceStrategy: string; // e.g., "serpapi,searchapi,hasdata,flightsentry-scraper"
   notificationsEnabled: number; // 0 (false) or 1 (true)
   appriseUrl?: string | null;
   smtpHost?: string | null;
@@ -110,16 +123,18 @@ export interface Settings {
   fallbackStrategyMode: string;
   serpApiEnabled: number;
   searchApiEnabled: number;
-  fastFlightsEnabled: number;
+  flightsentryScraperEnabled: number;
+  flightsentryScraperPrioritizeFirst?: number;
+  flightsentryScraperUrl?: string | null;
+  flightsentryScraperApiKey?: string | null;
   serpApiQuota: number;
   searchApiQuota: number;
-  fastFlightsQuota: number;
   serpApiUsed: number;
   searchApiUsed: number;
-  fastFlightsUsed: number;
+  flightsentryScraperUsed: number;
   serpApiPaused: number;
   searchApiPaused: number;
-  fastFlightsPaused: number;
+  flightsentryScraperPaused: number;
   roundRobinIndex: number;
   hasdataApiKey?: string | null;
   hasdataEnabled: number;

@@ -7,6 +7,7 @@ const SOURCE_LABEL_MAP: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
   hasdata: 'HasData',
+  'flightsentry-scraper': 'FlightSentry-Scraper',
   fastflights: 'Fast-Flights',
   'Price Paid': 'Price Paid',
   manual: 'Manual Price Entry',
@@ -80,6 +81,8 @@ export default function HistoryCheckBadges({ record, currency }: Props) {
         className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
           record.status === 'Success'
             ? 'bg-green-900/30 text-green-400 border-green-800/40'
+            : record.status === 'Paused'
+            ? 'bg-amber-950/50 text-amber-300 border-amber-800/50'
             : 'bg-red-900/30 text-red-400 border-red-800/40'
         }`}
       >
@@ -88,7 +91,7 @@ export default function HistoryCheckBadges({ record, currency }: Props) {
       {record.sourceUsed && (
         <span
           className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-            record.sourceUsed === 'fastflights'
+            record.sourceUsed === 'flightsentry-scraper' || record.sourceUsed === 'fastflights'
               ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
               : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
           }`}

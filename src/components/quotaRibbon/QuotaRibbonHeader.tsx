@@ -9,7 +9,7 @@ interface QuotaRibbonHeaderProps {
   hasSources: boolean;
   isAllPaused: boolean;
   meteredSources: QuotaSourceItem[];
-  unlimitedSources: QuotaSourceItem[];
+  selfHostedSources: QuotaSourceItem[];
   onToggleGlobalPause: () => void;
   onToggleCollapse: () => void;
 }
@@ -19,12 +19,12 @@ export default function QuotaRibbonHeader({
   hasSources,
   isAllPaused,
   meteredSources,
-  unlimitedSources,
+  selfHostedSources,
   onToggleGlobalPause,
   onToggleCollapse,
 }: QuotaRibbonHeaderProps) {
   const meteredSummary = summarizeQuotaCategory(meteredSources, isAllPaused);
-  const unlimitedSummary = summarizeQuotaCategory(unlimitedSources, isAllPaused);
+  const selfHostedSummary = summarizeQuotaCategory(selfHostedSources, isAllPaused);
 
   return (
     <div
@@ -34,7 +34,7 @@ export default function QuotaRibbonHeader({
     >
       <div className="flex flex-wrap items-center gap-2.5 min-w-0">
         <h3 className="text-sm font-bold text-slate-200">
-          Active Data Sources &amp; Monthly Quotas
+          Active Data Sources &amp; Quotas
         </h3>
         {isCollapsed && hasSources && (
           <div className="flex flex-wrap items-center gap-2">
@@ -45,9 +45,9 @@ export default function QuotaRibbonHeader({
               isGloballyPaused={isAllPaused}
             />
             <QuotaCategorySummaryPill
-              label="Unlimited"
-              kind="unlimited"
-              summary={unlimitedSummary}
+              label="Self-Hosted"
+              kind="self-hosted"
+              summary={selfHostedSummary}
               isGloballyPaused={isAllPaused}
             />
           </div>

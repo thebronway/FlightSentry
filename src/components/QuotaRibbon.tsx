@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Settings as SettingsType } from '@/types';
 import { QuotaPauseKey, QuotaSourceItem } from './quotaRibbon/types';
+import type { ScraperHealthResponse } from '@/services/flightsentryScraper';
 import QuotaRibbonHeader from './quotaRibbon/QuotaRibbonHeader';
 import QuotaSourceCard from './quotaRibbon/QuotaSourceCard';
 
@@ -16,6 +17,7 @@ const STORAGE_KEY = 'flightsentry_quota_ribbon_collapsed';
 export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Props) {
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [scraperHealth, setScraperHealth] = useState<ScraperHealthResponse | null>(null);
 
   useEffect(() => {
     try {
@@ -36,12 +38,43 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
     });
   };
 
+  const fetchRemoteScraperHealth = async (currentSettings: SettingsType) => {
+    const enabled = currentSettings.flightsentryScraperEnabled === 1;
+    const hasUrl = Boolean((currentSettings.flightsentryScraperUrl || '').trim());
+    const hasKey = Boolean((currentSettings.flightsentryScraperApiKey || '').trim());
+    if (!enabled || !hasUrl || !hasKey) {
+      setScraperHealth(null);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/settings/test-scraper', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.health) {
+          setScraperHealth(data.health as ScraperHealthResponse);
+        } else {
+          setScraperHealth(null);
+        }
+      } else {
+        setScraperHealth(null);
+      }
+    } catch {
+      setScraperHealth(null);
+    }
+  };
+
   const fetchSettings = async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       setSettings(data);
       onSettingsChange?.(data);
+      void fetchRemoteScraperHealth(data);
     }
   };
 
@@ -86,13 +119,21 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       isScraper: false,
     },
     {
-      key: 'fastflights',
-      name: 'Fast-Flights',
-      enabled: settings.fastFlightsEnabled,
-      paused: settings.fastFlightsPaused,
-      pauseKey: 'fastFlightsPaused',
-      used: settings.fastFlightsUsed,
+      key: 'flightsentry-scraper',
+      name: 'FlightSentry-Scraper',
+      enabled: settings.flightsentryScraperEnabled,
+      paused: settings.flightsentryScraperPaused,
+      remotePaused: scraperHealth?.paused === true || scraperHealth?.state === 'paused',
+      remoteState: scraperHealth?.state,
+      remoteStatusReason: scraperHealth?.statusReason ?? null,
+      pauseKey: 'flightsentryScraperPaused',
+      used: settings.flightsentryScraperUsed,
       quota: 0,
+      hourlyUsed: scraperHealth?.usage?.hourlyUsed,
+      hourlyLimit: scraperHealth?.usage?.hourlyLimit,
+      dailyUsed: scraperHealth?.usage?.dailyUsed,
+      dailyLimit: scraperHealth?.usage?.dailyLimit,
+      queueDepth: scraperHealth?.queueDepth,
       resetDate: null,
       isScraper: true,
     },
@@ -101,7 +142,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
   const sources = allSources.filter(s => s.enabled === 1);
 
   const meteredSources = sources.filter(s => !s.isScraper && s.quota > 0);
-  const unlimitedSources = sources.filter(s => s.isScraper || s.quota === 0);
+  const selfHostedSources = sources.filter(s => s.isScraper);
 
   const isAllPaused =
     settings.globalPause === 1 ||
@@ -115,7 +156,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       serpApiPaused: nextPauseState,
       searchApiPaused: nextPauseState,
       hasdataPaused: nextPauseState,
-      fastFlightsPaused: nextPauseState,
+      flightsentryScraperPaused: nextPauseState,
     };
 
     const res = await fetch('/api/settings', {
@@ -143,7 +184,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       { enabled: updatedDraft.serpApiEnabled, paused: updatedDraft.serpApiPaused },
       { enabled: updatedDraft.searchApiEnabled, paused: updatedDraft.searchApiPaused },
       { enabled: updatedDraft.hasdataEnabled, paused: updatedDraft.hasdataPaused },
-      { enabled: updatedDraft.fastFlightsEnabled, paused: updatedDraft.fastFlightsPaused },
+      { enabled: updatedDraft.flightsentryScraperEnabled, paused: updatedDraft.flightsentryScraperPaused },
     ].filter(s => s.enabled === 1);
 
     const willAllBePaused = checkSources.length > 0 && checkSources.every(s => s.paused === 1);
@@ -170,7 +211,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
         hasSources={sources.length > 0}
         isAllPaused={isAllPaused}
         meteredSources={meteredSources}
-        unlimitedSources={unlimitedSources}
+        selfHostedSources={selfHostedSources}
         onToggleGlobalPause={toggleGlobalPause}
         onToggleCollapse={handleToggleCollapse}
       />

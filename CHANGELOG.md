@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-12*  
-*Current Version: v0.8.2*
+*Last updated: 2026-11-13*  
+*Current Version: v0.8.3*
 
 ## Changelog
+
+### Release v0.8.3
+- Replaced `fast-flights-ts` with the `FlightSentry-Scraper` REST API adapter (`GET /api/v1/health` pre-flight check and `POST /api/v1/scrape` execution) and removed `fast-flights-ts` from `package.json` and `next.config.js`.
+- Added SQLite `settings` columns and migrations for `flightsentryScraperEnabled`, `flightsentryScraperPrioritizeFirst`, `flightsentryScraperUrl`, `flightsentryScraperApiKey`, `flightsentryScraperPaused`, and `flightsentryScraperUsed`, and migrated `dataSourceStrategy` to `flightsentry-scraper`.
+- Added Zod URL validation (`http:`/`https:`, no embedded credentials, trailing slashes stripped), masked API key input, and `fss_...` log redaction.
+- Isolated `settings.circuitBreakerUntil` from `FlightSentry-Scraper` `429 RateLimited` and `503 Paused` responses, failing over to active metered providers without artificial pre-request jitter.
+- Replaced `UnmeteredScraperCard` with `SelfHostedScraperCard` inside the unified priority stack in **Settings → Data Sources** with live health/quota inspection (`POST /api/settings/test-scraper`) and a scraper-first priority toggle.
+- Updated `QuotaRibbon` with stacked hourly and daily rolling quota bars, remote pause indicators (`PAUSED (REMOTE)`), and `Paused` badges in history and logs.
 
 ### Release v0.8.2
 - Added server-side 24-hour GitHub sync for `CHANGELOG.md` and `.github/announcements.json` with SQLite caching in `release_sync_state` and silent offline fallback.

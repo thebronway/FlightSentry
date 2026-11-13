@@ -9,8 +9,8 @@ import {
 } from './types';
 
 interface QuotaCategorySummaryPillProps {
-  label: 'Metered' | 'Unlimited';
-  kind: 'metered' | 'unlimited';
+  label: 'Metered' | 'Self-Hosted';
+  kind: 'metered' | 'self-hosted';
   summary: QuotaCategorySummary;
   isGloballyPaused: boolean;
 }
@@ -44,10 +44,27 @@ export default function QuotaCategorySummaryPill({
 }: QuotaCategorySummaryPillProps) {
   if (summary.sources.length === 0) return null;
 
+  const scraperSrc = kind === 'self-hosted' ? summary.sources[0] : undefined;
+  const hasRollingQuotas =
+    scraperSrc !== undefined &&
+    typeof scraperSrc.hourlyLimit === 'number' &&
+    scraperSrc.hourlyLimit > 0 &&
+    typeof scraperSrc.dailyLimit === 'number' &&
+    scraperSrc.dailyLimit > 0;
+
+  const getSelfHostedThreshold = (): QuotaThresholdLevel => {
+    if (!hasRollingQuotas || !scraperSrc || summary.allPaused) return 'normal';
+    const hourlyLevel = getQuotaThresholdLevel(scraperSrc.hourlyUsed ?? 0, scraperSrc.hourlyLimit!);
+    const dailyLevel = getQuotaThresholdLevel(scraperSrc.dailyUsed ?? 0, scraperSrc.dailyLimit!);
+    if (hourlyLevel === 'critical' || dailyLevel === 'critical') return 'critical';
+    if (hourlyLevel === 'warning' || dailyLevel === 'warning') return 'warning';
+    return 'normal';
+  };
+
   const threshold: QuotaThresholdLevel =
     kind === 'metered' && !summary.allPaused
       ? getQuotaThresholdLevel(summary.activeUsed, summary.activeQuota)
-      : 'normal';
+      : getSelfHostedThreshold();
 
   const style = summary.allPaused
     ? {
@@ -70,10 +87,12 @@ export default function QuotaCategorySummaryPill({
       </div>
       <div className="space-y-0.5 font-mono text-[10px]">
         {summary.sources.map(src => {
-          const paused = isGloballyPaused || src.paused === 1;
+          const paused = isGloballyPaused || src.paused === 1 || src.remotePaused === true;
           const usageText =
             kind === 'metered'
               ? `${src.used}/${src.quota}`
+              : typeof src.hourlyLimit === 'number' && typeof src.dailyLimit === 'number'
+              ? `Hr ${src.hourlyUsed ?? 0}/${src.hourlyLimit} • Day ${src.dailyUsed ?? 0}/${src.dailyLimit}`
               : `${src.used} ${src.used === 1 ? 'query' : 'queries'}`;
           return (
             <div
@@ -123,6 +142,16 @@ export default function QuotaCategorySummaryPill({
                 • 0 left (Exhausted)
               </span>
             )}
+          </>
+        ) : hasRollingQuotas && scraperSrc ? (
+          <>
+            <span className={`${style.label} font-sans`}>Hr:</span>
+            <span className={style.count}>{scraperSrc.hourlyUsed ?? 0}</span>
+            <span className={style.label}>/{scraperSrc.hourlyLimit}</span>
+            <span className={`${style.label} mx-0.5`}>•</span>
+            <span className={`${style.label} font-sans`}>Day:</span>
+            <span className={style.count}>{scraperSrc.dailyUsed ?? 0}</span>
+            <span className={style.label}>/{scraperSrc.dailyLimit}</span>
           </>
         ) : (
           <>

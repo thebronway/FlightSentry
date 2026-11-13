@@ -30,8 +30,17 @@ export default function SettingsForm() {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        const allKeys = ['serpapi', 'searchapi', 'hasdata', 'fastflights'];
-        const existing = (data.dataSourceStrategy || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const allKeys = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
+        const normalized = (data.dataSourceStrategy || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+          .map((s: string) => (s === 'fastflights' ? 'flightsentry-scraper' : s))
+          .filter((s: string) => s !== 'fli');
+        const existing: string[] = [];
+        normalized.forEach((k: string) => {
+          if (!existing.includes(k)) existing.push(k);
+        });
         allKeys.forEach(k => {
           if (!existing.includes(k)) existing.push(k);
         });

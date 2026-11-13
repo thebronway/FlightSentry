@@ -122,6 +122,7 @@ export default function DataSourceLogsModal({
               logs.map(log => {
                 const isSuccess = log.status === 'Success';
                 const isRateLimited = log.status === 'RateLimited';
+                const isPaused = log.status === 'Paused';
                 const isManual = log.status === 'Manual';
 
                 return (
@@ -132,7 +133,7 @@ export default function DataSourceLogsModal({
                         ? 'bg-sky-950/20 border-sky-900/40'
                         : isSuccess
                         ? 'bg-gunmetal-canvas/40 border-gunmetal-border'
-                        : isRateLimited
+                        : isRateLimited || isPaused
                         ? 'bg-amber-950/20 border-amber-900/40'
                         : 'bg-red-950/20 border-red-900/40'
                     }`}
@@ -145,7 +146,7 @@ export default function DataSourceLogsModal({
                               ? 'bg-sky-950/60 text-sky-400 border-sky-800/60'
                               : isSuccess
                               ? 'bg-green-950/60 text-green-400 border-green-800/60'
-                              : isRateLimited
+                              : isRateLimited || isPaused
                               ? 'bg-amber-950/60 text-amber-400 border-amber-800/60'
                               : 'bg-red-950/60 text-red-400 border-red-800/60'
                           }`}
@@ -154,7 +155,7 @@ export default function DataSourceLogsModal({
                             <SlidersHorizontal className="w-3 h-3" />
                           ) : isSuccess ? (
                             <CheckCircle2 className="w-3 h-3" />
-                          ) : isRateLimited ? (
+                          ) : isRateLimited || isPaused ? (
                             <AlertTriangle className="w-3 h-3" />
                           ) : (
                             <AlertCircle className="w-3 h-3" />
@@ -195,7 +196,7 @@ export default function DataSourceLogsModal({
                     {log.errorMessage && (
                       <p
                         className={`text-[11px] pt-1 leading-relaxed break-words ${
-                          isRateLimited
+                          isRateLimited || isPaused
                             ? 'text-amber-300/90 font-mono'
                             : !isSuccess && !isManual
                             ? 'text-red-300/90 font-mono'

@@ -129,13 +129,15 @@ export function getDataSourceStatus(settings?: any | null): {
   const serpKey = (settings.serpApiKey || '').trim();
   const searchKey = (settings.searchApiKey || '').trim();
   const hasdataKey = (settings.hasdataApiKey || '').trim();
+  const scraperUrl = (settings.flightsentryScraperUrl || '').trim();
+  const scraperKey = (settings.flightsentryScraperApiKey || '').trim();
 
   const serpConfigured = isEnabled(settings.serpApiEnabled) && Boolean(serpKey);
   const searchConfigured = isEnabled(settings.searchApiEnabled) && Boolean(searchKey);
   const hasdataConfigured = isEnabled(settings.hasdataEnabled) && Boolean(hasdataKey);
-  const fastConfigured = isEnabled(settings.fastFlightsEnabled);
+  const scraperConfigured = isEnabled(settings.flightsentryScraperEnabled) && Boolean(scraperUrl) && Boolean(scraperKey);
 
-  const anyConfigured = serpConfigured || searchConfigured || hasdataConfigured || fastConfigured;
+  const anyConfigured = serpConfigured || searchConfigured || hasdataConfigured || scraperConfigured;
 
   if (!anyConfigured) {
     return {
@@ -160,9 +162,9 @@ export function getDataSourceStatus(settings?: any | null): {
   const serpActive = serpConfigured && !isPaused(settings.serpApiPaused) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
   const searchActive = searchConfigured && !isPaused(settings.searchApiPaused) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
   const hasdataActive = hasdataConfigured && !isPaused(settings.hasdataPaused) && (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
-  const fastActive = fastConfigured && !isPaused(settings.fastFlightsPaused);
+  const scraperActive = scraperConfigured && !isPaused(settings.flightsentryScraperPaused);
 
-  const anyActive = serpActive || searchActive || hasdataActive || fastActive;
+  const anyActive = serpActive || searchActive || hasdataActive || scraperActive;
 
   if (!anyActive) {
     const serpExhausted = serpConfigured && settings.serpApiQuota > 0 && settings.serpApiUsed >= settings.serpApiQuota;
@@ -173,7 +175,7 @@ export function getDataSourceStatus(settings?: any | null): {
                                           (!searchConfigured || searchExhausted) &&
                                           (!hasdataConfigured || hasdataExhausted);
 
-    if (allConfiguredMeteredExhausted && !fastConfigured) {
+    if (allConfiguredMeteredExhausted && !scraperConfigured) {
       return {
         configured: true,
         allPaused: false,

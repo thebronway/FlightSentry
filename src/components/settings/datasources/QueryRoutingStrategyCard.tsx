@@ -50,7 +50,7 @@ export default function QueryRoutingStrategyCard({
         </p>
       </div>
       <p className="text-[11px] text-amber-400 font-medium pt-1">
-        Priority Rule: Any active unmetered data source will automatically be queried first before any metered datasource, regardless of Query Routing Strategy.
+        Priority Rule: When &ldquo;Always run scraper first&rdquo; is enabled on FlightSentry-Scraper, it is queried before metered APIs; otherwise all active providers follow their rank order and Query Routing Strategy.
       </p>
     </SettingsCard>
   );

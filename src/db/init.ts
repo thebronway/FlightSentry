@@ -70,6 +70,12 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN defaultExcludedConnectingAirports TEXT",
         "ALTER TABLE settings ADD COLUMN defaultMaxTotalDurationMinutes INTEGER",
         "ALTER TABLE settings ADD COLUMN githubSyncEnabled INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperEnabled INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperPrioritizeFirst INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperUrl TEXT",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperApiKey TEXT",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperPaused INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN flightsentryScraperUsed INTEGER NOT NULL DEFAULT 0",
     ];
     for (const migration of migrations) {
         try {
@@ -186,21 +192,31 @@ export function initDb() {
         // Ignored
     }
 
-    // Ensure all 5 providers exist in dataSourceStrategy for existing databases
+    // Migrate legacy fastflights / fli entries and ensure all current providers exist in dataSourceStrategy
     try {
         const row = db.prepare('SELECT dataSourceStrategy FROM settings WHERE id = 1').get() as { dataSourceStrategy?: string } | undefined;
         if (row && row.dataSourceStrategy) {
-            const list = row.dataSourceStrategy.split(',').map(s => s.trim()).filter(Boolean);
-            const allProviders = ['serpapi', 'searchapi', 'hasdata', 'fastflights'];
-            let modified = false;
+            const rawList = row.dataSourceStrategy
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+                .map(s => (s === 'fastflights' ? 'flightsentry-scraper' : s))
+                .filter(s => s !== 'fli');
+            const list: string[] = [];
+            for (const item of rawList) {
+                if (!list.includes(item)) {
+                    list.push(item);
+                }
+            }
+            const allProviders = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
             for (const p of allProviders) {
                 if (!list.includes(p)) {
                     list.push(p);
-                    modified = true;
                 }
             }
-            if (modified) {
-                db.prepare('UPDATE settings SET dataSourceStrategy = ? WHERE id = 1').run(list.join(','));
+            const nextStrategy = list.join(',');
+            if (nextStrategy !== row.dataSourceStrategy) {
+                db.prepare('UPDATE settings SET dataSourceStrategy = ? WHERE id = 1').run(nextStrategy);
             }
         }
     } catch {
@@ -216,8 +232,8 @@ export function initDb() {
                 scheduleFarOut, scheduleStandard, 
                 scheduleFinalStretch, operatingHoursStart, operatingHoursEnd, dataSourceStrategy,
                 fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled, hasdataEnabled,
-                fastFlightsEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
-                fastFlightsQuota, notificationsEnabled, discordEnabled, slackEnabled,
+                flightsentryScraperEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
+                notificationsEnabled, discordEnabled, slackEnabled,
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
                 defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
@@ -225,8 +241,8 @@ export function initDb() {
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
-                48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,fastflights,fli',
-                'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 1, 0, 0, 0, 0,
+                48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,flightsentry-scraper',
+                'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 1, 0, 0, 0, 0,
                 'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1
             )
         `);

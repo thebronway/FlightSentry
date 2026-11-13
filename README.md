@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.8.2-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.8.3-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -29,18 +29,18 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Custom Price Alerts:** Automated drop and surge alerts via Discord Webhook, Slack Webhook, Generic Webhook, or SMTP Email with independent channel toggles, isolated testing, and custom thresholds.
 - **Recurring Quota Resets:** Configure monthly quota resets by day of the month (1st–31st) with automatic calendar rollover and short-month clamping.
 - **Smart Scheduling:** Preserves API tokens by dynamically scaling check frequency based on departure date—flights closer to departure are checked more frequently, while distant flights are polled on longer intervals.
-- **Multi-Strategy Query Routing:** Pool quotas across active providers using an atomic SQLite Round-Robin rotation, dynamically route queries via Balanced Usage (% quota consumed), or fail over using Exhaust Quota priority, with unmetered scrapers prioritized first.
+- **Multi-Strategy Query Routing:** Pool quotas across active providers using Round-Robin rotation, Balanced Usage (% quota consumed), or Exhaust Quota priority, with optional scraper-first prioritization.
 
 ## Data Sources
-FlightSentry connects to multiple flight search APIs and scraping engines to pull live flight fares. Several providers offer free plans (typically around 100 free searches per month). FlightSentry strings these services together—either rotating requests, balancing quota consumption, or failing over when a quota is exhausted—to give you maximum coverage without requiring a paid subscription.
+FlightSentry connects to multiple flight search APIs and a self-hosted scraper service to pull live flight fares. Several API providers offer free tiers (typically around 100 searches per month). FlightSentry rotates requests, balances quota usage, or fails over across configured sources to maintain price tracking coverage.
 
-While unmetered scrapers like Fast-Flights are supported without an API key, relying on a scraper as your sole data source is not recommended. When it works, it works great, but scrapers are volatile and subject to anti-bot blocks or CAPTCHAs. Pairing an unmetered scraper with at least one official API provider ensures reliable, uninterrupted price tracking when scraper requests fail.
+Pairing `FlightSentry-Scraper` with at least one API provider ensures uninterrupted price checks when the scraper is paused, in cooldown, or at its hourly/daily limit.
 
 ### Current Supported Data Sources
 - **[SerpAPI](https://serpapi.com/):** Provides 100 free searches per month.
 - **[SearchApi.io](https://www.searchapi.io/):** Provides 100 free searches per month with cabin tier and airline filter support.
 - **[HasData](https://hasdata.com/):** Google Flights scraper API with structured returns, airline filtering, and rate-limit detection.
-- **[Fast-Flights](https://github.com/thebronway/FlightSentry):** Unmetered scraper executed first with randomized jitter delay (requires a home or residential internet connection).
+- **[FlightSentry-Scraper](https://github.com/thebronway/FlightSentry):** Self-hosted Google Flights scraper service with Bearer API key authentication, serial queue management, and rolling hourly/daily limits.
 
 ### Future Supported Data Sources
 - TBD

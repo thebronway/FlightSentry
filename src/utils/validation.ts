@@ -84,6 +84,42 @@ export const manualUsageSchema = z.discriminatedUnion('mode', [
   }),
 ]);
 
+const safeHttpUrlSchema = z
+  .string()
+  .trim()
+  .url('Must be a valid URL')
+  .refine((val) => {
+    try {
+      const parsed = new URL(val);
+      return (
+        (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+        !parsed.username &&
+        !parsed.password
+      );
+    } catch {
+      return false;
+    }
+  }, 'URL must use http or https protocol without embedded credentials');
+
+const scraperUrlSchema = safeHttpUrlSchema
+  .transform((val) => val.replace(/\/+$/, ''))
+  .optional()
+  .nullable()
+  .or(z.literal(''));
+
+const scraperApiKeySchema = z
+  .string()
+  .trim()
+  .regex(/^fss_[a-f0-9]{64}$/, 'API key must match fss_<64 lowercase hex characters>')
+  .optional()
+  .nullable()
+  .or(z.literal(''));
+
+export const testScraperSchema = z.object({
+  flightsentryScraperUrl: scraperUrlSchema,
+  flightsentryScraperApiKey: scraperApiKeySchema,
+});
+
 export const settingsSchema = z.object({
   serpApiKey: z.string().optional().nullable().or(z.literal('')),
   searchApiKey: z.string().optional().nullable().or(z.literal('')),
@@ -144,16 +180,18 @@ export const settingsSchema = z.object({
   serpApiEnabled: z.number().min(0).max(1).optional(),
   searchApiEnabled: z.number().min(0).max(1).optional(),
   hasdataEnabled: z.number().min(0).max(1).optional(),
-  fastFlightsEnabled: z.number().min(0).max(1).optional(),
+  flightsentryScraperEnabled: z.number().min(0).max(1).optional(),
+  flightsentryScraperPrioritizeFirst: z.number().min(0).max(1).optional(),
+  flightsentryScraperUrl: scraperUrlSchema,
+  flightsentryScraperApiKey: scraperApiKeySchema,
   fliEnabled: z.number().min(0).max(1).optional(),
   serpApiQuota: z.number().min(0).optional(),
   searchApiQuota: z.number().min(0).optional(),
   hasdataQuota: z.number().min(0).optional(),
-  fastFlightsQuota: z.number().min(0).optional(),
   serpApiPaused: z.number().min(0).max(1).optional(),
   searchApiPaused: z.number().min(0).max(1).optional(),
   hasdataPaused: z.number().min(0).max(1).optional(),
-  fastFlightsPaused: z.number().min(0).max(1).optional(),
+  flightsentryScraperPaused: z.number().min(0).max(1).optional(),
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
   githubSyncEnabled: z.number().min(0).max(1).optional(),
@@ -179,19 +217,6 @@ export const manualPriceEntrySchema = z.object({
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
   notes: z.string().optional().nullable(),
 });
-
-const safeHttpUrlSchema = z
-  .string()
-  .trim()
-  .url('Must be a valid URL')
-  .refine((val) => {
-    try {
-      const parsed = new URL(val);
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  }, 'URL must use http or https protocol');
 
 export const announcementItemSchema = z.object({
   id: z.string().trim().min(1).max(128),

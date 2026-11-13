@@ -6,7 +6,7 @@ import SettingsIntroBanner from './shared/SettingsIntroBanner';
 import DataSourceLogsModal from './DataSourceLogsModal';
 import QueryRoutingStrategyCard from './datasources/QueryRoutingStrategyCard';
 import MeteredProviderCard, { MeteredProviderKey } from './datasources/MeteredProviderCard';
-import UnmeteredScraperCard from './datasources/UnmeteredScraperCard';
+import SelfHostedScraperCard from './datasources/SelfHostedScraperCard';
 import RouteAutoDetectionCard from './datasources/RouteAutoDetectionCard';
 
 interface Props {
@@ -30,7 +30,7 @@ const PROVIDER_NAMES: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
   hasdata: 'HasData',
-  fastflights: 'Fast-Flights (Scraper)',
+  'flightsentry-scraper': 'FlightSentry-Scraper',
   'flight-route-lookup': 'Flight Route Lookup',
 };
 
@@ -47,28 +47,29 @@ export default function DataSourcesTab({
   onAutoSave,
   onAdjustUsage,
 }: Props) {
-  const meteredKeys: MeteredProviderKey[] = ['serpapi', 'searchapi', 'hasdata'];
-  const meteredOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata')
+  type AllProviderKey = MeteredProviderKey | 'flightsentry-scraper';
+  const allProviderKeys: AllProviderKey[] = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
+  const providerOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata,flightsentry-scraper')
     .split(',')
     .map(s => s.trim())
-    .filter((k): k is MeteredProviderKey => meteredKeys.includes(k as MeteredProviderKey));
+    .filter((k): k is AllProviderKey => allProviderKeys.includes(k as AllProviderKey));
 
-  meteredKeys.forEach(k => {
-    if (!meteredOrder.includes(k)) meteredOrder.push(k);
+  allProviderKeys.forEach(k => {
+    if (!providerOrder.includes(k)) providerOrder.push(k);
   });
 
   const [selectedLogsProvider, setSelectedLogsProvider] = useState<string | null>(null);
 
   const move = async (index: number, dir: -1 | 1) => {
-    const newOrder = [...meteredOrder];
+    const newOrder = [...providerOrder];
     const temp = newOrder[index];
     newOrder[index] = newOrder[index + dir];
     newOrder[index + dir] = temp;
-    const updatedStrategy = [...newOrder, 'fastflights'].join(',');
+    const updatedStrategy = newOrder.join(',');
     const updated = { ...settings, dataSourceStrategy: updatedStrategy };
     onChange(updated);
     if (onAutoSave) {
-      await onAutoSave(updated, '', '', 'Metered API priority order updated');
+      await onAutoSave(updated, '', '', 'Data source priority order updated');
     }
   };
 
@@ -78,11 +79,26 @@ export default function DataSourcesTab({
     if (key === 'serpapi') updated.serpApiEnabled = val;
     if (key === 'searchapi') updated.searchApiEnabled = val;
     if (key === 'hasdata') updated.hasdataEnabled = val;
-    if (key === 'fastflights') updated.fastFlightsEnabled = val;
+    if (key === 'flightsentry-scraper') updated.flightsentryScraperEnabled = val;
     onChange(updated);
     if (onAutoSave) {
       const providerLabel = PROVIDER_NAMES[key] || key;
       await onAutoSave(updated, key, 'Saved!', `${providerLabel} ${checked ? 'enabled' : 'disabled'}`);
+    }
+  };
+
+  const toggleScraperPrioritizeFirst = async (checked: boolean) => {
+    const updated = { ...settings, flightsentryScraperPrioritizeFirst: checked ? 1 : 0 };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(
+        updated,
+        'flightsentry-scraper',
+        'Saved!',
+        checked
+          ? 'FlightSentry-Scraper set to always run first'
+          : 'FlightSentry-Scraper set to follow priority rank'
+      );
     }
   };
 
@@ -143,16 +159,58 @@ export default function DataSourcesTab({
         onSelectStrategy={handleSelectStrategy}
       />
 
-      {/* Reorderable Metered API Provider Stack */}
+      {/* Reorderable Data Source Provider Stack */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-200">Metered API Priority Order</h3>
+          <h3 className="text-sm font-bold text-slate-200">Data Source Priority Order</h3>
           <p className="text-xs text-gunmetal-muted">
-            Use the chevrons on each card to adjust priority rank across metered API providers. Inactive providers remain in their fixed rank position but are skipped at runtime.
+            Use the chevrons on each card to adjust priority rank across all configured providers. Inactive providers remain in their fixed rank position but are skipped at runtime.
           </p>
         </div>
 
-        {meteredOrder.map((key, index) => {
+        {providerOrder.map((key, index) => {
+          if (key === 'flightsentry-scraper') {
+            return (
+              <SelfHostedScraperCard
+                key={key}
+                providerName={PROVIDER_NAMES['flightsentry-scraper']}
+                rankIndex={index}
+                totalCount={providerOrder.length}
+                isEnabled={settings.flightsentryScraperEnabled === 1}
+                prioritizeFirst={settings.flightsentryScraperPrioritizeFirst !== 0}
+                scraperUrl={settings.flightsentryScraperUrl || ''}
+                scraperApiKey={settings.flightsentryScraperApiKey || ''}
+                status={providerStatus['flightsentry-scraper']}
+                onToggleEnabled={checked => toggleEnabled('flightsentry-scraper', checked)}
+                onTogglePrioritizeFirst={toggleScraperPrioritizeFirst}
+                onMove={dir => move(index, dir)}
+                onUrlChange={val => onChange({ ...settings, flightsentryScraperUrl: val })}
+                onUrlBlur={() => {
+                  if (onAutoSave) {
+                    onAutoSave(
+                      settings,
+                      'flightsentry-scraper',
+                      'Saved!',
+                      'FlightSentry-Scraper URL saved'
+                    );
+                  }
+                }}
+                onApiKeyChange={val => onChange({ ...settings, flightsentryScraperApiKey: val })}
+                onApiKeyBlur={() => {
+                  if (onAutoSave) {
+                    onAutoSave(
+                      settings,
+                      'flightsentry-scraper',
+                      'Saved!',
+                      'FlightSentry-Scraper API key saved'
+                    );
+                  }
+                }}
+                onOpenLogs={() => setSelectedLogsProvider('flightsentry-scraper')}
+              />
+            );
+          }
+
           const props = getMeteredProps(key);
           return (
             <MeteredProviderCard
@@ -160,7 +218,7 @@ export default function DataSourcesTab({
               providerKey={key}
               providerName={PROVIDER_NAMES[key]}
               rankIndex={index}
-              totalCount={meteredOrder.length}
+              totalCount={providerOrder.length}
               isEnabled={props.isEnabled}
               apiKey={props.apiKey}
               monthlyQuota={props.monthlyQuota}
@@ -211,14 +269,6 @@ export default function DataSourcesTab({
           );
         })}
       </div>
-
-      <UnmeteredScraperCard
-        providerName={PROVIDER_NAMES['fastflights']}
-        isEnabled={settings.fastFlightsEnabled === 1}
-        status={providerStatus['fastflights']}
-        onToggleEnabled={checked => toggleEnabled('fastflights', checked)}
-        onOpenLogs={() => setSelectedLogsProvider('fastflights')}
-      />
 
       <RouteAutoDetectionCard
         onOpenLogs={() => setSelectedLogsProvider('flight-route-lookup')}

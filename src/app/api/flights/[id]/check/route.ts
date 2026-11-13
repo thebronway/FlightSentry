@@ -33,14 +33,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const result = await executeSearchStrategy(flight, settings);
 
-    if (result.status === 'RateLimited') {
+    if (result.status === 'RateLimited' && result.sourceUsed !== 'flightsentry-scraper') {
       const pauseHours = Math.random() * (8 - 4) + 4;
       const pauseUntil = new Date(Date.now() + pauseHours * 3600000).toISOString();
       settingsDb.update({ circuitBreakerUntil: pauseUntil });
       return NextResponse.json({ error: 'Rate limit hit. Circuit breaker triggered.' }, { status: 429 });
     }
 
-    if (result.status !== 'Error' && result.sourceUsed) {
+    const shouldIncrementUsage =
+      result.status !== 'Error' &&
+      result.status !== 'Paused' &&
+      !(result.sourceUsed === 'flightsentry-scraper' && result.status === 'RateLimited') &&
+      Boolean(result.sourceUsed);
+
+    if (shouldIncrementUsage && result.sourceUsed) {
       settingsDb.incrementApiUsage(result.sourceUsed);
     }
 

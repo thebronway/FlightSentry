@@ -4,7 +4,7 @@ const nextConfig = {
   swcMinify: true,
   output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3', 'node-libcurl', 'fast-flights-ts'],
+    serverComponentsExternalPackages: ['better-sqlite3', 'node-libcurl'],
   },
 };
 

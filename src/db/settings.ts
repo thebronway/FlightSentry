@@ -5,7 +5,7 @@ export const settingsDb = {
   get: (): Settings => {
     return db.prepare('SELECT * FROM settings WHERE id = 1').get() as Settings;
   },
-  update: (settings: Partial<Omit<Settings, 'id' | 'serpApiUsed' | 'searchApiUsed' | 'hasdataUsed' | 'fastFlightsUsed'>>): void => {
+  update: (settings: Partial<Omit<Settings, 'id' | 'serpApiUsed' | 'searchApiUsed' | 'hasdataUsed' | 'flightsentryScraperUsed'>>): void => {
     const current = settingsDb.get();
     const updated = { ...current, ...settings };
     
@@ -28,12 +28,14 @@ export const settingsDb = {
         serpApiEnabled = @serpApiEnabled,
         searchApiEnabled = @searchApiEnabled,
         hasdataEnabled = @hasdataEnabled,
-        fastFlightsEnabled = @fastFlightsEnabled,
+        flightsentryScraperEnabled = @flightsentryScraperEnabled,
+        flightsentryScraperPrioritizeFirst = @flightsentryScraperPrioritizeFirst,
+        flightsentryScraperUrl = @flightsentryScraperUrl,
+        flightsentryScraperApiKey = @flightsentryScraperApiKey,
         fliEnabled = @fliEnabled,
         serpApiQuota = @serpApiQuota,
         searchApiQuota = @searchApiQuota,
         hasdataQuota = @hasdataQuota,
-        fastFlightsQuota = @fastFlightsQuota,
         serpApiResetDate = @serpApiResetDate,
         searchApiResetDate = @searchApiResetDate,
         hasdataResetDate = @hasdataResetDate,
@@ -44,7 +46,7 @@ export const settingsDb = {
         serpApiPaused = @serpApiPaused,
         searchApiPaused = @searchApiPaused,
         hasdataPaused = @hasdataPaused,
-        fastFlightsPaused = @fastFlightsPaused,
+        flightsentryScraperPaused = @flightsentryScraperPaused,
         fliPaused = @fliPaused,
         notificationsEnabled = @notificationsEnabled,
         discordEnabled = @discordEnabled,
@@ -103,11 +105,11 @@ export const settingsDb = {
     });
     return atomicTx();
   },
-  incrementApiUsage: (source: 'serpapi' | 'searchapi' | 'hasdata' | 'fastflights'): void => {
+  incrementApiUsage: (source: 'serpapi' | 'searchapi' | 'hasdata' | 'flightsentry-scraper'): void => {
     if (source === 'serpapi') db.prepare('UPDATE settings SET serpApiUsed = serpApiUsed + 1 WHERE id = 1').run();
     if (source === 'searchapi') db.prepare('UPDATE settings SET searchApiUsed = searchApiUsed + 1 WHERE id = 1').run();
     if (source === 'hasdata') db.prepare('UPDATE settings SET hasdataUsed = hasdataUsed + 1 WHERE id = 1').run();
-    if (source === 'fastflights') db.prepare('UPDATE settings SET fastFlightsUsed = fastFlightsUsed + 1 WHERE id = 1').run();
+    if (source === 'flightsentry-scraper') db.prepare('UPDATE settings SET flightsentryScraperUsed = flightsentryScraperUsed + 1 WHERE id = 1').run();
   },
   adjustProviderUsage: (
     source: 'serpapi' | 'searchapi' | 'hasdata',
@@ -133,7 +135,7 @@ export const settingsDb = {
     return adjustTx();
   },
   resetApiUsage: (newResetDate: string): void => {
-    const stmt = db.prepare('UPDATE settings SET serpApiUsed = 0, searchApiUsed = 0, hasdataUsed = 0, fastFlightsUsed = 0, quotaResetDate = @newResetDate WHERE id = 1');
+    const stmt = db.prepare('UPDATE settings SET serpApiUsed = 0, searchApiUsed = 0, hasdataUsed = 0, flightsentryScraperUsed = 0, quotaResetDate = @newResetDate WHERE id = 1');
     stmt.run({ newResetDate });
   },
   resetProviderUsage: (source: 'serpapi' | 'searchapi' | 'hasdata', newResetDate: string): void => {

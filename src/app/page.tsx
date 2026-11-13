@@ -153,7 +153,7 @@ export default function Dashboard() {
         serpApiPaused: 0,
         searchApiPaused: 0,
         hasdataPaused: 0,
-        fastFlightsPaused: 0,
+        flightsentryScraperPaused: 0,
       }),
     });
     if (res.ok) {
