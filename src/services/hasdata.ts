@@ -1,4 +1,4 @@
-import { Flight, RouteItinerary } from '../types';
+import { Flight, RouteItinerary, AdapterExecutionOptions } from '../types';
 import { DataSourceResult } from './datasource';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
@@ -7,7 +7,8 @@ import { resolveToApiAirportCodes } from '../utils/coLocations';
 export const checkHasDataPrice = async (
   flight: Flight,
   apiKey: string,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  options?: AdapterExecutionOptions
 ): Promise<DataSourceResult> => {
   if (!apiKey) {
     console.error('[HasData] API key is missing or not configured.');
@@ -113,12 +114,14 @@ export const checkHasDataPrice = async (
       let parsedMessage = errorText;
       try {
         const json = JSON.parse(errorText);
+        options?.onRawPayload?.(json);
         parsedMessage = json.error || json.message || errorText;
       } catch {}
       return { price: null, status: 'Error', errorMessage: `HasData HTTP ${response.status}: ${parsedMessage}` };
     }
 
     const data = await response.json();
+    options?.onRawPayload?.(data);
     const bestFlights = data.bestFlights || [];
     const otherFlights = data.otherFlights || [];
     const allFlights = data.allFlights || [...bestFlights, ...otherFlights];

@@ -251,3 +251,86 @@ export const bannerDismissSchema = z.discriminatedUnion('type', [
     id: z.string().trim().min(1).max(128),
   }),
 ]);
+
+export const devProviderIdSchema = z.enum([
+  'serpapi',
+  'searchapi',
+  'hasdata',
+  'flightsentry-scraper',
+]);
+
+export const devProviderTestSchema = z.object({
+  origin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+      'Origin must be a 3-letter IATA code or comma-separated IATA codes (e.g. JFK or NYC)'
+    ),
+  destination: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+      'Destination must be a 3-letter IATA code or comma-separated IATA codes (e.g. LAX or WAS)'
+    ),
+  departureDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Departure date must be YYYY-MM-DD'),
+  cabinClass: z
+    .enum(['economy', 'premium_economy', 'business', 'first'])
+    .default('economy'),
+  fareTier: z
+    .enum(['Basic Economy', 'Standard'])
+    .default('Standard'),
+  airline: z
+    .string()
+    .trim()
+    .max(32)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  flightNumber: z
+    .string()
+    .trim()
+    .regex(/^(?:[A-Z0-9]{2}\s*)?\d{1,5}$/i, 'Flight number must be numeric (e.g. 452) or carrier + digits (e.g. DL452)')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  providers: z
+    .array(devProviderIdSchema)
+    .min(1, 'Select at least one provider to test')
+    .max(4)
+    .transform((list) => Array.from(new Set(list))),
+  overrides: z
+    .object({
+      serpapi: z
+        .object({
+          apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
+        })
+        .optional(),
+      searchapi: z
+        .object({
+          apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
+        })
+        .optional(),
+      hasdata: z
+        .object({
+          apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
+        })
+        .optional(),
+      'flightsentry-scraper': z
+        .object({
+          apiKey: scraperApiKeySchema,
+          scraperUrl: scraperUrlSchema,
+        })
+        .optional(),
+    })
+    .optional()
+    .default({}),
+});
+
+export type DevProviderTestInput = z.infer<typeof devProviderTestSchema>;

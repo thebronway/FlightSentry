@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-13*  
-*Current Version: v0.8.3*
+*Current Version: v0.8.4*
 
 ## Changelog
+
+### Release v0.8.4
+- Added `/api-test` page and `POST /api/dev/provider-test` endpoint gated by `ENABLE_API_TESTER=true` (returning `404` when unset or `false`).
+- Added server-side saved credential resolution (incrementing provider quota counters) and per-provider temporary key/URL overrides (unpersisted and excluded from quota counters).
+- Added raw upstream payload capture across `SerpAPI`, `SearchApi.io`, `HasData`, and `FlightSentry-Scraper` adapters with server-side secret redaction and collapsible JSON inspection.
+- Added cross-provider itinerary parity checks flagging mismatches across carrier, flight number, price, stops, and departure/arrival times alongside per-provider latency and parsed flight counts.
+- Updated `SearchApi.io` itinerary parsing to combine `departure_airport.date` and `arrival_airport.date` with departure/arrival times.
 
 ### Release v0.8.3
 - Replaced `fast-flights-ts` with the `FlightSentry-Scraper` REST API adapter (`GET /api/v1/health` pre-flight check and `POST /api/v1/scrape` execution) and removed `fast-flights-ts` from `package.json` and `next.config.js`.

@@ -54,6 +54,10 @@ export interface Flight {
 
 export type CheckResultStatus = 'Success' | 'SoldOut' | 'Error' | 'RateLimited' | 'Paused';
 
+export interface AdapterExecutionOptions {
+  onRawPayload?: (raw: unknown) => void;
+}
+
 export interface RouteSegment {
   airline: string;
   flightNumber: string;

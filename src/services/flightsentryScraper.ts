@@ -1,4 +1,4 @@
-import { Flight, RouteItinerary, RouteSegment } from '../types';
+import { Flight, RouteItinerary, RouteSegment, AdapterExecutionOptions } from '../types';
 import { DataSourceResult } from './datasource';
 import {
   normalizeAirlineCode,
@@ -159,7 +159,8 @@ export const checkFlightSentryScraperPrice = async (
   flight: Flight,
   baseUrl?: string | null,
   apiKey?: string | null,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  options?: AdapterExecutionOptions
 ): Promise<DataSourceResult> => {
   const trimmedUrl = (baseUrl || '').trim();
   const trimmedKey = (apiKey || '').trim();
@@ -280,7 +281,7 @@ export const checkFlightSentryScraperPrice = async (
     cabinClass: flight.cabinClass || 'economy',
     fareTier: flight.fareTier === 'Basic Economy' ? 'Basic' : 'Standard',
     currency: activeCurrency,
-    includeRaw: false,
+    includeRaw: Boolean(options?.onRawPayload),
   };
 
   if (flight.searchMode === 'Route') {
@@ -355,6 +356,9 @@ export const checkFlightSentryScraperPrice = async (
   let body: ScraperQueryResponse | null = null;
   try {
     body = (await res.json()) as ScraperQueryResponse;
+    if (body) {
+      options?.onRawPayload?.(body);
+    }
   } catch {
     // Non-JSON upstream error
   }

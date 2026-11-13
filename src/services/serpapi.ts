@@ -1,4 +1,4 @@
-import { Flight, RouteItinerary } from '../types';
+import { Flight, RouteItinerary, AdapterExecutionOptions } from '../types';
 import { DataSourceResult } from './datasource';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
@@ -7,7 +7,8 @@ import { resolveToApiAirportCodes } from '../utils/coLocations';
 export const checkFlightPrice = async (
   flight: Flight,
   apiKey: string,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  options?: AdapterExecutionOptions
 ): Promise<DataSourceResult> => {
   if (!apiKey) {
     console.error("SerpApi key is missing or not configured.");
@@ -106,12 +107,14 @@ export const checkFlightPrice = async (
       let parsedMessage = errorText;
       try {
         const json = JSON.parse(errorText);
+        options?.onRawPayload?.(json);
         parsedMessage = json.error || json.message || errorText;
       } catch {}
       return { price: null, status: 'Error', errorMessage: `SerpAPI HTTP ${response.status}: ${parsedMessage}` };
     }
 
     const data = await response.json();
+    options?.onRawPayload?.(data);
     const bestFlights = data.best_flights || [];
     const otherFlights = data.other_flights || [];
     const allFlights = [...bestFlights, ...otherFlights];

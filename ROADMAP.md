@@ -1,32 +1,22 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-13*  
-*Current Version: v0.8.3*
+*Current Version: v0.8.4*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.8.4: Dev API
-- **Env-Gated Internal Test Page (`/api-test`)**
-  - Build a dedicated `/api-test` UI page and `POST /api/dev/provider-test` endpoint directly into the main FlightSentry image, gated by `ENABLE_API_TESTER=true` (returning `404` when unset or `false`).
-- **Saved & Temporary Provider Key Testing**
-  - Use existing API keys and scraper URLs saved in SQLite by default (resolved server-side without exposing stored secrets in the UI, and incrementing that provider's quota counter so usage tracking stays accurate).
-  - Allow an optional temporary key override per provider (never saved to SQLite and excluded from saved key quota counters).
-  - Execute FlightSentry's actual production provider adapters (`SerpAPI`, `SearchApi.io`, `HasData`, `FlightSentry-Scraper`) against configurable origin, destination, date, cabin class, and optional flight number inputs.
-- **Result Parity & Raw Payload Inspection**
-  - Run selected providers side-by-side and flag mismatches across normalized fields (carrier, flight number, price, stops, departure/arrival times) to verify all providers return consistent results.
-  - Display per-provider latency, parsed flight count, error details, and collapsible raw upstream JSON responses to quickly catch breaking API or scraper changes.
-
 ### Release v0.8.5: bug fixes / app tweaks
 - App wide
-  - google flights link(s) dont work
+  - google flights link(s) dont work, link is encoded, use urlBuilder (esp basic econ vs not basic econ from scraper)
 - Flight Modal Flight Lookups
   - what happens when airlines use the same flight number for multiple flights? How do we deal with that in the UI
   - it is sometimes auto-checking for route and putting in the route before I finish typing in the number, so maybe don't auto-check until I get to four numbers or until time has passed or until like focus like it's you're out of the cell or something, you know what I mean. Need to come up with a good solution. need options
 - Data Sources
   - Data Sources can be one time or monthly, need to support both modes per data source (api, not scraper)
+  - Remove Hasdata, all links settings, references, etc. (it does not support basic econ) (remove from api test, and change from 4col to 3col)
 - Dashboard
   - Old flights cleanup worth it? maybe keep 1 year, but user changeable in settings? performance implications? Maybe a cleanup button in settings? Okay with just keeping everything archived. Discuss/options first.
 

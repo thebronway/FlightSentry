@@ -1,5 +1,5 @@
 import { DataSourceResult } from './datasource';
-import { Flight, RouteItinerary } from '../types';
+import { Flight, RouteItinerary, AdapterExecutionOptions } from '../types';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToApiAirportCodes } from '../utils/coLocations';
@@ -7,7 +7,8 @@ import { resolveToApiAirportCodes } from '../utils/coLocations';
 export const checkSearchApiPrice = async (
   flight: Flight,
   apiKey: string,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  options?: AdapterExecutionOptions
 ): Promise<DataSourceResult> => {
   try {
     const url = new URL('https://www.searchapi.io/api/v1/search');
@@ -106,6 +107,7 @@ export const checkSearchApiPrice = async (
       let parsedMessage = errorText;
       try {
         const json = JSON.parse(errorText);
+        options?.onRawPayload?.(json);
         parsedMessage = json.error || json.message || errorText;
       } catch {
         // use raw text
@@ -119,6 +121,7 @@ export const checkSearchApiPrice = async (
     }
 
     const data = await response.json();
+    options?.onRawPayload?.(data);
     const bestFlights = data.best_flights || [];
     const otherFlights = data.other_flights || [];
     const allFlights = [...bestFlights, ...otherFlights];
@@ -172,6 +175,22 @@ export const checkSearchApiPrice = async (
           if (durations.length > 0) maxLayoverMinutes = Math.max(...durations);
         }
 
+        const formatSearchApiDateTime = (
+          airportPoint: any,
+          fallbackDate?: string
+        ): string | undefined => {
+          const rawTime = typeof airportPoint?.time === 'string' ? airportPoint.time.trim() : '';
+          if (!rawTime) return undefined;
+          if (/^\d{4}-\d{2}-\d{2}[T\s]\d{1,2}:\d{2}/.test(rawTime)) {
+            return rawTime;
+          }
+          const rawDate =
+            typeof airportPoint?.date === 'string' && airportPoint.date.trim()
+              ? airportPoint.date.trim()
+              : fallbackDate || '';
+          return rawDate ? `${rawDate} ${rawTime}` : rawTime;
+        };
+
         return {
           airline: code,
           airlineName: firstLeg.airline || getAirlineName(code),
@@ -179,8 +198,8 @@ export const checkSearchApiPrice = async (
           origin: legOrigin,
           destination: legDestination,
           price: extractPrice(f.price),
-          departureTime: firstLeg.departure_airport?.time,
-          arrivalTime: lastLeg.arrival_airport?.time,
+          departureTime: formatSearchApiDateTime(firstLeg.departure_airport, flight.departureDate),
+          arrivalTime: formatSearchApiDateTime(lastLeg.arrival_airport),
           duration: f.total_duration ? `${Math.floor(f.total_duration / 60)}h ${f.total_duration % 60}m` : undefined,
           durationMinutes: typeof f.total_duration === 'number' ? f.total_duration : undefined,
           stops,
