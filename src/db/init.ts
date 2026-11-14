@@ -11,11 +11,6 @@ export function initDb() {
         "ALTER TABLE flights ADD COLUMN minDropDollar REAL",
         "ALTER TABLE flights ADD COLUMN minDropPercent REAL",
         "ALTER TABLE settings ADD COLUMN roundRobinIndex INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE settings ADD COLUMN hasdataApiKey TEXT",
-        "ALTER TABLE settings ADD COLUMN hasdataEnabled INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE settings ADD COLUMN hasdataQuota INTEGER NOT NULL DEFAULT 100",
-        "ALTER TABLE settings ADD COLUMN hasdataUsed INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE settings ADD COLUMN hasdataPaused INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN fliEnabled INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN fliPaused INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN discordEnabled INTEGER NOT NULL DEFAULT 0",
@@ -31,7 +26,6 @@ export function initDb() {
         "ALTER TABLE price_history ADD COLUMN sourceUsed TEXT",
         "ALTER TABLE settings ADD COLUMN serpApiResetDate TEXT",
         "ALTER TABLE settings ADD COLUMN searchApiResetDate TEXT",
-        "ALTER TABLE settings ADD COLUMN hasdataResetDate TEXT",
         "ALTER TABLE settings ADD COLUMN checkStartTime TEXT DEFAULT '06:00'",
         "ALTER TABLE flights ADD COLUMN earliestDeparture TEXT",
         "ALTER TABLE flights ADD COLUMN latestDeparture TEXT",
@@ -43,7 +37,6 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN quotaResetDay INTEGER NOT NULL DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN serpApiResetDay INTEGER DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN searchApiResetDay INTEGER DEFAULT 1",
-        "ALTER TABLE settings ADD COLUMN hasdataResetDay INTEGER DEFAULT 1",
         "ALTER TABLE settings ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'",
         "ALTER TABLE settings ADD COLUMN minIncreaseDollar REAL NOT NULL DEFAULT 50.0",
         "ALTER TABLE settings ADD COLUMN minIncreasePercent REAL NOT NULL DEFAULT 10.0",
@@ -76,6 +69,8 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN flightsentryScraperApiKey TEXT",
         "ALTER TABLE settings ADD COLUMN flightsentryScraperPaused INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN flightsentryScraperUsed INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN serpApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
+        "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
     ];
     for (const migration of migrations) {
         try {
@@ -147,12 +142,11 @@ export function initDb() {
 
     // Initialize per-provider reset dates and recurring days from quotaResetDate if unset
     try {
-        const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, hasdataResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay, hasdataResetDay FROM settings WHERE id = 1').get() as any;
+        const row = db.prepare('SELECT quotaResetDate, serpApiResetDate, searchApiResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay FROM settings WHERE id = 1').get() as any;
         if (row) {
             const fallbackReset = row.quotaResetDate || new Date().toISOString().split('T')[0];
             if (!row.serpApiResetDate) db.prepare('UPDATE settings SET serpApiResetDate = ? WHERE id = 1').run(fallbackReset);
             if (!row.searchApiResetDate) db.prepare('UPDATE settings SET searchApiResetDate = ? WHERE id = 1').run(fallbackReset);
-            if (!row.hasdataResetDate) db.prepare('UPDATE settings SET hasdataResetDate = ? WHERE id = 1').run(fallbackReset);
 
             const parseDay = (dateStr?: string | null): number => {
                 if (!dateStr) return 1;
@@ -164,16 +158,14 @@ export function initDb() {
             const globalDay = row.quotaResetDay || parseDay(row.quotaResetDate);
             const serpDay = row.serpApiResetDay || parseDay(row.serpApiResetDate || row.quotaResetDate);
             const searchDay = row.searchApiResetDay || parseDay(row.searchApiResetDate || row.quotaResetDate);
-            const hasdataDay = row.hasdataResetDay || parseDay(row.hasdataResetDate || row.quotaResetDate);
 
             db.prepare(`
                 UPDATE settings SET 
                     quotaResetDay = COALESCE(quotaResetDay, ?),
                     serpApiResetDay = COALESCE(serpApiResetDay, ?),
-                    searchApiResetDay = COALESCE(searchApiResetDay, ?),
-                    hasdataResetDay = COALESCE(hasdataResetDay, ?)
+                    searchApiResetDay = COALESCE(searchApiResetDay, ?)
                 WHERE id = 1
-            `).run(globalDay, serpDay, searchDay, hasdataDay);
+            `).run(globalDay, serpDay, searchDay);
         }
     } catch {
         // Ignored
@@ -192,7 +184,7 @@ export function initDb() {
         // Ignored
     }
 
-    // Migrate legacy fastflights / fli entries and ensure all current providers exist in dataSourceStrategy
+    // Migrate legacy fastflights / fli / hasdata entries and ensure all current providers exist in dataSourceStrategy
     try {
         const row = db.prepare('SELECT dataSourceStrategy FROM settings WHERE id = 1').get() as { dataSourceStrategy?: string } | undefined;
         if (row && row.dataSourceStrategy) {
@@ -201,14 +193,14 @@ export function initDb() {
                 .map(s => s.trim())
                 .filter(Boolean)
                 .map(s => (s === 'fastflights' ? 'flightsentry-scraper' : s))
-                .filter(s => s !== 'fli');
+                .filter(s => s !== 'fli' && s !== 'hasdata');
             const list: string[] = [];
             for (const item of rawList) {
                 if (!list.includes(item)) {
                     list.push(item);
                 }
             }
-            const allProviders = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
+            const allProviders = ['serpapi', 'searchapi', 'flightsentry-scraper'];
             for (const p of allProviders) {
                 if (!list.includes(p)) {
                     list.push(p);
@@ -228,11 +220,12 @@ export function initDb() {
     if (!getSettings.get()) {
         const insertSettings = db.prepare(`
             INSERT INTO settings (
-                id, timezone, quotaResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay, hasdataResetDay,
+                id, timezone, quotaResetDate, quotaResetDay, serpApiResetDay, searchApiResetDay,
                 scheduleFarOut, scheduleStandard, 
                 scheduleFinalStretch, operatingHoursStart, operatingHoursEnd, dataSourceStrategy,
-                fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled, hasdataEnabled,
-                flightsentryScraperEnabled, fliEnabled, serpApiQuota, searchApiQuota, hasdataQuota,
+                fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled,
+                flightsentryScraperEnabled, fliEnabled, serpApiQuota, searchApiQuota,
+                serpApiQuotaMode, searchApiQuotaMode,
                 notificationsEnabled, discordEnabled, slackEnabled,
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
@@ -240,9 +233,9 @@ export function initDb() {
                 maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled
             ) 
             VALUES (
-                1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 1, 
-                48, 24, 12, 7, 23, 'serpapi,searchapi,hasdata,flightsentry-scraper',
-                'sequential-query', 0, 0, 0, 0, 0, 0, 100, 100, 100, 1, 0, 0, 0, 0,
+                1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
+                48, 24, 12, 7, 23, 'serpapi,searchapi,flightsentry-scraper',
+                'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
                 'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1
             )
         `);

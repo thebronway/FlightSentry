@@ -6,7 +6,8 @@ import { calculateNextResetDate, formatOrdinalDay } from '@/utils/date';
 import { getQuotaThresholdLevel } from '@/components/quotaRibbon/types';
 import SettingsSelect from '../shared/SettingsSelect';
 
-export type MeteredProviderKey = 'serpapi' | 'searchapi' | 'hasdata';
+export type MeteredProviderKey = 'serpapi' | 'searchapi';
+export type QuotaResetMode = 'monthly' | 'one-time';
 
 interface Props {
   providerKey: MeteredProviderKey;
@@ -15,6 +16,7 @@ interface Props {
   totalCount: number;
   isEnabled: boolean;
   apiKey: string;
+  quotaMode: QuotaResetMode;
   monthlyQuota: number;
   resetDay: number;
   nextResetDate: string;
@@ -26,6 +28,7 @@ interface Props {
   onOpenLogs: () => void;
   onApiKeyChange: (val: string) => void;
   onApiKeyBlur: () => void;
+  onQuotaModeChange: (mode: QuotaResetMode) => void;
   onQuotaChange: (val: number) => void;
   onQuotaBlur: () => void;
   onResetDayChange: (day: number, nextReset: string) => void;
@@ -43,6 +46,7 @@ export default function MeteredProviderCard({
   totalCount,
   isEnabled,
   apiKey,
+  quotaMode,
   monthlyQuota,
   resetDay,
   nextResetDate,
@@ -54,11 +58,13 @@ export default function MeteredProviderCard({
   onOpenLogs,
   onApiKeyChange,
   onApiKeyBlur,
+  onQuotaModeChange,
   onQuotaChange,
   onQuotaBlur,
   onResetDayChange,
   onAdjustUsage,
 }: Props) {
+  const isOneTime = quotaMode === 'one-time';
   const [usageDraft, setUsageDraft] = useState<string | null>(null);
   const [isAdjusting, setIsAdjusting] = useState(false);
 
@@ -115,6 +121,15 @@ export default function MeteredProviderCard({
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded border bg-sky-950/40 text-sky-400 border-sky-800/40">
             Metered API
           </span>
+          <span
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+              isOneTime
+                ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
+                : 'bg-gunmetal-canvas text-slate-300 border-gunmetal-border'
+            }`}
+          >
+            {isOneTime ? 'One-Time Credits' : 'Monthly Quota'}
+          </span>
           {!isEnabled && (
             <span className="text-[10px] uppercase font-bold text-gunmetal-muted bg-gunmetal-canvas px-1.5 py-0.5 rounded border border-gunmetal-border">
               Disabled
@@ -168,8 +183,8 @@ export default function MeteredProviderCard({
       </div>
 
       <div className="p-4 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
               API Key
             </label>
@@ -188,7 +203,24 @@ export default function MeteredProviderCard({
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Monthly Quota (0 = Unlimited)
+              Quota Mode
+            </label>
+            <SettingsSelect
+              compactDesktop
+              disabled={!isEnabled}
+              value={quotaMode}
+              onChange={e => onQuotaModeChange(e.target.value as QuotaResetMode)}
+            >
+              <option value="monthly">Monthly Recurring</option>
+              <option value="one-time">One-Time Credits</option>
+            </SettingsSelect>
+            <span className="text-[11px] text-gunmetal-muted block mt-1">
+              {isOneTime ? 'Fixed pool; does not reset monthly' : 'Resets automatically every month'}
+            </span>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              {isOneTime ? 'Credit Allowance (0 = Unlim.)' : 'Monthly Quota (0 = Unlim.)'}
             </label>
             <input
               type="number"
@@ -204,27 +236,35 @@ export default function MeteredProviderCard({
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-              Monthly Reset Day
+              {isOneTime ? 'Reset Schedule' : 'Monthly Reset Day'}
             </label>
-            <SettingsSelect
-              compactDesktop
-              disabled={!isEnabled}
-              value={resetDay}
-              onChange={e => {
-                const day = parseInt(e.target.value, 10);
-                const nextReset = calculateNextResetDate(day, timezone);
-                onResetDayChange(day, nextReset);
-              }}
-            >
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                <option key={day} value={day}>
-                  {formatOrdinalDay(day)} of every month
-                </option>
-              ))}
-            </SettingsSelect>
-            <span className="text-[11px] text-gunmetal-muted block mt-1 font-mono">
-              Next reset: {nextResetDate || calculateNextResetDate(1, timezone)}
-            </span>
+            {isOneTime ? (
+              <div className="w-full min-h-[44px] sm:min-h-[38px] border border-gunmetal-border/70 px-3 py-2 rounded-md bg-gunmetal-canvas/40 text-gunmetal-muted text-sm flex items-center font-mono">
+                No automatic reset
+              </div>
+            ) : (
+              <>
+                <SettingsSelect
+                  compactDesktop
+                  disabled={!isEnabled}
+                  value={resetDay}
+                  onChange={e => {
+                    const day = parseInt(e.target.value, 10);
+                    const nextReset = calculateNextResetDate(day, timezone);
+                    onResetDayChange(day, nextReset);
+                  }}
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                    <option key={day} value={day}>
+                      {formatOrdinalDay(day)} of every month
+                    </option>
+                  ))}
+                </SettingsSelect>
+                <span className="text-[11px] text-gunmetal-muted block mt-1 font-mono">
+                  Next reset: {nextResetDate || calculateNextResetDate(1, timezone)}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

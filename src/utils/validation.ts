@@ -73,12 +73,12 @@ export const flightStatusSchema = z.object({
 
 export const manualUsageSchema = z.discriminatedUnion('mode', [
   z.object({
-    provider: z.enum(['serpapi', 'searchapi', 'hasdata']),
+    provider: z.enum(['serpapi', 'searchapi']),
     mode: z.literal('increment'),
     value: z.number().int().min(1).max(10000).optional().default(1),
   }),
   z.object({
-    provider: z.enum(['serpapi', 'searchapi', 'hasdata']),
+    provider: z.enum(['serpapi', 'searchapi']),
     mode: z.literal('set'),
     value: z.number().int().min(0).max(1000000),
   }),
@@ -123,7 +123,6 @@ export const testScraperSchema = z.object({
 export const settingsSchema = z.object({
   serpApiKey: z.string().optional().nullable().or(z.literal('')),
   searchApiKey: z.string().optional().nullable().or(z.literal('')),
-  hasdataApiKey: z.string().optional().nullable().or(z.literal('')),
   dataSourceStrategy: z.string().optional(),
   notificationsEnabled: z.number().min(0).max(1).optional(),
   discordEnabled: z.number().min(0).max(1).optional(),
@@ -135,11 +134,9 @@ export const settingsSchema = z.object({
   smtpEnabled: z.number().min(0).max(1).optional(),
   serpApiResetDate: z.string().optional().nullable().or(z.literal('')),
   searchApiResetDate: z.string().optional().nullable().or(z.literal('')),
-  hasdataResetDate: z.string().optional().nullable().or(z.literal('')),
   quotaResetDay: z.number().int().min(1).max(31).optional(),
   serpApiResetDay: z.number().int().min(1).max(31).optional().nullable(),
   searchApiResetDay: z.number().int().min(1).max(31).optional().nullable(),
-  hasdataResetDay: z.number().int().min(1).max(31).optional().nullable(),
   appriseUrl: z.string().url().optional().nullable().or(z.literal('')),
   smtpHost: z.string().optional().nullable().or(z.literal('')),
   smtpPort: z.number().optional().nullable(),
@@ -179,7 +176,6 @@ export const settingsSchema = z.object({
   roundRobinIndex: z.number().int().nonnegative().optional(),
   serpApiEnabled: z.number().min(0).max(1).optional(),
   searchApiEnabled: z.number().min(0).max(1).optional(),
-  hasdataEnabled: z.number().min(0).max(1).optional(),
   flightsentryScraperEnabled: z.number().min(0).max(1).optional(),
   flightsentryScraperPrioritizeFirst: z.number().min(0).max(1).optional(),
   flightsentryScraperUrl: scraperUrlSchema,
@@ -187,10 +183,10 @@ export const settingsSchema = z.object({
   fliEnabled: z.number().min(0).max(1).optional(),
   serpApiQuota: z.number().min(0).optional(),
   searchApiQuota: z.number().min(0).optional(),
-  hasdataQuota: z.number().min(0).optional(),
+  serpApiQuotaMode: z.enum(['monthly', 'one-time']).optional(),
+  searchApiQuotaMode: z.enum(['monthly', 'one-time']).optional(),
   serpApiPaused: z.number().min(0).max(1).optional(),
   searchApiPaused: z.number().min(0).max(1).optional(),
-  hasdataPaused: z.number().min(0).max(1).optional(),
   flightsentryScraperPaused: z.number().min(0).max(1).optional(),
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
@@ -255,7 +251,6 @@ export const bannerDismissSchema = z.discriminatedUnion('type', [
 export const devProviderIdSchema = z.enum([
   'serpapi',
   'searchapi',
-  'hasdata',
   'flightsentry-scraper',
 ]);
 
@@ -303,7 +298,7 @@ export const devProviderTestSchema = z.object({
   providers: z
     .array(devProviderIdSchema)
     .min(1, 'Select at least one provider to test')
-    .max(4)
+    .max(3)
     .transform((list) => Array.from(new Set(list))),
   overrides: z
     .object({
@@ -313,11 +308,6 @@ export const devProviderTestSchema = z.object({
         })
         .optional(),
       searchapi: z
-        .object({
-          apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
-        })
-        .optional(),
-      hasdata: z
         .object({
           apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
         })

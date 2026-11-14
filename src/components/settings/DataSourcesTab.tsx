@@ -29,7 +29,6 @@ interface Props {
 const PROVIDER_NAMES: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  hasdata: 'HasData',
   'flightsentry-scraper': 'FlightSentry-Scraper',
   'flight-route-lookup': 'Flight Route Lookup',
 };
@@ -48,8 +47,8 @@ export default function DataSourcesTab({
   onAdjustUsage,
 }: Props) {
   type AllProviderKey = MeteredProviderKey | 'flightsentry-scraper';
-  const allProviderKeys: AllProviderKey[] = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
-  const providerOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,hasdata,flightsentry-scraper')
+  const allProviderKeys: AllProviderKey[] = ['serpapi', 'searchapi', 'flightsentry-scraper'];
+  const providerOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,flightsentry-scraper')
     .split(',')
     .map(s => s.trim())
     .filter((k): k is AllProviderKey => allProviderKeys.includes(k as AllProviderKey));
@@ -78,7 +77,6 @@ export default function DataSourcesTab({
     const updated = { ...settings };
     if (key === 'serpapi') updated.serpApiEnabled = val;
     if (key === 'searchapi') updated.searchApiEnabled = val;
-    if (key === 'hasdata') updated.hasdataEnabled = val;
     if (key === 'flightsentry-scraper') updated.flightsentryScraperEnabled = val;
     onChange(updated);
     if (onAutoSave) {
@@ -120,29 +118,21 @@ export default function DataSourcesTab({
       return {
         isEnabled: settings.serpApiEnabled === 1,
         apiKey: settings.serpApiKey || '',
+        quotaMode: (settings.serpApiQuotaMode || 'monthly') as 'monthly' | 'one-time',
         monthlyQuota: settings.serpApiQuota,
         resetDay: settings.serpApiResetDay ?? 1,
         nextResetDate: settings.serpApiResetDate || '',
         usedCount: settings.serpApiUsed ?? 0,
       };
     }
-    if (key === 'searchapi') {
-      return {
-        isEnabled: settings.searchApiEnabled === 1,
-        apiKey: settings.searchApiKey || '',
-        monthlyQuota: settings.searchApiQuota,
-        resetDay: settings.searchApiResetDay ?? 1,
-        nextResetDate: settings.searchApiResetDate || '',
-        usedCount: settings.searchApiUsed ?? 0,
-      };
-    }
     return {
-      isEnabled: settings.hasdataEnabled === 1,
-      apiKey: settings.hasdataApiKey || '',
-      monthlyQuota: settings.hasdataQuota,
-      resetDay: settings.hasdataResetDay ?? 1,
-      nextResetDate: settings.hasdataResetDate || '',
-      usedCount: settings.hasdataUsed ?? 0,
+      isEnabled: settings.searchApiEnabled === 1,
+      apiKey: settings.searchApiKey || '',
+      quotaMode: (settings.searchApiQuotaMode || 'monthly') as 'monthly' | 'one-time',
+      monthlyQuota: settings.searchApiQuota,
+      resetDay: settings.searchApiResetDay ?? 1,
+      nextResetDate: settings.searchApiResetDate || '',
+      usedCount: settings.searchApiUsed ?? 0,
     };
   };
 
@@ -221,6 +211,7 @@ export default function DataSourcesTab({
               totalCount={providerOrder.length}
               isEnabled={props.isEnabled}
               apiKey={props.apiKey}
+              quotaMode={props.quotaMode}
               monthlyQuota={props.monthlyQuota}
               resetDay={props.resetDay}
               nextResetDate={props.nextResetDate}
@@ -233,17 +224,32 @@ export default function DataSourcesTab({
               onApiKeyChange={val => {
                 if (key === 'serpapi') onChange({ ...settings, serpApiKey: val });
                 if (key === 'searchapi') onChange({ ...settings, searchApiKey: val });
-                if (key === 'hasdata') onChange({ ...settings, hasdataApiKey: val });
               }}
               onApiKeyBlur={() => {
                 if (onAutoSave) {
                   onAutoSave(settings, key, 'Saved!', `${PROVIDER_NAMES[key]} API key saved`);
                 }
               }}
+              onQuotaModeChange={async mode => {
+                let updated = { ...settings };
+                if (key === 'serpapi') {
+                  updated = { ...settings, serpApiQuotaMode: mode };
+                } else if (key === 'searchapi') {
+                  updated = { ...settings, searchApiQuotaMode: mode };
+                }
+                onChange(updated);
+                if (onAutoSave) {
+                  await onAutoSave(
+                    updated,
+                    key,
+                    'Saved!',
+                    `${PROVIDER_NAMES[key]} quota mode set to ${mode === 'one-time' ? 'One-Time Credits' : 'Monthly Recurring'}`
+                  );
+                }
+              }}
               onQuotaChange={val => {
                 if (key === 'serpapi') onChange({ ...settings, serpApiQuota: val });
                 if (key === 'searchapi') onChange({ ...settings, searchApiQuota: val });
-                if (key === 'hasdata') onChange({ ...settings, hasdataQuota: val });
               }}
               onQuotaBlur={() => {
                 if (onAutoSave) {
@@ -256,8 +262,6 @@ export default function DataSourcesTab({
                   updated = { ...settings, serpApiResetDay: day, serpApiResetDate: nextReset };
                 } else if (key === 'searchapi') {
                   updated = { ...settings, searchApiResetDay: day, searchApiResetDate: nextReset };
-                } else if (key === 'hasdata') {
-                  updated = { ...settings, hasdataResetDay: day, hasdataResetDate: nextReset };
                 }
                 onChange(updated);
                 if (onAutoSave) {

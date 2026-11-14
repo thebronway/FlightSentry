@@ -3,6 +3,7 @@ export type FareTier = 'Basic Economy' | 'Standard';
 export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
 export type SearchMode = 'Route' | 'FlightNumber';
 export type PriceTrackingDirection = 'drop' | 'increase' | 'both';
+export type QuotaResetMode = 'monthly' | 'one-time';
 
 export interface Flight {
   id: number;
@@ -102,7 +103,7 @@ export interface Settings {
   id: number;
   serpApiKey?: string | null;
   searchApiKey?: string | null;
-  dataSourceStrategy: string; // e.g., "serpapi,searchapi,hasdata,flightsentry-scraper"
+  dataSourceStrategy: string; // e.g., "serpapi,searchapi,flightsentry-scraper"
   notificationsEnabled: number; // 0 (false) or 1 (true)
   appriseUrl?: string | null;
   smtpHost?: string | null;
@@ -133,6 +134,8 @@ export interface Settings {
   flightsentryScraperApiKey?: string | null;
   serpApiQuota: number;
   searchApiQuota: number;
+  serpApiQuotaMode?: QuotaResetMode;
+  searchApiQuotaMode?: QuotaResetMode;
   serpApiUsed: number;
   searchApiUsed: number;
   flightsentryScraperUsed: number;
@@ -140,11 +143,6 @@ export interface Settings {
   searchApiPaused: number;
   flightsentryScraperPaused: number;
   roundRobinIndex: number;
-  hasdataApiKey?: string | null;
-  hasdataEnabled: number;
-  hasdataQuota: number;
-  hasdataUsed: number;
-  hasdataPaused: number;
   discordEnabled: number;
   discordWebhookUrl?: string | null;
   slackEnabled: number;
@@ -154,12 +152,10 @@ export interface Settings {
   smtpEnabled: number;
   serpApiResetDate?: string | null; // YYYY-MM-DD
   searchApiResetDate?: string | null; // YYYY-MM-DD
-  hasdataResetDate?: string | null; // YYYY-MM-DD
   quotaResetDate: string; // YYYY-MM-DD
   quotaResetDay: number; // Day of the month (1-31)
   serpApiResetDay?: number | null; // Day of the month (1-31)
   searchApiResetDay?: number | null; // Day of the month (1-31)
-  hasdataResetDay?: number | null; // Day of the month (1-31)
   pointsCurrencies?: string | null;
   globalPause: number; // 0 (false) or 1 (true)
   defaultCabinClass?: CabinClass;

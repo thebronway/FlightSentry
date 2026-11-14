@@ -289,7 +289,7 @@ export function getCoLocationInfo(code?: string | null): CoLocationInfo | null {
 
 /**
  * Resolves an origin or destination string (single airport, metro code like WAS, or comma-separated list like "DFW, DAL")
- * into comma-separated commercial airport codes suitable for Google Flights / HasData / SerpApi / SearchApi.
+ * into comma-separated commercial airport codes suitable for Google Flights / SerpApi / SearchApi.
  *
  * Examples:
  * - 'WAS' -> 'DCA,IAD,BWI'

@@ -1,6 +1,6 @@
 import { Flight, RouteItinerary } from '@/types';
 import { formatCurrency, formatPercent } from '@/utils/format';
-import { getAirlineName, cleanDisplayTime } from '@/utils/airline';
+import { getAirlineName, cleanDisplayTime, getGoogleFlightsUrl } from '@/utils/airline';
 
 export interface PriceDropAlertPayload {
   title: string;
@@ -35,16 +35,7 @@ export function formatPriceDropAlert(
     ? `${leadingAirlineCode} ${leadingFlightNum}`
     : leadingAirlineName || leadingAirlineCode || 'Route Flight';
 
-  // Construct cabin class query parameter for Google Flights deep-link
-  const cabinClassQuery = flight.cabinClass === 'premium_economy'
-    ? '%20premium%20economy'
-    : flight.cabinClass === 'business'
-    ? '%20business'
-    : flight.cabinClass === 'first'
-    ? '%20first%20class'
-    : '';
-
-  const googleFlightsUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${flight.destination}%20from%20${flight.origin}%20on%20${flight.departureDate}${cabinClassQuery}%20oneway`;
+  const googleFlightsUrl = getGoogleFlightsUrl(flight, currency);
 
   const title = `${alertType}: ${flight.origin} → ${flight.destination} via ${leadingAirlineCode}${leadingFlightNum ? ` #${leadingFlightNum}` : ''} (${formatCurrency(newPrice, currency)})`;
 

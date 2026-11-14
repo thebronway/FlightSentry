@@ -42,10 +42,6 @@ export default function ApiTestPage() {
       configured: Boolean((settings.searchApiKey || '').trim()),
       enabled: settings.searchApiEnabled === 1,
     },
-    hasdata: {
-      configured: Boolean((settings.hasdataApiKey || '').trim()),
-      enabled: settings.hasdataEnabled === 1,
-    },
     'flightsentry-scraper': {
       configured: Boolean(
         (settings.flightsentryScraperUrl || '').trim() &&

@@ -5,7 +5,6 @@ import { checkAndResetQuota } from './quota';
 import { DataSourceProvider, DataSourceResult } from './datasource';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
-import { checkHasDataPrice as queryHasData } from './hasdata';
 import {
   checkFlightSentryScraperPrice as queryFlightSentryScraper,
   redactScraperSecrets,
@@ -50,7 +49,6 @@ export interface DevProviderTestResponse {
 const PROVIDER_LABELS: Record<DataSourceProvider, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  hasdata: 'HasData',
   'flightsentry-scraper': 'FlightSentry-Scraper',
 };
 
@@ -258,10 +256,9 @@ function resolveProviderCredentials(
     };
   }
 
-  const savedMap: Record<'serpapi' | 'searchapi' | 'hasdata', string> = {
+  const savedMap: Record<'serpapi' | 'searchapi', string> = {
     serpapi: (stored.serpApiKey || '').trim(),
     searchapi: (stored.searchApiKey || '').trim(),
-    hasdata: (stored.hasdataApiKey || '').trim(),
   };
 
   const savedKey = savedMap[provider];
@@ -292,11 +289,9 @@ export async function runDevProviderComparison(
   const secretPool = [
     settings.serpApiKey || '',
     settings.searchApiKey || '',
-    settings.hasdataApiKey || '',
     settings.flightsentryScraperApiKey || '',
     input.overrides?.serpapi?.apiKey || '',
     input.overrides?.searchapi?.apiKey || '',
-    input.overrides?.hasdata?.apiKey || '',
     input.overrides?.['flightsentry-scraper']?.apiKey || '',
   ]
     .map((s) => s.trim())
@@ -345,13 +340,6 @@ export async function runDevProviderComparison(
           );
         } else if (provider === 'searchapi') {
           adapterResult = await querySearchApi(
-            syntheticFlight,
-            creds.apiKey,
-            currency,
-            adapterOptions
-          );
-        } else if (provider === 'hasdata') {
-          adapterResult = await queryHasData(
             syntheticFlight,
             creds.apiKey,
             currency,

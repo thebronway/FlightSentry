@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import AirlineBadge from '../common/AirlineBadge';
 import GoogleIcon from '../GoogleIcon';
 import { resolveLocationDisplay } from '@/utils/coLocations';
+import { getGoogleFlightsUrl } from '@/utils/airline';
 import HistoryCheckBadges from './HistoryCheckBadges';
 
 interface Props {
@@ -54,11 +55,14 @@ export default function HistoryCheckRow({ record, flight }: Props) {
   const origDisp = hasCheckRoute ? resolveLocationDisplay(checkOrigin) : null;
   const destDisp = hasCheckRoute ? resolveLocationDisplay(checkDestination) : null;
 
-  const googleFlightsUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${encodeURIComponent(
-    checkDestination || flight.destination || ''
-  )}%20from%20${encodeURIComponent(checkOrigin || flight.origin || '')}%20on%20${flight.departureDate}${
-    record.airline ? `%20${encodeURIComponent(record.airline)}` : ''
-  }${record.flightNumber ? `%20${encodeURIComponent(record.flightNumber)}` : ''}%20oneway`;
+  const googleFlightsUrl = getGoogleFlightsUrl({
+    origin: checkOrigin || flight.origin,
+    destination: checkDestination || flight.destination,
+    departureDate: flight.departureDate,
+    cabinClass: flight.cabinClass,
+    fareTier: flight.fareTier,
+    currency: flight.currency,
+  });
 
   return (
     <div className="px-3.5 sm:px-4 py-3 sm:py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2.5 hover:bg-gunmetal-canvas/70 transition-colors text-xs">

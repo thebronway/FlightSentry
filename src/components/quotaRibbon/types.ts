@@ -1,7 +1,6 @@
 export type QuotaPauseKey =
   | 'serpApiPaused'
   | 'searchApiPaused'
-  | 'hasdataPaused'
   | 'flightsentryScraperPaused';
 
 export type QuotaThresholdLevel = 'normal' | 'warning' | 'critical';
@@ -17,6 +16,7 @@ export interface QuotaSourceItem {
   pauseKey: QuotaPauseKey;
   used: number;
   quota: number;
+  quotaMode?: 'monthly' | 'one-time';
   hourlyUsed?: number;
   hourlyLimit?: number;
   dailyUsed?: number;

@@ -1,5 +1,6 @@
 export * from './airlineThemes';
 import { AIRLINE_NAMES, BRAND_COLORS, AIRLINE_THEMES, AIRLINE_ALIASES, getAirlineName, getAirlineColor } from './airlineThemes';
+import { buildGoogleFlightsUrl } from './googleFlightsUrl';
 
 export function normalizeAirlineCode(rawNameOrCode: string, rawFlightNum?: string): string {
   if (!rawNameOrCode && !rawFlightNum) return 'UN';
@@ -87,29 +88,31 @@ export function cleanDisplayTime(timeStr?: string): string | null {
   return `${displayHours}:${minutes} ${period}`;
 }
 
-export function getGoogleFlightsUrl(flight: {
-  origin?: string | null;
-  destination?: string | null;
-  departureDate: string;
-  airline?: string | null;
-  flightNumber?: string | null;
-  cabinClass?: string | null;
-  searchMode?: string | null;
-}): string {
-  const isFlightNumMode = flight.searchMode === 'FlightNumber' && flight.flightNumber;
-  const cabinClassQuery = flight.cabinClass === 'premium_economy'
-    ? '%20premium%20economy'
-    : flight.cabinClass === 'business'
-    ? '%20business'
-    : flight.cabinClass === 'first'
-    ? '%20first%20class'
-    : '';
-
-  const flightNumQuery = isFlightNumMode && flight.flightNumber && flight.airline
-    ? `%20${encodeURIComponent(flight.airline)}%20${encodeURIComponent(flight.flightNumber)}`
-    : '';
-
-  return `https://www.google.com/travel/flights?q=Flights%20to%20${encodeURIComponent(flight.destination || '')}%20from%20${encodeURIComponent(flight.origin || '')}%20on%20${flight.departureDate}${flightNumQuery}${cabinClassQuery}%20oneway`;
+export function getGoogleFlightsUrl(
+  flight: {
+    origin?: string | null;
+    destination?: string | null;
+    departureDate: string;
+    airline?: string | null;
+    flightNumber?: string | null;
+    cabinClass?: string | null;
+    fareTier?: string | null;
+    currency?: string | null;
+    searchMode?: string | null;
+  },
+  fallbackCurrency?: string | null
+): string {
+  return buildGoogleFlightsUrl(
+    {
+      origin: flight.origin,
+      destination: flight.destination,
+      departureDate: flight.departureDate,
+      cabinClass: flight.cabinClass,
+      fareTier: flight.fareTier,
+      currency: flight.currency,
+    },
+    { fallbackCurrency }
+  );
 }
 
 export function getDataSourceStatus(settings?: any | null): {
@@ -128,16 +131,14 @@ export function getDataSourceStatus(settings?: any | null): {
 
   const serpKey = (settings.serpApiKey || '').trim();
   const searchKey = (settings.searchApiKey || '').trim();
-  const hasdataKey = (settings.hasdataApiKey || '').trim();
   const scraperUrl = (settings.flightsentryScraperUrl || '').trim();
   const scraperKey = (settings.flightsentryScraperApiKey || '').trim();
 
   const serpConfigured = isEnabled(settings.serpApiEnabled) && Boolean(serpKey);
   const searchConfigured = isEnabled(settings.searchApiEnabled) && Boolean(searchKey);
-  const hasdataConfigured = isEnabled(settings.hasdataEnabled) && Boolean(hasdataKey);
   const scraperConfigured = isEnabled(settings.flightsentryScraperEnabled) && Boolean(scraperUrl) && Boolean(scraperKey);
 
-  const anyConfigured = serpConfigured || searchConfigured || hasdataConfigured || scraperConfigured;
+  const anyConfigured = serpConfigured || searchConfigured || scraperConfigured;
 
   if (!anyConfigured) {
     return {
@@ -161,19 +162,16 @@ export function getDataSourceStatus(settings?: any | null): {
 
   const serpActive = serpConfigured && !isPaused(settings.serpApiPaused) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
   const searchActive = searchConfigured && !isPaused(settings.searchApiPaused) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
-  const hasdataActive = hasdataConfigured && !isPaused(settings.hasdataPaused) && (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
   const scraperActive = scraperConfigured && !isPaused(settings.flightsentryScraperPaused);
 
-  const anyActive = serpActive || searchActive || hasdataActive || scraperActive;
+  const anyActive = serpActive || searchActive || scraperActive;
 
   if (!anyActive) {
     const serpExhausted = serpConfigured && settings.serpApiQuota > 0 && settings.serpApiUsed >= settings.serpApiQuota;
     const searchExhausted = searchConfigured && settings.searchApiQuota > 0 && settings.searchApiUsed >= settings.searchApiQuota;
-    const hasdataExhausted = hasdataConfigured && settings.hasdataQuota > 0 && settings.hasdataUsed >= settings.hasdataQuota;
 
     const allConfiguredMeteredExhausted = (!serpConfigured || serpExhausted) &&
-                                          (!searchConfigured || searchExhausted) &&
-                                          (!hasdataConfigured || hasdataExhausted);
+                                          (!searchConfigured || searchExhausted);
 
     if (allConfiguredMeteredExhausted && !scraperConfigured) {
       return {

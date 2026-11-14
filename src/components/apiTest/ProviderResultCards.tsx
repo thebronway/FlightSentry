@@ -74,7 +74,15 @@ export default function ProviderResultCards({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
+      <div
+        className={`grid grid-cols-1 ${
+          results.length === 2
+            ? 'md:grid-cols-2'
+            : results.length >= 3
+            ? 'md:grid-cols-2 xl:grid-cols-3'
+            : ''
+        } gap-3.5`}
+      >
         {results.map((item) => {
           const statusMeta = STATUS_BADGE_MAP[item.status] || STATUS_BADGE_MAP.Error;
 

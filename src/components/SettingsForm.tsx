@@ -30,7 +30,7 @@ export default function SettingsForm() {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        const allKeys = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
+        const allKeys = ['serpapi', 'searchapi', 'flightsentry-scraper'];
         const normalized = (data.dataSourceStrategy || '')
           .split(',')
           .map((s: string) => s.trim())
@@ -94,14 +94,13 @@ export default function SettingsForm() {
   };
 
   const handleAdjustUsage = async (
-    provider: 'serpapi' | 'searchapi' | 'hasdata',
+    provider: 'serpapi' | 'searchapi',
     mode: 'increment' | 'set',
     value: number
   ) => {
-    const providerLabels: Record<'serpapi' | 'searchapi' | 'hasdata', string> = {
+    const providerLabels: Record<'serpapi' | 'searchapi', string> = {
       serpapi: 'SerpAPI',
       searchapi: 'SearchApi.io',
-      hasdata: 'HasData',
     };
     setProviderStatus(prev => ({ ...prev, [provider]: null }));
     try {

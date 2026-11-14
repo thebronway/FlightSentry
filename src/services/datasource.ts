@@ -3,7 +3,6 @@ import { settingsDb } from '../db/settings';
 import { logsDb } from '../db/logs';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
-import { checkHasDataPrice as queryHasData } from './hasdata';
 import {
   checkFlightSentryScraperPrice as queryFlightSentryScraper,
   checkScraperHealth,
@@ -11,7 +10,7 @@ import {
 } from './flightsentryScraper';
 import { selectDiverseItineraries } from '../utils/routeIntelligence';
 
-export type DataSourceProvider = 'serpapi' | 'searchapi' | 'hasdata' | 'flightsentry-scraper';
+export type DataSourceProvider = 'serpapi' | 'searchapi' | 'flightsentry-scraper';
 
 export interface DataSourceResult {
   price: number | null;
@@ -30,7 +29,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   console.log(`[Router] --- Check Flight #${flight.id} (${flight.origin} -> ${flight.destination}) ---`);
   console.log(`[Router] Configured Order: "${settings.dataSourceStrategy}" | Mode: "${settings.fallbackStrategyMode}"`);
 
-  const ALL_PROVIDERS: DataSourceProvider[] = ['serpapi', 'searchapi', 'hasdata', 'flightsentry-scraper'];
+  const ALL_PROVIDERS: DataSourceProvider[] = ['serpapi', 'searchapi', 'flightsentry-scraper'];
   const rawOrder = (settings.dataSourceStrategy || '').split(',').map(s => s.trim()).filter(Boolean) as DataSourceProvider[];
   const configuredOrder: DataSourceProvider[] = [
     ...rawOrder.filter(p => ALL_PROVIDERS.includes(p)),
@@ -50,7 +49,6 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
   const serpKey = (settings.serpApiKey || '').trim();
   const searchKey = (settings.searchApiKey || '').trim();
-  const hasdataKey = (settings.hasdataApiKey || '').trim();
 
   const isProviderActive = (api: DataSourceProvider): boolean => {
     if (api === 'flightsentry-scraper') {
@@ -64,19 +62,15 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
       return isEnabled(settings.searchApiEnabled) && !isPaused(settings.searchApiPaused) && Boolean(searchKey) &&
         (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
     }
-    if (api === 'hasdata') {
-      return isEnabled(settings.hasdataEnabled) && !isPaused(settings.hasdataPaused) && Boolean(hasdataKey) &&
-        (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
-    }
     return false;
   };
 
   const activeAll = configuredOrder.filter(isProviderActive);
-  const activeMetered = activeAll.filter((api): api is 'serpapi' | 'searchapi' | 'hasdata' => api !== 'flightsentry-scraper');
+  const activeMetered = activeAll.filter((api): api is 'serpapi' | 'searchapi' => api !== 'flightsentry-scraper');
 
   console.log(`[Router] Active Providers: [${activeAll.join(', ')}] | ScraperFirst=${prioritizeScraperFirst}`);
   if (activeMetered.length === 0) {
-    console.log(`[Router] Metered breakdown: SerpAPI(enabled=${isEnabled(settings.serpApiEnabled)}, paused=${isPaused(settings.serpApiPaused)}, hasKey=${Boolean(serpKey)}, used=${settings.serpApiUsed}/${settings.serpApiQuota}), SearchApi(enabled=${isEnabled(settings.searchApiEnabled)}, paused=${isPaused(settings.searchApiPaused)}, hasKey=${Boolean(searchKey)}, used=${settings.searchApiUsed}/${settings.searchApiQuota}), HasData(enabled=${isEnabled(settings.hasdataEnabled)}, paused=${isPaused(settings.hasdataPaused)}, hasKey=${Boolean(hasdataKey)}, used=${settings.hasdataUsed}/${settings.hasdataQuota})`);
+    console.log(`[Router] Metered breakdown: SerpAPI(enabled=${isEnabled(settings.serpApiEnabled)}, paused=${isPaused(settings.serpApiPaused)}, hasKey=${Boolean(serpKey)}, used=${settings.serpApiUsed}/${settings.serpApiQuota}), SearchApi(enabled=${isEnabled(settings.searchApiEnabled)}, paused=${isPaused(settings.searchApiPaused)}, hasKey=${Boolean(searchKey)}, used=${settings.searchApiUsed}/${settings.searchApiQuota})`);
   }
 
   const executeProvider = async (strategy: DataSourceProvider): Promise<DataSourceResult> => {
@@ -91,8 +85,6 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
         result = { ...(await querySerpApi(flight, serpKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'searchapi' && searchKey) {
         result = { ...(await querySearchApi(flight, searchKey, activeCurrency)), sourceUsed: strategy };
-      } else if (strategy === 'hasdata' && hasdataKey) {
-        result = { ...(await queryHasData(flight, hasdataKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'flightsentry-scraper' && scraperUrl && scraperKey) {
         result = {
           ...(await queryFlightSentryScraper(flight, scraperUrl, scraperKey, activeCurrency)),
@@ -196,8 +188,8 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
       const getUsageRatio = (api: DataSourceProvider): number => {
         if (api === 'flightsentry-scraper') return scraperRatio;
-        const quota = api === 'serpapi' ? settings.serpApiQuota : api === 'searchapi' ? settings.searchApiQuota : settings.hasdataQuota;
-        const used = api === 'serpapi' ? settings.serpApiUsed : api === 'searchapi' ? settings.searchApiUsed : settings.hasdataUsed;
+        const quota = api === 'serpapi' ? settings.serpApiQuota : settings.searchApiQuota;
+        const used = api === 'serpapi' ? settings.serpApiUsed : settings.searchApiUsed;
         if (quota <= 0) return 0;
         return used / quota;
       };

@@ -10,7 +10,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v0.8.5: bug fixes / app tweaks
 - App wide
-  - google flights link(s) dont work, link is encoded, use urlBuilder (esp basic econ vs not basic econ from scraper)
+  - google flights link(s) dont work, link is encoded, use urlBuilder from scraper as example of how that app made it work (esp basic econ vs not basic econ from scraper)
 - Flight Modal Flight Lookups
   - what happens when airlines use the same flight number for multiple flights? How do we deal with that in the UI
   - it is sometimes auto-checking for route and putting in the route before I finish typing in the number, so maybe don't auto-check until I get to four numbers or until time has passed or until like focus like it's you're out of the cell or something, you know what I mean. Need to come up with a good solution. need options

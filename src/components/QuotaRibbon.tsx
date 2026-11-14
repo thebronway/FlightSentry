@@ -93,6 +93,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       pauseKey: 'serpApiPaused',
       used: settings.serpApiUsed,
       quota: settings.serpApiQuota,
+      quotaMode: settings.serpApiQuotaMode || 'monthly',
       resetDate: settings.serpApiResetDate || settings.quotaResetDate,
       isScraper: false,
     },
@@ -104,18 +105,8 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       pauseKey: 'searchApiPaused',
       used: settings.searchApiUsed,
       quota: settings.searchApiQuota,
+      quotaMode: settings.searchApiQuotaMode || 'monthly',
       resetDate: settings.searchApiResetDate || settings.quotaResetDate,
-      isScraper: false,
-    },
-    {
-      key: 'hasdata',
-      name: 'HasData',
-      enabled: settings.hasdataEnabled,
-      paused: settings.hasdataPaused,
-      pauseKey: 'hasdataPaused',
-      used: settings.hasdataUsed,
-      quota: settings.hasdataQuota,
-      resetDate: settings.hasdataResetDate || settings.quotaResetDate,
       isScraper: false,
     },
     {
@@ -155,7 +146,6 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       globalPause: nextPauseState,
       serpApiPaused: nextPauseState,
       searchApiPaused: nextPauseState,
-      hasdataPaused: nextPauseState,
       flightsentryScraperPaused: nextPauseState,
     };
 
@@ -183,7 +173,6 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
     const checkSources = [
       { enabled: updatedDraft.serpApiEnabled, paused: updatedDraft.serpApiPaused },
       { enabled: updatedDraft.searchApiEnabled, paused: updatedDraft.searchApiPaused },
-      { enabled: updatedDraft.hasdataEnabled, paused: updatedDraft.hasdataPaused },
       { enabled: updatedDraft.flightsentryScraperEnabled, paused: updatedDraft.flightsentryScraperPaused },
     ].filter(s => s.enabled === 1);
 

@@ -26,7 +26,6 @@ interface ApiTestWorkspaceProps {
 const EMPTY_OVERRIDES: ProviderOverridesState = {
   serpapi: { apiKey: '' },
   searchapi: { apiKey: '' },
-  hasdata: { apiKey: '' },
   'flightsentry-scraper': { apiKey: '', scraperUrl: '' },
 };
 
@@ -140,9 +139,6 @@ export default function ApiTestWorkspace({
             : undefined,
           searchapi: overrides.searchapi.apiKey.trim()
             ? { apiKey: overrides.searchapi.apiKey.trim() }
-            : undefined,
-          hasdata: overrides.hasdata.apiKey.trim()
-            ? { apiKey: overrides.hasdata.apiKey.trim() }
             : undefined,
           'flightsentry-scraper':
             overrides['flightsentry-scraper'].apiKey.trim() ||

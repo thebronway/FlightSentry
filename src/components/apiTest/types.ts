@@ -43,13 +43,6 @@ export const ALL_TEST_PROVIDERS: ProviderMetadata[] = [
     keyPlaceholder: 'Temporary SearchApi.io key override...',
   },
   {
-    id: 'hasdata',
-    label: 'HasData',
-    badge: 'Metered API',
-    badgeClass: 'bg-sky-950/40 text-sky-400 border-sky-800/40',
-    keyPlaceholder: 'Temporary HasData key override...',
-  },
-  {
     id: 'flightsentry-scraper',
     label: 'FlightSentry-Scraper',
     badge: 'Self-Hosted Scraper',

@@ -69,12 +69,12 @@ export default function ProviderSelectionGrid({
             onClick={onSelectAll}
             className="min-h-[36px] px-2.5 py-1.5 text-xs font-semibold rounded-md bg-gunmetal-canvas border border-gunmetal-border text-slate-300 hover:text-white hover:bg-gunmetal-border transition-colors disabled:opacity-40 cursor-pointer"
           >
-            Select All (4)
+            Select All ({ALL_TEST_PROVIDERS.length})
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         {ALL_TEST_PROVIDERS.map((meta) => {
           const isSelected = selectedProviders.includes(meta.id);
           const readiness = providerReadiness[meta.id];

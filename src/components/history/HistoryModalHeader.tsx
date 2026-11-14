@@ -31,7 +31,7 @@ export default function HistoryModalHeader({
 }: Props) {
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const operatingAirlines = useMemo(() => getOperatingAirlines(flight), [flight]);
-  const googleFlightsUrl = getGoogleFlightsUrl(flight);
+  const googleFlightsUrl = getGoogleFlightsUrl(flight, settings?.currency);
 
   return (
     <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gunmetal-border flex flex-col lg:flex-row lg:items-start justify-between gap-3.5 sm:gap-4 bg-gunmetal-card z-10 flex-shrink-0">

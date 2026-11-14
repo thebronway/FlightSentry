@@ -38,7 +38,7 @@ export default function FlightActionBar({
   const { toggleStatus, checkNow } = useFlightActions(onRefresh);
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const isPast = flight.status === 'Past';
-  const googleFlightsUrl = getGoogleFlightsUrl(flight);
+  const googleFlightsUrl = getGoogleFlightsUrl(flight, settings?.currency);
   const isCard = variant === 'card';
 
   const btnPadding = isCard ? 'p-2' : 'p-1.5';

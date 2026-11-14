@@ -7,10 +7,14 @@ export const checkAndResetQuota = (settings: Settings): Settings => {
   let changed = false;
 
   const checkProvider = (
-    provider: 'serpapi' | 'searchapi' | 'hasdata',
+    provider: 'serpapi' | 'searchapi',
+    quotaMode?: 'monthly' | 'one-time' | null,
     resetDay?: number | null,
     resetDate?: string | null
   ) => {
+    if (quotaMode === 'one-time') {
+      return;
+    }
     const effectiveDay = (resetDay !== undefined && resetDay !== null && resetDay >= 1 && resetDay <= 31)
       ? resetDay
       : settings.quotaResetDay || 1;
@@ -24,9 +28,8 @@ export const checkAndResetQuota = (settings: Settings): Settings => {
     }
   };
 
-  checkProvider('serpapi', settings.serpApiResetDay, settings.serpApiResetDate);
-  checkProvider('searchapi', settings.searchApiResetDay, settings.searchApiResetDate);
-  checkProvider('hasdata', settings.hasdataResetDay, settings.hasdataResetDate);
+  checkProvider('serpapi', settings.serpApiQuotaMode, settings.serpApiResetDay, settings.serpApiResetDate);
+  checkProvider('searchapi', settings.searchApiQuotaMode, settings.searchApiResetDay, settings.searchApiResetDate);
 
   if (settings.quotaResetDate && today >= settings.quotaResetDate) {
     const nextReset = calculateNextResetDate(settings.quotaResetDay || 1, settings.timezone);
@@ -41,11 +44,10 @@ export const canMakeApiCall = (settings: Settings): boolean => {
   if (settings.globalPause === 1) return false;
   const hasSerp = settings.serpApiEnabled === 1 && settings.serpApiPaused !== 1 && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
   const hasSearch = settings.searchApiEnabled === 1 && settings.searchApiPaused !== 1 && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
-  const hasHasdata = settings.hasdataEnabled === 1 && settings.hasdataPaused !== 1 && (settings.hasdataQuota === 0 || settings.hasdataUsed < settings.hasdataQuota);
   const hasScraper =
     settings.flightsentryScraperEnabled === 1 &&
     settings.flightsentryScraperPaused !== 1 &&
     Boolean((settings.flightsentryScraperUrl || '').trim()) &&
     Boolean((settings.flightsentryScraperApiKey || '').trim());
-  return hasSerp || hasSearch || hasHasdata || hasScraper;
+  return hasSerp || hasSearch || hasScraper;
 };

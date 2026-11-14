@@ -6,7 +6,6 @@ import { formatCurrency } from '@/utils/format';
 const SOURCE_LABEL_MAP: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  hasdata: 'HasData',
   'flightsentry-scraper': 'FlightSentry-Scraper',
   fastflights: 'Fast-Flights',
   'Price Paid': 'Price Paid',

@@ -116,11 +116,15 @@ export default function QuotaSourceCard({
                   {isExhausted ? '0 left (Exhausted)' : `${remainingCount} left`}
                 </span>
               )}
-              {source.resetDate && (
+              {source.quotaMode === 'one-time' ? (
+                <span className="text-[11px] text-gunmetal-muted font-mono whitespace-nowrap">
+                  One-time credits
+                </span>
+              ) : source.resetDate ? (
                 <span className="text-[11px] text-gunmetal-muted font-mono whitespace-nowrap">
                   Resets: {source.resetDate}
                 </span>
-              )}
+              ) : null}
             </div>
           ) : !hasRollingQuotas ? (
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1 text-xs text-gunmetal-muted">

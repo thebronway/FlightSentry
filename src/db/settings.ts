@@ -5,7 +5,7 @@ export const settingsDb = {
   get: (): Settings => {
     return db.prepare('SELECT * FROM settings WHERE id = 1').get() as Settings;
   },
-  update: (settings: Partial<Omit<Settings, 'id' | 'serpApiUsed' | 'searchApiUsed' | 'hasdataUsed' | 'flightsentryScraperUsed'>>): void => {
+  update: (settings: Partial<Omit<Settings, 'id' | 'serpApiUsed' | 'searchApiUsed' | 'flightsentryScraperUsed'>>): void => {
     const current = settingsDb.get();
     const updated = { ...current, ...settings };
     
@@ -21,13 +21,11 @@ export const settingsDb = {
       UPDATE settings SET 
         serpApiKey = @serpApiKey,
         searchApiKey = @searchApiKey,
-        hasdataApiKey = @hasdataApiKey,
         dataSourceStrategy = @dataSourceStrategy,
         fallbackStrategyMode = @fallbackStrategyMode,
         roundRobinIndex = @roundRobinIndex,
         serpApiEnabled = @serpApiEnabled,
         searchApiEnabled = @searchApiEnabled,
-        hasdataEnabled = @hasdataEnabled,
         flightsentryScraperEnabled = @flightsentryScraperEnabled,
         flightsentryScraperPrioritizeFirst = @flightsentryScraperPrioritizeFirst,
         flightsentryScraperUrl = @flightsentryScraperUrl,
@@ -35,17 +33,15 @@ export const settingsDb = {
         fliEnabled = @fliEnabled,
         serpApiQuota = @serpApiQuota,
         searchApiQuota = @searchApiQuota,
-        hasdataQuota = @hasdataQuota,
+        serpApiQuotaMode = @serpApiQuotaMode,
+        searchApiQuotaMode = @searchApiQuotaMode,
         serpApiResetDate = @serpApiResetDate,
         searchApiResetDate = @searchApiResetDate,
-        hasdataResetDate = @hasdataResetDate,
         quotaResetDay = @quotaResetDay,
         serpApiResetDay = @serpApiResetDay,
         searchApiResetDay = @searchApiResetDay,
-        hasdataResetDay = @hasdataResetDay,
         serpApiPaused = @serpApiPaused,
         searchApiPaused = @searchApiPaused,
-        hasdataPaused = @hasdataPaused,
         flightsentryScraperPaused = @flightsentryScraperPaused,
         fliPaused = @fliPaused,
         notificationsEnabled = @notificationsEnabled,
@@ -105,21 +101,19 @@ export const settingsDb = {
     });
     return atomicTx();
   },
-  incrementApiUsage: (source: 'serpapi' | 'searchapi' | 'hasdata' | 'flightsentry-scraper'): void => {
+  incrementApiUsage: (source: 'serpapi' | 'searchapi' | 'flightsentry-scraper'): void => {
     if (source === 'serpapi') db.prepare('UPDATE settings SET serpApiUsed = serpApiUsed + 1 WHERE id = 1').run();
     if (source === 'searchapi') db.prepare('UPDATE settings SET searchApiUsed = searchApiUsed + 1 WHERE id = 1').run();
-    if (source === 'hasdata') db.prepare('UPDATE settings SET hasdataUsed = hasdataUsed + 1 WHERE id = 1').run();
     if (source === 'flightsentry-scraper') db.prepare('UPDATE settings SET flightsentryScraperUsed = flightsentryScraperUsed + 1 WHERE id = 1').run();
   },
   adjustProviderUsage: (
-    source: 'serpapi' | 'searchapi' | 'hasdata',
+    source: 'serpapi' | 'searchapi',
     mode: 'increment' | 'set',
     value: number
   ): { previousUsed: number; newUsed: number } => {
-    const columnMap: Record<'serpapi' | 'searchapi' | 'hasdata', 'serpApiUsed' | 'searchApiUsed' | 'hasdataUsed'> = {
+    const columnMap: Record<'serpapi' | 'searchapi', 'serpApiUsed' | 'searchApiUsed'> = {
       serpapi: 'serpApiUsed',
       searchapi: 'searchApiUsed',
-      hasdata: 'hasdataUsed',
     };
     const column = columnMap[source];
     const adjustTx = db.transaction(() => {
@@ -135,16 +129,21 @@ export const settingsDb = {
     return adjustTx();
   },
   resetApiUsage: (newResetDate: string): void => {
-    const stmt = db.prepare('UPDATE settings SET serpApiUsed = 0, searchApiUsed = 0, hasdataUsed = 0, flightsentryScraperUsed = 0, quotaResetDate = @newResetDate WHERE id = 1');
+    const stmt = db.prepare(`
+      UPDATE settings SET
+        serpApiUsed = CASE WHEN COALESCE(serpApiQuotaMode, 'monthly') = 'one-time' THEN serpApiUsed ELSE 0 END,
+        searchApiUsed = CASE WHEN COALESCE(searchApiQuotaMode, 'monthly') = 'one-time' THEN searchApiUsed ELSE 0 END,
+        flightsentryScraperUsed = 0,
+        quotaResetDate = @newResetDate
+      WHERE id = 1
+    `);
     stmt.run({ newResetDate });
   },
-  resetProviderUsage: (source: 'serpapi' | 'searchapi' | 'hasdata', newResetDate: string): void => {
+  resetProviderUsage: (source: 'serpapi' | 'searchapi', newResetDate: string): void => {
     if (source === 'serpapi') {
       db.prepare('UPDATE settings SET serpApiUsed = 0, serpApiResetDate = ? WHERE id = 1').run(newResetDate);
     } else if (source === 'searchapi') {
       db.prepare('UPDATE settings SET searchApiUsed = 0, searchApiResetDate = ? WHERE id = 1').run(newResetDate);
-    } else if (source === 'hasdata') {
-      db.prepare('UPDATE settings SET hasdataUsed = 0, hasdataResetDate = ? WHERE id = 1').run(newResetDate);
     }
   }
 };
