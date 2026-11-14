@@ -12,7 +12,7 @@ export default function Navbar() {
     <nav className="bg-gunmetal-nav shadow-sm border-b border-gunmetal-border transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-3 text-white">
-          <Image src="/logo-filled-sm.webp" alt="FlightSentry Logo" width={160} height={40} className="h-[42px] w-auto object-contain rounded" />
+          <Image src="/FlightSentry-Main-icon-sm.png" alt="FlightSentry Logo" width={160} height={40} className="h-[42px] w-auto object-contain rounded" />
           <span className="font-bold text-xl tracking-tight">FlightSentry</span>
         </Link>
         <div className="flex items-center space-x-2 sm:space-x-4">

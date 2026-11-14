@@ -1,7 +1,7 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-13*  
-*Current Version: v0.8.4*
+*Current Version: v0.8.5*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
@@ -10,13 +10,16 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v0.8.6: UX/UI tweaks
 - Flight Modal
-  - Quick add
   - If selecting any miles (ex AA miles, must be a oneworld airline, etc.) airline or airline alliance (or partership like UA and JB) should be selected as carrier. Not hard stop, just warning message. Also we can change Carrier Code to Carrier. And add booking carrier, if not specified used carrier. Need a way to differentiate for non-aviation people. 
-  - Manual Mode, also monitor route hide / disable?
-    - when booking with points, maybe if they add the cash fare, then it can track it. I don't know, we need to rethink that process.
+  - Route Mismatch > Potential Route Mismatch with tooltip explaining
+- Simplify Drops and Rises to just dollar amount or just percetnage?
+- Flight Card
+  - Make paid size same size as up or down number
+- Reject airline 'XX', airline 'UN', or any value not matching /^(?=[A-Z0-9]*[A-Z])[A-Z0-9]{2}$/.
 
 ### Release v0.8.7a: Brand Optimization
 - go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.
+- Create DETAILED design guide
 
 ### Release v0.8.7: Brand Optimization Application
 - Brand Optimization Application
@@ -27,7 +30,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Standardize touch targets across all form inputs, toggles, tags, and action buttons.
   - Add touch-friendly everything across that app
 - go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
-- Multiple phases so testing and changes are not massive.
+- Multiple phases so testing and changes are not massive, a lot of modals already optimized
 
 ### Release v0.8.9a: Research Only, Security and Best Practices Audit
 - Look for hacks
@@ -55,12 +58,11 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Add a minimal `.env.example` documenting optional overrides (`PORT`, `TZ`, `DATABASE_PATH`, `HOSTING_PLATFORM`, `DISABLE_UPDATE_BANNER`, `ENABLE_LOCAL`) while keeping `.env` optional.
   - Add DISABLE_UPDATE_BANNER optional docker env. if set to true disable update banner. Deafult is false
   - Add ENABLE_LOCAL optional docker env. if set to false, disable flightsentry-scraper integration. Defailt is true
-- **Railway & PikaPods Prep**
-  - Add `HOSTING_PLATFORM` env support so managed hosts (like PikaPods) can be identified by the app.
-  - Prepare one-click Railway template config (single `/app/data` volume) and PikaPods catalog requirements (including optional basic login auth for public pod URLs).
 
 ### Release v0.9.1
-- TBD
+- Manual Mode, also monitor route hide / disable?
+    - when booking with points, maybe if they add the cash fare, then it can track it. I don't know, we need to rethink that process.
+    - Quick add
 
 ### Release v0.9.2: Public API
 - **API Key Management & Authentication**
@@ -74,9 +76,9 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - **Link to API Reference on website**
 
 ### Release v0.9.3
-- New API providers
-  - Links to get API keys
-  - Referral links
+- **Railway & PikaPods Prep**
+  - Add `HOSTING_PLATFORM` env support so managed hosts (like PikaPods) can be identified by the app.
+  - Prepare one-click Railway template config (single `/app/data` volume) and PikaPods catalog requirements (including optional basic login auth for public pod URLs).
 
 ### Release v0.9.4
 - TBD
