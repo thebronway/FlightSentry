@@ -14,6 +14,7 @@ import Tooltip from './Tooltip';
 interface AirlineTagInputProps {
   value?: string | null;
   onChange: (val: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -24,6 +25,7 @@ interface AirlineTagInputProps {
 export default function AirlineTagInput({
   value = '',
   onChange,
+  onBlur,
   placeholder = 'e.g. DL, AA (type code & press space or comma)',
   disabled = false,
   className = '',
@@ -125,6 +127,7 @@ export default function AirlineTagInput({
       commitToken(inputValue);
       setInputValue('');
     }
+    onBlur?.();
   };
 
   const removeTag = (idxToRemove: number) => {

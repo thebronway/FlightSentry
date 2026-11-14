@@ -155,9 +155,13 @@ export function useFlightModalState({
 
   const {
     detectedRoute,
+    detectedRoutes,
     routeLookupLoading,
     routeAlert,
+    selectRouteCandidate,
     adoptDetectedRoute,
+    triggerBlurLookup,
+    triggerManualLookup,
     resetLookupState,
   } = useRouteLookup({
     isOpen,
@@ -594,9 +598,13 @@ export function useFlightModalState({
     isDirty,
     showUnsavedPrompt,
     detectedRoute,
+    detectedRoutes,
     routeLookupLoading,
     routeAlert,
+    selectRouteCandidate,
     adoptDetectedRoute,
+    triggerBlurLookup,
+    triggerManualLookup,
     handleFieldChange,
     handleTrackingTypeChange,
     handlePaymentTypeChange,

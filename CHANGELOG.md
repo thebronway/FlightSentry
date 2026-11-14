@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-13*  
-*Current Version: v0.8.4*
+*Current Version: v0.8.5*
 
 ## Changelog
+
+### Release v0.8.5
+- Replaced query-based Google Flights links with a Protobuf `tfs` and `tfu` URL builder (`src/utils/googleFlightsUrl.ts`) supporting metro clusters, cabin classes, Standard vs. Basic Economy filtering, and active currency across cards, history modals, and alerts.
+- Removed the HasData provider integration, settings, routing/quota references, and `/api-test` card, changing the provider selection grid to 3 columns.
+- Added per-provider `Monthly Recurring` and `One-Time Credits` quota modes (`serpApiQuotaMode`, `searchApiQuotaMode`) in Settings and `QuotaRibbon`, skipping automatic monthly resets for one-time pools.
+- Added multi-leg route disambiguation in the Flight Modal with clickable route pills when a flight number operates multiple legs.
+- Updated Flight Modal route lookup triggers to wait for 2+ digits with a 1,200ms idle pause (600ms at 4+ digits), trigger on field blur, and provide an inline manual lookup button.
+- Added configurable past flight retention (`pastFlightRetentionDays`), a **Clean Up Past Flights** confirmation modal in **Settings → General**, `GET`/`POST /api/flights/cleanup-past`, and a composite `price_history(flightId, status, checkedAt DESC)` index.
 
 ### Release v0.8.4
 - Added `/api-test` page and `POST /api/dev/provider-test` endpoint gated by `ENABLE_API_TESTER=true` (returning `404` when unset or `false`).

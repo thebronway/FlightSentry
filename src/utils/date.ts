@@ -131,3 +131,13 @@ export const isFlightExpired = (departureDate: string, timezone: string): boolea
   const localToday = getTodayDateString(timezone);
   return localToday > departureDate;
 };
+
+export const subtractDaysFromDateString = (dateStr: string, days: number): string => {
+  const parts = dateStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const safeDays = Math.max(0, Math.round(days));
+  const dt = new Date(Date.UTC(year, month, day - safeDays));
+  return dt.toISOString().split('T')[0];
+};

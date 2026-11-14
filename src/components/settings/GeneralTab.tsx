@@ -7,6 +7,7 @@ import SettingsIntroBanner from './shared/SettingsIntroBanner';
 import DisplayCurrencyCard, { SUPPORTED_CURRENCIES } from './general/DisplayCurrencyCard';
 import PointsCurrenciesCard, { POPULAR_POINTS_PRESETS } from './general/PointsCurrenciesCard';
 import SystemTimezoneCard from './general/SystemTimezoneCard';
+import PastFlightsRetentionCard from './general/PastFlightsRetentionCard';
 import AppVersionSupportCard from './general/AppVersionSupportCard';
 import CurrencyWarningModal from './general/CurrencyWarningModal';
 
@@ -125,6 +126,21 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
     }
   };
 
+  const handleRetentionDaysChange = async (retentionDays: number | null) => {
+    const updated = { ...settings, pastFlightRetentionDays: retentionDays };
+    onChange(updated);
+    if (onAutoSave) {
+      await onAutoSave(
+        updated,
+        'general',
+        undefined,
+        retentionDays === null
+          ? 'Past flights retention set to Keep Forever'
+          : `Past flights retention set to ${retentionDays} days`
+      );
+    }
+  };
+
   return (
     <div className="space-y-6 pt-2">
       <SettingsIntroBanner
@@ -144,6 +160,11 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
       />
 
       <SystemTimezoneCard timezone={timezone} />
+
+      <PastFlightsRetentionCard
+        retentionDays={settings.pastFlightRetentionDays ?? null}
+        onSelectRetentionDays={handleRetentionDaysChange}
+      />
 
       <AppVersionSupportCard
         githubSyncEnabled={(settings.githubSyncEnabled ?? 1) === 1}

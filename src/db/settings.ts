@@ -85,7 +85,8 @@ export const settingsDb = {
         defaultMaxLayoverMinutes = @defaultMaxLayoverMinutes,
         defaultExcludedConnectingAirports = @defaultExcludedConnectingAirports,
         defaultMaxTotalDurationMinutes = @defaultMaxTotalDurationMinutes,
-        githubSyncEnabled = @githubSyncEnabled
+        githubSyncEnabled = @githubSyncEnabled,
+        pastFlightRetentionDays = @pastFlightRetentionDays
       WHERE id = 1
     `);
     stmt.run(updated);

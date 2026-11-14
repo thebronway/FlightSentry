@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS price_history (
     FOREIGN KEY (flightId) REFERENCES flights(id) ON DELETE CASCADE
 );
 
+CREATE INDEX IF NOT EXISTS idx_price_history_flight_status_checked
+    ON price_history(flightId, status, checkedAt DESC);
+
 CREATE TABLE IF NOT EXISTS datasource_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     provider TEXT NOT NULL,
@@ -142,7 +145,8 @@ CREATE TABLE IF NOT EXISTS settings (
     defaultMaxLayoverMinutes INTEGER,
     defaultExcludedConnectingAirports TEXT,
     defaultMaxTotalDurationMinutes INTEGER,
-    githubSyncEnabled INTEGER NOT NULL DEFAULT 1
+    githubSyncEnabled INTEGER NOT NULL DEFAULT 1,
+    pastFlightRetentionDays INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS release_sync_state (

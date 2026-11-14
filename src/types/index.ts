@@ -170,6 +170,7 @@ export interface Settings {
   defaultExcludedConnectingAirports?: string | null;
   defaultMaxTotalDurationMinutes?: number | null;
   githubSyncEnabled?: number; // 0 (false) or 1 (true)
+  pastFlightRetentionDays?: number | null;
 }
 
 export type AnnouncementSeverity = 'info' | 'warning';

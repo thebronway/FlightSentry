@@ -191,7 +191,18 @@ export const settingsSchema = z.object({
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
   githubSyncEnabled: z.number().min(0).max(1).optional(),
+  pastFlightRetentionDays: z.number().int().min(1).max(3650).optional().nullable(),
 });
+
+export const cleanupPastFlightsSchema = z.discriminatedUnion('scope', [
+  z.object({
+    scope: z.literal('all'),
+  }),
+  z.object({
+    scope: z.literal('retention'),
+    retentionDays: z.number().int().min(1).max(3650),
+  }),
+]);
 
 export const manualPriceEntrySchema = z.object({
   price: z.number().positive("Price or points must be greater than zero"),

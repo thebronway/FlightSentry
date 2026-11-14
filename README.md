@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.8.4-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.8.5-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -27,7 +27,7 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Price Surge & Drop Alerts:** Monitor price drops, price increases, or both for prospective flights with custom dollar or percentage alert thresholds.
 - **Convert to Booked:** 1-click in-place transition from watching to booked status that preserves historical price trends and switches tracking to rebooking drop credits.
 - **Custom Price Alerts:** Automated drop and surge alerts via Discord Webhook, Slack Webhook, Generic Webhook, or SMTP Email with independent channel toggles, isolated testing, and custom thresholds.
-- **Recurring Quota Resets:** Configure monthly quota resets by day of the month (1st–31st) with automatic calendar rollover and short-month clamping.
+- **Quota Modes & Resets:** Configure monthly recurring quota resets by day of the month (1st–31st) or one-time credit pools per API provider.
 - **Smart Scheduling:** Preserves API tokens by dynamically scaling check frequency based on departure date—flights closer to departure are checked more frequently, while distant flights are polled on longer intervals.
 - **Multi-Strategy Query Routing:** Pool quotas across active providers using Round-Robin rotation, Balanced Usage (% quota consumed), or Exhaust Quota priority, with optional scraper-first prioritization.
 
@@ -37,10 +37,9 @@ FlightSentry connects to multiple flight search APIs and a self-hosted scraper s
 Pairing `FlightSentry-Scraper` with at least one API provider ensures uninterrupted price checks when the scraper is paused, in cooldown, or at its hourly/daily limit.
 
 ### Current Supported Data Sources
-- **[SerpAPI](https://serpapi.com/):** Provides 100 free searches per month.
-- **[SearchApi.io](https://www.searchapi.io/):** Provides 100 free searches per month with cabin tier and airline filter support.
-- **[HasData](https://hasdata.com/):** Google Flights scraper API with structured returns, airline filtering, and rate-limit detection.
-- **[FlightSentry-Scraper](https://github.com/thebronway/FlightSentry):** Self-hosted Google Flights scraper service with Bearer API key authentication, serial queue management, and rolling hourly/daily limits.
+- **[SerpAPI](https://serpapi.com/):** Provides 250 free searches per month.
+- **[SearchApi.io](https://www.searchapi.io/):** Provides 100 free searches.
+- **[FlightSentry-Scraper](https://github.com/thebronway/FlightSentry):** Self-hosted Google Flights scraper service with API key authentication and rolling hourly/daily limits.
 
 ### Future Supported Data Sources
 - TBD

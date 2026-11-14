@@ -41,9 +41,13 @@ export default function FlightModal({
     error,
     showUnsavedPrompt,
     detectedRoute,
+    detectedRoutes,
     routeLookupLoading,
     routeAlert,
+    selectRouteCandidate,
     adoptDetectedRoute,
+    triggerBlurLookup,
+    triggerManualLookup,
     handleFieldChange,
     handleTrackingTypeChange,
     handlePaymentTypeChange,
@@ -160,6 +164,7 @@ export default function FlightModal({
               routeLookupLoading={routeLookupLoading}
               routeAlert={routeAlert}
               detectedRoute={detectedRoute}
+              detectedRoutes={detectedRoutes}
               currentOrigin={formData.origin}
               currentDestination={formData.destination}
               isBooked={isBooked}
@@ -167,7 +172,10 @@ export default function FlightModal({
               onFlightNumberChange={val => handleFieldChange({ flightNumber: val })}
               onDepartureDateChange={val => handleFieldChange({ departureDate: val })}
               onShowRouteDetailsChange={val => handleFieldChange({ showRouteDetails: val })}
+              onSelectRouteCandidate={selectRouteCandidate}
               onAdoptRoute={adoptDetectedRoute}
+              onFieldBlurLookup={triggerBlurLookup}
+              onManualLookup={triggerManualLookup}
             />
           )}
 

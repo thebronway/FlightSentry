@@ -71,6 +71,7 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN flightsentryScraperUsed INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN serpApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
+        "ALTER TABLE settings ADD COLUMN pastFlightRetentionDays INTEGER",
     ];
     for (const migration of migrations) {
         try {
@@ -78,6 +79,16 @@ export function initDb() {
         } catch {
             // Column already exists
         }
+    }
+
+    // Ensure composite index exists for price_history lookups on existing databases
+    try {
+        db.exec(`
+            CREATE INDEX IF NOT EXISTS idx_price_history_flight_status_checked
+                ON price_history(flightId, status, checkedAt DESC)
+        `);
+    } catch {
+        // Ignored
     }
 
     // Migrate legacy flight statuses to standardized domain vocabulary

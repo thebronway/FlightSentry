@@ -18,27 +18,50 @@ export async function POST(req: NextRequest) {
 
     console.log(`[RouteLookup API] Received request for Carrier: "${airline}", Flight#: "${flightNumber}"`);
 
-    if (!airline || !flightNumber) {
-      console.warn('[RouteLookup API] Missing carrier code or flight number in request body.');
+    const cleanAirline = airline ? airline.toUpperCase() : '';
+    const cleanFlightNumber = flightNumber ? flightNumber.replace(/\D/g, '') : '';
+
+    if (!cleanAirline || !/^[A-Z0-9]{2,3}$/.test(cleanAirline) || !cleanFlightNumber || !/^\d{1,5}$/.test(cleanFlightNumber)) {
+      console.warn('[RouteLookup API] Invalid or missing carrier code or flight number in request body.');
       return NextResponse.json(
-        { success: false, error: 'Carrier code and flight number are required' },
+        { success: false, error: 'Valid carrier code and numeric flight number are required' },
         { status: 400 }
       );
     }
 
-    const result = await lookupFlightRoute(airline, flightNumber, departureDate);
+    if (departureDate && !/^\d{4}-\d{2}-\d{2}$/.test(departureDate)) {
+      return NextResponse.json(
+        { success: false, error: 'Departure date must be YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+
+    const result = await lookupFlightRoute(cleanAirline, cleanFlightNumber, departureDate);
     const durationMs = Date.now() - startTime;
-    console.log(`[RouteLookup API] Result for ${airline} ${flightNumber}:`, JSON.stringify(result));
+    console.log(`[RouteLookup API] Result for ${cleanAirline} ${cleanFlightNumber}:`, JSON.stringify(result));
+
+    const routeSummary =
+      result.success && result.routes && result.routes.length > 1
+        ? result.routes.map(r => `${r.origin} → ${r.destination}`).join(', ')
+        : result.success && result.origin && result.destination
+        ? `${result.origin} → ${result.destination}`
+        : null;
+
+    const sourceDetail = result.success
+      ? `Source: ${result.source || 'aviation-db'}${
+          result.routes && result.routes.length > 1 ? ` (${result.routes.length} routes)` : ''
+        }`
+      : 'Route not found';
 
     try {
       logsDb.insert({
         provider: 'flight-route-lookup',
-        route: result.success && result.origin && result.destination ? `${result.origin} → ${result.destination}` : null,
-        flightNumber: `${airline} ${flightNumber}`,
+        route: routeSummary,
+        flightNumber: `${cleanAirline} ${cleanFlightNumber}`,
         departureDate: departureDate || null,
         status: result.success ? 'Success' : 'Error',
         statusCode: result.success ? 200 : 404,
-        errorMessage: result.error || (result.success ? `Source: ${result.source || 'aviation-db'}` : 'Route not found'),
+        errorMessage: result.error || sourceDetail,
         durationMs,
       });
     } catch (logErr) {

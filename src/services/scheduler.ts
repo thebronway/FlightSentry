@@ -4,7 +4,7 @@ import { historyDb } from '../db/history';
 import { checkFlightPrice } from './serpapi';
 import { evaluatePrice } from './evaluator';
 import { checkAndResetQuota, canMakeApiCall } from './quota';
-import { isFlightExpired } from '../utils/date';
+import { getTodayDateString, isFlightExpired, subtractDaysFromDateString } from '../utils/date';
 
 export const expireOldFlights = (timezone: string): void => {
   const flights = flightDb.getAll().filter(f => f.status === 'Watching' || f.status === 'Booked');
@@ -12,6 +12,19 @@ export const expireOldFlights = (timezone: string): void => {
     if (isFlightExpired(flight.departureDate, timezone)) {
       console.log(`Flight ${flight.id} departed (${flight.departureDate}). Marking as Past.`);
       flightDb.updateStatus(flight.id, 'Past');
+    }
+  }
+
+  const settings = settingsDb.get();
+  const retentionDays = settings?.pastFlightRetentionDays;
+  if (typeof retentionDays === 'number' && retentionDays > 0) {
+    const todayStr = getTodayDateString(timezone);
+    const cutoffDate = subtractDaysFromDateString(todayStr, retentionDays);
+    const purgedCount = flightDb.purgePastFlights(cutoffDate);
+    if (purgedCount > 0) {
+      console.log(
+        `Purged ${purgedCount} archived Past flight(s) older than ${retentionDays} days (before ${cutoffDate}).`
+      );
     }
   }
 };

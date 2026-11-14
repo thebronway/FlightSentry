@@ -247,6 +247,30 @@ export const flightDb = {
     return flightDb.getById(id);
   },
 
+  countPastFlights: (cutoffDepartureDate?: string | null): number => {
+    if (cutoffDepartureDate) {
+      const row = db
+        .prepare("SELECT COUNT(*) as count FROM flights WHERE status = 'Past' AND departureDate < ?")
+        .get(cutoffDepartureDate) as { count: number } | undefined;
+      return row?.count ?? 0;
+    }
+    const row = db
+      .prepare("SELECT COUNT(*) as count FROM flights WHERE status = 'Past'")
+      .get() as { count: number } | undefined;
+    return row?.count ?? 0;
+  },
+
+  purgePastFlights: (cutoffDepartureDate?: string | null): number => {
+    if (cutoffDepartureDate) {
+      const info = db
+        .prepare("DELETE FROM flights WHERE status = 'Past' AND departureDate < ?")
+        .run(cutoffDepartureDate);
+      return info.changes;
+    }
+    const info = db.prepare("DELETE FROM flights WHERE status = 'Past'").run();
+    return info.changes;
+  },
+
   delete: (id: number): void => {
     db.prepare('DELETE FROM flights WHERE id = ?').run(id);
   }
