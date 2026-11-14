@@ -4,6 +4,7 @@ import { historyDb } from '@/db/history';
 import { flightStatusSchema } from '@/utils/validation';
 import { flightSchema } from '@/utils/validation';
 import { FlightStatus } from '@/types';
+import { isPointsCurrency } from '@/utils/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const newPurchasePrice = parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice;
     const isBooked = (newPurchasePrice !== null && newPurchasePrice !== undefined && newPurchasePrice > 0) || Boolean(parsed.pnr || existing.pnr);
 
-    const updatedStatus: FlightStatus = body.status === 'Paused' 
+    const effectiveCurrency = parsed.currency !== undefined ? parsed.currency : existing.currency;
+    const isPointsFlight = isPointsCurrency(effectiveCurrency);
+    const effectiveIsManual = isPointsFlight
+      ? 1
+      : parsed.isManual !== undefined
+      ? parsed.isManual
+      : (existing.isManual ?? 0);
+
+    const updatedStatus: FlightStatus = (isPointsFlight || effectiveIsManual === 1 || body.status === 'Paused')
       ? 'Paused' 
       : body.status === 'Past'
       ? 'Past'
@@ -67,6 +76,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       origin: parsed.origin ?? existing.origin,
       destination: parsed.destination ?? existing.destination,
       airline: parsed.airline ?? '',
+      bookingAirline: parsed.bookingAirline !== undefined
+        ? (parsed.bookingAirline || parsed.airline || existing.airline || null)
+        : (existing.bookingAirline || parsed.airline || existing.airline || null),
       flightNumber: parsed.flightNumber ?? null,
       includedAirlines: parsed.includedAirlines ?? null,
       excludedAirlines: parsed.excludedAirlines ?? null,
@@ -90,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       minIncreasePercent: parsed.minIncreasePercent !== undefined ? parsed.minIncreasePercent : existing.minIncreasePercent,
       monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : (existing.monitorRouteAlternatives ?? 0),
       bookingDate: parsed.bookingDate !== undefined ? parsed.bookingDate : existing.bookingDate,
-      isManual: parsed.isManual !== undefined ? parsed.isManual : (existing.isManual ?? 0),
+      isManual: effectiveIsManual,
       maxLayoverMinutes: parsed.maxLayoverMinutes !== undefined ? parsed.maxLayoverMinutes : existing.maxLayoverMinutes,
       excludedConnectingAirports: parsed.excludedConnectingAirports !== undefined ? parsed.excludedConnectingAirports : existing.excludedConnectingAirports,
       maxTotalDurationMinutes: parsed.maxTotalDurationMinutes !== undefined ? parsed.maxTotalDurationMinutes : existing.maxTotalDurationMinutes,

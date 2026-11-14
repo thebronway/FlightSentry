@@ -40,7 +40,7 @@ export const flightDb = {
   create: (flight: Omit<Flight, 'id' | 'createdAt' | 'updatedAt' | 'currentPrice'> & { currentPrice?: number }): number => {
     const stmt = db.prepare(`
       INSERT INTO flights (
-        searchMode, origin, destination, departureDate, airline, flightNumber, 
+        searchMode, origin, destination, departureDate, airline, bookingAirline, flightNumber, 
         includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
         purchasePrice, originalPurchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
@@ -50,7 +50,7 @@ export const flightDb = {
         maxLayoverMinutes, excludedConnectingAirports, maxTotalDurationMinutes,
         includedAlliances, excludedAlliances, createdAt, updatedAt
       ) VALUES (
-        @searchMode, @origin, @destination, @departureDate, @airline, @flightNumber, 
+        @searchMode, @origin, @destination, @departureDate, @airline, @bookingAirline, @flightNumber, 
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
         @purchasePrice, @originalPurchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
@@ -86,10 +86,14 @@ export const flightDb = {
     const maxTotalDurationMinutes = flight.maxTotalDurationMinutes ?? null;
     const includedAlliances = flight.includedAlliances ?? null;
     const excludedAlliances = flight.excludedAlliances ?? null;
+    const bookingAirline = flight.bookingAirline?.trim()
+      ? flight.bookingAirline.trim().toUpperCase()
+      : (flight.airline ? flight.airline.trim().toUpperCase() : null);
 
     const result = stmt.run({
       ...flight, 
-      currentPrice, 
+      bookingAirline,
+      currentPrice,
       purchasePrice, 
       originalPurchasePrice,
       targetPrice, 
@@ -120,7 +124,15 @@ export const flightDb = {
   update: (id: number, data: Partial<Flight>): void => {
     const current = flightDb.getById(id);
     if (!current) return;
-    const merged = { ...current, ...data, updatedAt: new Date().toISOString() };
+    const merged = {
+      ...current,
+      ...data,
+      bookingAirline:
+        data.bookingAirline !== undefined
+          ? (data.bookingAirline?.trim() ? data.bookingAirline.trim().toUpperCase() : (data.airline ?? current.airline ?? null))
+          : (current.bookingAirline ?? data.airline ?? current.airline ?? null),
+      updatedAt: new Date().toISOString(),
+    };
     const stmt = db.prepare(`
       UPDATE flights SET
         searchMode = @searchMode,
@@ -128,6 +140,7 @@ export const flightDb = {
         destination = @destination,
         departureDate = @departureDate,
         airline = @airline,
+        bookingAirline = @bookingAirline,
         flightNumber = @flightNumber,
         includedAirlines = @includedAirlines,
         excludedAirlines = @excludedAirlines,

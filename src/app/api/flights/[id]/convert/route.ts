@@ -3,21 +3,37 @@ import { flightDb } from '@/db/flights';
 import { historyDb } from '@/db/history';
 import { settingsDb } from '@/db/settings';
 import { calculateNextCheck } from '@/utils/queue';
+import { airlineCodeSchema } from '@/utils/validation';
+import { isValidAirlineCode } from '@/utils/airline';
+import { isAllianceKey } from '@/utils/airlineThemes';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
+const convertAirlinesFilterSchema = z
+  .string()
+  .optional()
+  .nullable()
+  .refine((val) => {
+    if (!val || !val.trim()) return true;
+    const tokens = val
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+    return tokens.every((token) => isAllianceKey(token) || isValidAirlineCode(token));
+  }, "All airlines must be valid 2-character IATA codes (excluding 'XX' and 'UN') or recognized alliances");
+
 const convertSchema = z.object({
   purchasePrice: z.number().positive('Purchase price must be greater than zero'),
-  airline: z.string().min(2, 'Airline carrier code is required').max(3),
+  airline: airlineCodeSchema,
   flightNumber: z.string().regex(/^\d+$/, 'Flight number must be numbers only').min(1, 'Flight number is required'),
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
   currency: z.string().max(50).optional().nullable().or(z.literal('')),
   monitorRouteAlternatives: z.number().min(0).max(1).optional().default(1),
   origin: z.string().optional().nullable(),
   destination: z.string().optional().nullable(),
-  includedAirlines: z.string().optional().nullable(),
-  excludedAirlines: z.string().optional().nullable(),
+ includedAirlines: convertAirlinesFilterSchema,
+  excludedAirlines: convertAirlinesFilterSchema,
   maxStops: z.number().int().min(0).max(2).optional().nullable(),
   earliestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
   latestDeparture: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM format").optional().nullable().or(z.literal('')),
@@ -46,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       purchasePrice: parsed.purchasePrice,
       priceTrackingDirection: 'drop',
       airline: cleanAirline,
+      bookingAirline: existing.bookingAirline || cleanAirline,
       flightNumber: cleanFlightNumber,
       pnr: cleanPnr,
       searchMode,

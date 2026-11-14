@@ -1,3 +1,7 @@
+import packageInfo from '../../package.json';
+
+const USER_AGENT = `FlightSentry/${packageInfo.version}`;
+
 export interface DetectedRouteCandidate {
   origin: string;
   destination: string;
@@ -131,7 +135,7 @@ export const lookupFlightRoute = async (
         const url = `https://hexdb.io/api/v2/routes/${encodeURIComponent(cs)}`;
         console.log(`[FlightLookup] Querying HexDB v2: ${url}`);
         const res = await fetch(url, {
-          headers: { 'User-Agent': 'FlightSentry/0.8.5', Accept: 'application/json' },
+          headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
           signal: AbortSignal.timeout(3500),
         });
 
@@ -176,7 +180,7 @@ export const lookupFlightRoute = async (
         const url = `https://api.adsbdb.com/v0/callsign/${encodeURIComponent(key)}`;
         console.log(`[FlightLookup] Querying ADS-B: ${url}`);
         const res = await fetch(url, {
-          headers: { 'User-Agent': 'FlightSentry/0.8.5', Accept: 'application/json' },
+          headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
           signal: AbortSignal.timeout(3500),
         });
 
@@ -218,7 +222,7 @@ export const lookupFlightRoute = async (
       const res = await fetch('https://api.adsb.lol/api/0/routeset', {
         method: 'POST',
         headers: {
-          'User-Agent': 'FlightSentry/0.8.5',
+          'User-Agent': USER_AGENT,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },

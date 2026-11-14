@@ -5,6 +5,7 @@ import { historyDb } from '@/db/history';
 import { settingsDb } from '@/db/settings';
 import { executeSearchStrategy } from '@/services/datasource';
 import { getDataSourceStatus } from '@/utils/airline';
+import { isPointsCurrency } from '@/utils/format';
 import { checkAndResetQuota } from '@/services/quota';
 import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
@@ -70,16 +71,20 @@ export async function POST(req: NextRequest) {
         if (Array.isArray(p)) pointsList = p;
       } catch {}
     }
-    const isPointsFlight = Boolean(parsed.currency && pointsList.includes(parsed.currency));
+    const isPointsFlight = Boolean(
+      parsed.currency && (isPointsCurrency(parsed.currency) || pointsList.includes(parsed.currency))
+    );
 
     // For points flights or manual tracking mode, automated searches are bypassed
     if (isPointsFlight || parsed.isManual === 1) {
       const initialAmount = isBooked ? (parsed.purchasePrice || 0) : (baselinePrice || 0);
       const manualNextCheckAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
 
+      const manualCarrier = parsed.airline || (isPointsFlight ? 'POINTS' : 'MANUAL');
       const newFlightId = flightDb.create({
         ...parsed,
-        airline: parsed.airline || (isPointsFlight ? 'POINTS' : 'MANUAL'),
+        airline: manualCarrier,
+        bookingAirline: parsed.bookingAirline || parsed.airline || null,
         flightNumber: parsed.flightNumber || null,
         cabinClass: parsed.cabinClass,
         fareTier: parsed.fareTier,
@@ -199,6 +204,7 @@ export async function POST(req: NextRequest) {
     const currentPrice = liveSearchResultPrice ?? baselinePrice;
     const isRouteMode = parsed.searchMode === 'Route';
     const finalAirline = isRouteMode ? (parsed.airline || '') : (parsed.airline || initialAirline || '');
+    const finalBookingAirline = parsed.bookingAirline || finalAirline || null;
     const finalFlightNumber = isRouteMode ? null : (parsed.flightNumber || initialFlightNumber);
 
     settings = settingsDb.get();
@@ -221,6 +227,7 @@ export async function POST(req: NextRequest) {
     const newFlightId = flightDb.create({ 
       ...parsed, 
       airline: finalAirline,
+      bookingAirline: finalBookingAirline,
       flightNumber: finalFlightNumber,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,

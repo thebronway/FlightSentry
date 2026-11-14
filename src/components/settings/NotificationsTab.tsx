@@ -55,26 +55,48 @@ export default function NotificationsTab({
         }}
         onMinDropDollarChange={val => onChange({ ...settings, minDropDollar: val })}
         onMinDropDollarBlur={() => {
+          const updated = { ...settings, minDropPercent: 0 };
+          onChange(updated);
           if (onAutoSave) {
-            onAutoSave(settings, 'thresholds', undefined, `Minimum price drop threshold (${symbol}) updated`);
+            onAutoSave(updated, 'thresholds', undefined, `Minimum price drop threshold (${symbol}) updated`);
           }
         }}
         onMinDropPercentChange={val => onChange({ ...settings, minDropPercent: val })}
         onMinDropPercentBlur={() => {
+          const updated = { ...settings, minDropDollar: 0 };
+          onChange(updated);
           if (onAutoSave) {
-            onAutoSave(settings, 'thresholds', undefined, 'Minimum price drop percentage updated');
+            onAutoSave(updated, 'thresholds', undefined, 'Minimum price drop percentage updated');
+          }
+        }}
+        onDropThresholdModeSave={(dollar, percent) => {
+          const updated = { ...settings, minDropDollar: dollar, minDropPercent: percent };
+          onChange(updated);
+          if (onAutoSave) {
+            onAutoSave(updated, 'thresholds', undefined, 'Price drop threshold unit updated');
           }
         }}
         onMinIncreaseDollarChange={val => onChange({ ...settings, minIncreaseDollar: val })}
         onMinIncreaseDollarBlur={() => {
+          const updated = { ...settings, minIncreasePercent: 0 };
+          onChange(updated);
           if (onAutoSave) {
-            onAutoSave(settings, 'thresholds', undefined, `Minimum price surge threshold (${symbol}) updated`);
+            onAutoSave(updated, 'thresholds', undefined, `Minimum price surge threshold (${symbol}) updated`);
           }
         }}
         onMinIncreasePercentChange={val => onChange({ ...settings, minIncreasePercent: val })}
         onMinIncreasePercentBlur={() => {
+          const updated = { ...settings, minIncreaseDollar: 0 };
+          onChange(updated);
           if (onAutoSave) {
-            onAutoSave(settings, 'thresholds', undefined, 'Minimum price surge percentage updated');
+            onAutoSave(updated, 'thresholds', undefined, 'Minimum price surge percentage updated');
+          }
+        }}
+        onIncreaseThresholdModeSave={(dollar, percent) => {
+          const updated = { ...settings, minIncreaseDollar: dollar, minIncreasePercent: percent };
+          onChange(updated);
+          if (onAutoSave) {
+            onAutoSave(updated, 'thresholds', undefined, 'Price surge threshold unit updated');
           }
         }}
       />

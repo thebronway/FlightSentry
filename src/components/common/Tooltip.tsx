@@ -35,8 +35,8 @@ export default function Tooltip({
     const tooltipHeight = tooltipRef.current.offsetHeight;
     if (tooltipWidth === 0) return;
 
-    // Detect enclosing boundaries: Card container, Table row, Table, or Document
-    const boundaryEl = containerRef.current.closest('.group\\/card, tr, table, .bg-gunmetal-card') || document.body;
+    // Detect enclosing boundaries: Scrollable form, Card container, Table row, Table, or Document
+    const boundaryEl = containerRef.current.closest('form, .group\\/card, tr, table, .bg-gunmetal-card') || document.body;
     const boundaryRect = boundaryEl.getBoundingClientRect();
 
     const padding = 8;
@@ -91,7 +91,7 @@ export default function Tooltip({
           left: '50%',
           transform: `translateX(calc(-50% + ${shiftState.shiftX}px))`,
         }}
-        className={`pointer-events-none absolute ${positionContainerClasses} opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150 ease-out z-50 flex flex-col items-center`}
+        className={`pointer-events-none w-max max-w-[calc(100vw-24px)] absolute ${positionContainerClasses} opacity-0 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 transition-opacity duration-150 ease-out z-50 flex flex-col items-center`}
       >
         {effectivePosition === 'bottom' && (
           <div

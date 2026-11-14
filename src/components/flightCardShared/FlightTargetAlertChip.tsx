@@ -23,13 +23,19 @@ export default function FlightTargetAlertChip({
   if (flight.status === 'Past') return null;
 
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
+  const hasFlightDropDollar = flight.minDropDollar !== null && flight.minDropDollar !== undefined && flight.minDropDollar > 0;
+  const hasFlightDropPercent = flight.minDropPercent !== null && flight.minDropPercent !== undefined && flight.minDropPercent > 0;
   const effDollar =
     flight.minDropDollar !== null && flight.minDropDollar !== undefined
       ? flight.minDropDollar
+      : hasFlightDropPercent
+      ? 0
       : settings?.minDropDollar ?? 15;
   const effPercent =
     flight.minDropPercent !== null && flight.minDropPercent !== undefined
       ? flight.minDropPercent
+      : hasFlightDropDollar
+      ? 0
       : settings?.minDropPercent ?? 5;
   const dropTargets = computeAlertTargets(
     flight.currentPrice,
@@ -37,13 +43,19 @@ export default function FlightTargetAlertChip({
     effPercent
   );
 
+  const hasFlightIncDollar = flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined && flight.minIncreaseDollar > 0;
+  const hasFlightIncPercent = flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined && flight.minIncreasePercent > 0;
   const effIncDollar =
     flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined
       ? flight.minIncreaseDollar
+      : hasFlightIncPercent
+      ? 0
       : settings?.minIncreaseDollar ?? 50;
   const effIncPercent =
     flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined
       ? flight.minIncreasePercent
+      : hasFlightIncDollar
+      ? 0
       : settings?.minIncreasePercent ?? 10;
   const incTargets = computeIncreaseAlertTargets(
     flight.currentPrice,

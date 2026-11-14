@@ -12,6 +12,7 @@ export interface Flight {
   destination?: string | null;
   departureDate: string; // YYYY-MM-DD
   airline: string;
+  bookingAirline?: string | null;
   flightNumber?: string | null;
   includedAirlines?: string | null; // JSON array of strings
   excludedAirlines?: string | null; // JSON array of strings

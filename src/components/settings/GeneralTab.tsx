@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Settings } from '@/types';
+import { Settings, Flight } from '@/types';
 import { setActiveCurrency } from '@/utils/format';
 import SettingsIntroBanner from './shared/SettingsIntroBanner';
 import DisplayCurrencyCard, { SUPPORTED_CURRENCIES } from './general/DisplayCurrencyCard';
@@ -25,9 +25,21 @@ interface Props {
 }
 
 export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
-  const [flightCount, setFlightCount] = useState<number>(0);
+  const [flights, setFlights] = useState<Flight[]>([]);
   const [pendingCurrency, setPendingCurrency] = useState<string | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
+
+  const flightCount = flights.length;
+
+  const pointsUsageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const f of flights) {
+      if (f.currency) {
+        counts[f.currency] = (counts[f.currency] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [flights]);
 
   const pointsList: string[] = useMemo(() => {
     if (!settings.pointsCurrencies) return [];
@@ -68,9 +80,9 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
     fetch('/api/flights')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setFlightCount(data.length);
+        if (Array.isArray(data)) setFlights(data);
       })
-      .catch(() => setFlightCount(0));
+      .catch(() => setFlights([]));
   }, []);
 
   useEffect(() => {
@@ -155,6 +167,7 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
 
       <PointsCurrenciesCard
         pointsList={pointsList}
+        usageCounts={pointsUsageCounts}
         onAdd={handleAddPointsCurrency}
         onRemove={handleRemovePointsCurrency}
       />

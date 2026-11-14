@@ -5,7 +5,7 @@ import { Flight } from '@/types';
 import { X, Calendar, RotateCcw, AlertCircle, ArrowRight } from 'lucide-react';
 import { getCurrencySymbol, isPointsCurrency, formatCurrency } from '@/utils/format';
 import { resolveLocationDisplay } from '@/utils/coLocations';
-import { getCurrentPriceAirline, expandAlliancesToAirlines } from '@/utils/airline';
+import { getCurrentPriceAirline, expandAlliancesToAirlines, isValidAirlineCode } from '@/utils/airline';
 import AirlineBadge from '../common/AirlineBadge';
 import AirlineTagInput from '../common/AirlineTagInput';
 
@@ -82,6 +82,12 @@ export default function RebookFlightModal({
 
     if (!airline.trim()) {
       setError('Carrier code is required.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidAirlineCode(airline)) {
+      setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
       setLoading(false);
       return;
     }
@@ -286,7 +292,7 @@ export default function RebookFlightModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Rebooked Carrier Code *
+                Rebooked Carrier *
               </label>
               <AirlineTagInput
                 value={airline}

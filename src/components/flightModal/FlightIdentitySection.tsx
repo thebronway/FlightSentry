@@ -1,11 +1,17 @@
 'use client';
 
-import { Loader2, CheckCircle2, AlertTriangle, Search, GitBranch, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, CheckCircle2, AlertTriangle, Search, GitBranch, ArrowRight, HelpCircle } from 'lucide-react';
 import AirlineTagInput from '../common/AirlineTagInput';
+import Tooltip from '../common/Tooltip';
+import { checkLoyaltyCarrierCompatibility } from '@/utils/airlineThemes';
+import { isPointsCurrency } from '@/utils/format';
+import { normalizeAirlineCode, isValidAirlineCode } from '@/utils/airline';
 import type { DetectedRouteCandidate, RouteAlertState } from '@/hooks/useRouteLookup';
 
 interface Props {
   airline: string;
+  bookingAirline: string;
   flightNumber: string;
   departureDate: string;
   minDepartureDate: string;
@@ -17,7 +23,10 @@ interface Props {
   currentOrigin: string;
   currentDestination: string;
   isBooked: boolean;
+  isPoints?: boolean;
+  currency?: string;
   onAirlineChange: (val: string) => void;
+  onBookingAirlineChange: (val: string) => void;
   onFlightNumberChange: (val: string) => void;
   onDepartureDateChange: (val: string) => void;
   onShowRouteDetailsChange: (val: boolean) => void;
@@ -29,6 +38,7 @@ interface Props {
 
 export default function FlightIdentitySection({
   airline,
+  bookingAirline,
   flightNumber,
   departureDate,
   minDepartureDate,
@@ -40,7 +50,10 @@ export default function FlightIdentitySection({
   currentOrigin,
   currentDestination,
   isBooked,
+  isPoints = false,
+  currency,
   onAirlineChange,
+  onBookingAirlineChange,
   onFlightNumberChange,
   onDepartureDateChange,
   onShowRouteDetailsChange,
@@ -49,7 +62,27 @@ export default function FlightIdentitySection({
   onFieldBlurLookup,
   onManualLookup,
 }: Props) {
-  const canLookup = airline.trim().length >= 2 && flightNumber.trim().replace(/\D/g, '').length >= 1;
+  const [draftAirline, setDraftAirline] = useState('');
+  const [draftBookingAirline, setDraftBookingAirline] = useState('');
+
+  const resolveEffectiveCarrier = (committed: string, draft: string): string => {
+    if (committed.trim()) return committed.trim().toUpperCase();
+    const raw = draft.trim();
+    if (!raw) return '';
+    const norm = normalizeAirlineCode(raw);
+    if (norm !== 'UN' && isValidAirlineCode(norm)) return norm;
+    const upper = raw.toUpperCase();
+    return isValidAirlineCode(upper) ? upper : '';
+  };
+
+  const effectiveAirline = resolveEffectiveCarrier(airline, draftAirline);
+  const effectiveBookingAirline = resolveEffectiveCarrier(bookingAirline, draftBookingAirline);
+
+  const canLookup = effectiveAirline.length >= 2 && flightNumber.trim().replace(/\D/g, '').length >= 1;
+  const activePointsMode = isPoints || isPointsCurrency(currency);
+  const loyaltyCheck = activePointsMode
+    ? checkLoyaltyCarrierCompatibility(currency, effectiveAirline, effectiveBookingAirline)
+    : { hasWarning: false, program: null, message: null };
 
   return (
     <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5 space-y-4">
@@ -65,19 +98,66 @@ export default function FlightIdentitySection({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Carrier Code */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {/* Operating Carrier */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-            Carrier Code *
-          </label>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Carrier *
+            </label>
+            <Tooltip
+              align="left"
+              content={
+                <div className="max-w-[260px] whitespace-normal text-left leading-relaxed font-normal">
+                  <strong className="text-white font-semibold block mb-0.5">Airline Flying the Plane</strong>
+                  The airline operating the aircraft and flight number (for example, if your flight is DL 523, Delta is the Carrier).
+                </div>
+              }
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-gunmetal-muted hover:text-slate-200 cursor-help" />
+            </Tooltip>
+          </div>
           <AirlineTagInput
             value={airline}
             onChange={onAirlineChange}
+            onDraftChange={setDraftAirline}
             onBlur={onFieldBlurLookup}
             maxTags={1}
             placeholder="e.g. DL, AS, or Delta"
           />
+          <span className="text-[11px] text-gunmetal-muted block mt-1">
+            Airline operating the plane you actually fly on.
+          </span>
+        </div>
+
+        {/* Booking Carrier (Optional) */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Booking Carrier (Optional)
+            </label>
+            <Tooltip
+              align="left"
+              content={
+                <div className="max-w-[275px] whitespace-normal text-left leading-relaxed font-normal">
+                  <strong className="text-white font-semibold block mb-0.5">Where You Booked (Partner / Codeshare)</strong>
+                  Only needed if you bought the ticket or redeemed miles through a different airline than the one flying the plane (e.g. booking a British Airways flight with AA miles). Leave blank if booked directly.
+                </div>
+              }
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-gunmetal-muted hover:text-slate-200 cursor-help" />
+            </Tooltip>
+          </div>
+          <AirlineTagInput
+            value={bookingAirline}
+            onChange={onBookingAirlineChange}
+            onDraftChange={setDraftBookingAirline}
+            maxTags={1}
+            placeholder={effectiveAirline ? `Defaults to ${effectiveAirline}` : 'Defaults to Carrier'}
+          />
+          <span className="text-[11px] text-gunmetal-muted block mt-1">
+            Where you booked, if different from Carrier (defaults to Carrier).
+          </span>
         </div>
 
         {/* Flight Number */}
@@ -135,6 +215,17 @@ export default function FlightIdentitySection({
           </div>
         </div>
       </div>
+
+      {/* Non-blocking Miles / Alliance / Partnership Warning */}
+      {loyaltyCheck.hasWarning && loyaltyCheck.message && (
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-950/35 border border-amber-700/60 text-xs text-amber-200 animate-in fade-in duration-150">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="leading-relaxed">
+            <span className="font-semibold text-amber-100">Carrier &amp; Miles Notice: </span>
+            {loyaltyCheck.message}
+          </div>
+        </div>
+      )}
 
       {/* Multiple Routes Disambiguation Banner */}
       {routeAlert === 'multiple' && detectedRoutes.length > 1 && (
@@ -204,13 +295,27 @@ export default function FlightIdentitySection({
         </div>
       )}
 
-      {/* Route Mismatch notification banner */}
+      {/* Potential Route Mismatch notification banner */}
       {routeAlert === 'mismatch' && detectedRoute && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-lg bg-amber-950/30 border border-amber-800/50 text-xs text-amber-300 animate-in fade-in duration-150">
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-amber-200">Route Mismatch: </span>
+              <span className="inline-flex items-center gap-1 font-semibold text-amber-200 mr-1">
+                <span>Potential Route Mismatch</span>
+                <Tooltip
+                  align="left"
+                  content={
+                    <div className="max-w-[280px] whitespace-normal text-left leading-relaxed font-normal">
+                      <strong className="text-white font-semibold block mb-0.5">Why does this happen?</strong>
+                      Airlines frequently reuse flight numbers across different city pairs, change routes seasonally, or operate multi-leg flights. Public aviation schedules can also lag behind recent timetable changes. If your ticket matches your entered airports, you can safely keep them.
+                    </div>
+                  }
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-amber-300/90 hover:text-amber-100 cursor-help" />
+                </Tooltip>
+                <span>:</span>
+              </span>
               {airline} {flightNumber} schedule operates{' '}
               <span className="font-bold underline text-white">
                 {detectedRoutes.length > 1

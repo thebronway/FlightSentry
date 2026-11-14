@@ -2,7 +2,7 @@
 
 import { PlaneTakeoff, Compass, ShoppingBag, Coins, DollarSign, Wrench, Lock } from 'lucide-react';
 import { TrackingOption, PaymentType } from './useFlightModalState';
-import { getCurrencySymbol } from '@/utils/format';
+import { getCurrencySymbol, isPointsCurrency } from '@/utils/format';
 
 interface Props {
   trackingType: TrackingOption;
@@ -171,6 +171,14 @@ export default function TrackingModeSelector({
               {pointsCurrencies.length === 0 && (
                 <option value="PTS">PTS (Points)</option>
               )}
+              {currency &&
+                currency !== 'PTS' &&
+                isPointsCurrency(currency) &&
+                !pointsCurrencies.includes(currency) && (
+                  <option value={currency}>
+                    {currency} (Points · Removed from Settings)
+                  </option>
+                )}
               {pointsCurrencies.map(p => (
                 <option key={p} value={p}>
                   {p} (Points)

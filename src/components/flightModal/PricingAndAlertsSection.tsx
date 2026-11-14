@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Settings, PriceTrackingDirection } from '@/types';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, getCurrencySymbol } from '@/utils/format';
 import { Bell, TrendingDown, TrendingUp, ArrowUpDown, Coins } from 'lucide-react';
@@ -58,34 +59,141 @@ export default function PricingAndAlertsSection({
   const isBooked = trackingType === 'flight_booked';
   const isAutomatedLockedOff = isPoints || isManual;
 
-  const effectiveDropDollar = minDropDollar !== ''
-    ? parseFloat(minDropDollar)
-    : defaultSettings?.minDropDollar ?? 15;
+  const currencySymbol = getCurrencySymbol(defaultSettings?.currency || currency);
 
-  const effectiveDropPercent = minDropPercent !== ''
-    ? parseFloat(minDropPercent)
-    : defaultSettings?.minDropPercent ?? 5;
+  const hasCustomDropDollar = minDropDollar !== '' && parseFloat(minDropDollar) > 0;
+  const hasCustomDropPercent = minDropPercent !== '' && parseFloat(minDropPercent) > 0;
+  const hasAnyCustomDrop = hasCustomDropDollar || hasCustomDropPercent;
 
-  const effectiveIncreaseDollar = minIncreaseDollar !== ''
-    ? parseFloat(minIncreaseDollar)
-    : defaultSettings?.minIncreaseDollar ?? 50;
+  const defaultDropUnit: 'dollar' | 'percent' =
+    hasCustomDropPercent && !hasCustomDropDollar
+      ? 'percent'
+      : hasCustomDropDollar
+      ? 'dollar'
+      : (defaultSettings?.minDropDollar ?? 15) <= 0 && (defaultSettings?.minDropPercent ?? 0) > 0
+      ? 'percent'
+      : 'dollar';
 
-  const effectiveIncreasePercent = minIncreasePercent !== ''
-    ? parseFloat(minIncreasePercent)
-    : defaultSettings?.minIncreasePercent ?? 10;
+  const hasCustomIncDollar = minIncreaseDollar !== '' && parseFloat(minIncreaseDollar) > 0;
+  const hasCustomIncPercent = minIncreasePercent !== '' && parseFloat(minIncreasePercent) > 0;
+  const hasAnyCustomInc = hasCustomIncDollar || hasCustomIncPercent;
+
+  const defaultIncUnit: 'dollar' | 'percent' =
+    hasCustomIncPercent && !hasCustomIncDollar
+      ? 'percent'
+      : hasCustomIncDollar
+      ? 'dollar'
+      : (defaultSettings?.minIncreaseDollar ?? 50) <= 0 && (defaultSettings?.minIncreasePercent ?? 0) > 0
+      ? 'percent'
+      : 'dollar';
+
+  const [dropUnit, setDropUnit] = useState<'dollar' | 'percent'>(defaultDropUnit);
+  const [increaseUnit, setIncreaseUnit] = useState<'dollar' | 'percent'>(defaultIncUnit);
+
+  useEffect(() => {
+    setDropUnit(defaultDropUnit);
+  }, [defaultDropUnit]);
+
+  useEffect(() => {
+    setIncreaseUnit(defaultIncUnit);
+  }, [defaultIncUnit]);
+
+  const effectiveDropDollar =
+    dropUnit === 'dollar'
+      ? hasCustomDropDollar
+        ? parseFloat(minDropDollar)
+        : !hasAnyCustomDrop
+        ? defaultSettings?.minDropDollar ?? 15
+        : null
+      : null;
+
+  const effectiveDropPercent =
+    dropUnit === 'percent'
+      ? hasCustomDropPercent
+        ? parseFloat(minDropPercent)
+        : !hasAnyCustomDrop
+        ? defaultSettings?.minDropPercent ?? 5
+        : null
+      : null;
+
+  const effectiveIncreaseDollar =
+    increaseUnit === 'dollar'
+      ? hasCustomIncDollar
+        ? parseFloat(minIncreaseDollar)
+        : !hasAnyCustomInc
+        ? defaultSettings?.minIncreaseDollar ?? 50
+        : null
+      : null;
+
+  const effectiveIncreasePercent =
+    increaseUnit === 'percent'
+      ? hasCustomIncPercent
+        ? parseFloat(minIncreasePercent)
+        : !hasAnyCustomInc
+        ? defaultSettings?.minIncreasePercent ?? 10
+        : null
+      : null;
+
+  const handleDropUnitSwitch = (nextUnit: 'dollar' | 'percent') => {
+    if (nextUnit === dropUnit) return;
+    setDropUnit(nextUnit);
+    if (nextUnit === 'dollar') {
+      const carry = hasCustomDropPercent ? minDropPercent : '';
+      onDollarChange(carry);
+      onPercentChange(carry ? '0' : '');
+    } else {
+      const carry = hasCustomDropDollar ? minDropDollar : '';
+      onPercentChange(carry);
+      onDollarChange(carry ? '0' : '');
+    }
+  };
+
+  const handleDropValueChange = (raw: string) => {
+    if (dropUnit === 'dollar') {
+      onDollarChange(raw);
+      onPercentChange(raw.trim() !== '' ? '0' : '');
+    } else {
+      onPercentChange(raw);
+      onDollarChange(raw.trim() !== '' ? '0' : '');
+    }
+  };
+
+  const handleIncreaseUnitSwitch = (nextUnit: 'dollar' | 'percent') => {
+    if (nextUnit === increaseUnit) return;
+    setIncreaseUnit(nextUnit);
+    if (nextUnit === 'dollar') {
+      const carry = hasCustomIncPercent ? minIncreasePercent : '';
+      onIncreaseDollarChange(carry);
+      onIncreasePercentChange(carry ? '0' : '');
+    } else {
+      const carry = hasCustomIncDollar ? minIncreaseDollar : '';
+      onIncreasePercentChange(carry);
+      onIncreaseDollarChange(carry ? '0' : '');
+    }
+  };
+
+  const handleIncreaseValueChange = (raw: string) => {
+    if (increaseUnit === 'dollar') {
+      onIncreaseDollarChange(raw);
+      onIncreasePercentChange(raw.trim() !== '' ? '0' : '');
+    } else {
+      onIncreasePercentChange(raw);
+      onIncreaseDollarChange(raw.trim() !== '' ? '0' : '');
+    }
+  };
 
   const hasCurrentPrice = typeof currentPrice === 'number' && currentPrice > 0;
 
   const dropTargets = computeAlertTargets(
     currentPrice || 0,
-    !isNaN(effectiveDropDollar) ? effectiveDropDollar : null,
-    !isNaN(effectiveDropPercent) ? effectiveDropPercent : null
+    effectiveDropDollar !== null && !isNaN(effectiveDropDollar) ? effectiveDropDollar : null,
+    effectiveDropPercent !== null && !isNaN(effectiveDropPercent) ? effectiveDropPercent : null
   );
 
   const increaseTargets = computeIncreaseAlertTargets(
     currentPrice || 0,
-    !isNaN(effectiveIncreaseDollar) ? effectiveIncreaseDollar : null,
-    !isNaN(effectiveIncreasePercent) ? effectiveIncreasePercent : null
+    effectiveIncreaseDollar !== null && !isNaN(effectiveIncreaseDollar) ? effectiveIncreaseDollar : null,
+    effectiveIncreasePercent !== null && !isNaN(effectiveIncreasePercent) ? effectiveIncreasePercent : null
   );
 
   const activeDirection: PriceTrackingDirection = isBooked ? 'drop' : priceTrackingDirection;
@@ -219,50 +327,67 @@ export default function PricingAndAlertsSection({
             )}
           </div>
 
-          {/* 4. Price Drop Thresholds Card */}
+          {/* 4. Price Drop Threshold Card */}
           {(activeDirection === 'drop' || activeDirection === 'both') && (
             <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Price Drop Alert Thresholds (Optional Overrides)</span>
-              </h3>
-              <p className="text-[11px] text-gunmetal-muted">
-                Leave blank to inherit global defaults from Settings. Specify custom limits if you only want alerts above specific thresholds.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Min {getCurrencySymbol(defaultSettings?.currency)} Drop to Alert
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(defaultSettings?.currency)}</span>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      placeholder={defaultSettings?.minDropDollar != null ? String(defaultSettings.minDropDollar) : '15'}
-                      value={minDropDollar}
-                      onChange={e => onDollarChange(e.target.value)}
-                      className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                    />
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Price Drop Alert Threshold (Optional Override)</span>
+                </h3>
+                <div className="inline-flex rounded-lg bg-gunmetal-canvas border border-gunmetal-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDropUnitSwitch('dollar')}
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      dropUnit === 'dollar'
+                        ? 'bg-gunmetal-border text-emerald-300 border border-emerald-500/60 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    {currencySymbol} Amount
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDropUnitSwitch('percent')}
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      dropUnit === 'percent'
+                        ? 'bg-gunmetal-border text-emerald-300 border border-emerald-500/60 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    % Percent
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Min % Drop to Alert
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gunmetal-muted text-xs">%</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder={defaultSettings?.minDropPercent != null ? String(defaultSettings.minDropPercent) : '5'}
-                      value={minDropPercent}
-                      onChange={e => onPercentChange(e.target.value)}
-                      className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                    />
-                  </div>
+              </div>
+              <p className="text-[11px] text-gunmetal-muted">
+                Leave blank to inherit your global default from Settings, or enter a custom {dropUnit === 'dollar' ? 'amount' : 'percentage'} drop threshold.
+              </p>
+              <div className="max-w-sm">
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  {dropUnit === 'dollar' ? `Min ${currencySymbol} Drop to Alert` : 'Min % Drop to Alert'}
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gunmetal-muted text-xs font-mono">
+                    {dropUnit === 'dollar' ? currencySymbol : '%'}
+                  </span>
+                  <input
+                    type="number"
+                    step={dropUnit === 'dollar' ? '1' : '0.1'}
+                    min="0"
+                    placeholder={
+                      dropUnit === 'dollar'
+                        ? defaultSettings?.minDropDollar && defaultSettings.minDropDollar > 0
+                          ? String(defaultSettings.minDropDollar)
+                          : '15'
+                        : defaultSettings?.minDropPercent && defaultSettings.minDropPercent > 0
+                        ? String(defaultSettings.minDropPercent)
+                        : '5'
+                    }
+                    value={dropUnit === 'dollar' ? (hasCustomDropDollar ? minDropDollar : '') : (hasCustomDropPercent ? minDropPercent : '')}
+                    onChange={e => handleDropValueChange(e.target.value)}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                  />
                 </div>
               </div>
 
@@ -280,50 +405,67 @@ export default function PricingAndAlertsSection({
             </div>
           )}
 
-          {/* 5. Price Increase Thresholds Card */}
+          {/* 5. Price Increase Threshold Card */}
           {!isBooked && (activeDirection === 'increase' || activeDirection === 'both') && (
             <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-rose-400" />
-                <span>Price Increase Alert Thresholds (Optional Overrides)</span>
-              </h3>
-              <p className="text-[11px] text-gunmetal-muted">
-                Alerts you if fares surge above these limits so you can lock in tickets before prices climb higher.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Min {getCurrencySymbol(defaultSettings?.currency)} Surge to Alert
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gunmetal-muted text-xs">{getCurrencySymbol(defaultSettings?.currency)}</span>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      placeholder={defaultSettings?.minIncreaseDollar != null ? String(defaultSettings.minIncreaseDollar) : '50'}
-                      value={minIncreaseDollar}
-                      onChange={e => onIncreaseDollarChange(e.target.value)}
-                      className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                    />
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Price Increase Alert Threshold (Optional Override)</span>
+                </h3>
+                <div className="inline-flex rounded-lg bg-gunmetal-canvas border border-gunmetal-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleIncreaseUnitSwitch('dollar')}
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      increaseUnit === 'dollar'
+                        ? 'bg-gunmetal-border text-rose-300 border border-rose-500/60 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    {currencySymbol} Amount
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleIncreaseUnitSwitch('percent')}
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      increaseUnit === 'percent'
+                        ? 'bg-gunmetal-border text-rose-300 border border-rose-500/60 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    % Percent
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Min % Surge to Alert
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gunmetal-muted text-xs">%</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder={defaultSettings?.minIncreasePercent != null ? String(defaultSettings.minIncreasePercent) : '10'}
-                      value={minIncreasePercent}
-                      onChange={e => onIncreasePercentChange(e.target.value)}
-                      className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500"
-                    />
-                  </div>
+              </div>
+              <p className="text-[11px] text-gunmetal-muted">
+                Alerts you if fares surge above this {increaseUnit === 'dollar' ? 'amount' : 'percentage'} so you can lock in tickets before prices climb higher.
+              </p>
+              <div className="max-w-sm">
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  {increaseUnit === 'dollar' ? `Min ${currencySymbol} Surge to Alert` : 'Min % Surge to Alert'}
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gunmetal-muted text-xs font-mono">
+                    {increaseUnit === 'dollar' ? currencySymbol : '%'}
+                  </span>
+                  <input
+                    type="number"
+                    step={increaseUnit === 'dollar' ? '1' : '0.1'}
+                    min="0"
+                    placeholder={
+                      increaseUnit === 'dollar'
+                        ? defaultSettings?.minIncreaseDollar && defaultSettings.minIncreaseDollar > 0
+                          ? String(defaultSettings.minIncreaseDollar)
+                          : '50'
+                        : defaultSettings?.minIncreasePercent && defaultSettings.minIncreasePercent > 0
+                        ? String(defaultSettings.minIncreasePercent)
+                        : '10'
+                    }
+                    value={increaseUnit === 'dollar' ? (hasCustomIncDollar ? minIncreaseDollar : '') : (hasCustomIncPercent ? minIncreasePercent : '')}
+                    onChange={e => handleIncreaseValueChange(e.target.value)}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                  />
                 </div>
               </div>
 

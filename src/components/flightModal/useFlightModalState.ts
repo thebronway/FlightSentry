@@ -10,9 +10,10 @@ import {
   Settings,
 } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
-import { getDataSourceStatus } from '@/utils/airline';
+import { getDataSourceStatus, isValidAirlineCode } from '@/utils/airline';
 import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
+import { isPointsCurrency } from '@/utils/format';
 
 export type TrackingOption = 'route_watch' | 'flight_watch' | 'flight_booked';
 export type PaymentType = 'cash' | 'points';
@@ -27,6 +28,7 @@ export interface FlightFormState {
   departureDate: string;
   bookingDate: string;
   airline: string;
+  bookingAirline: string;
   flightNumber: string;
   includedAirlines: string;
   excludedAirlines: string;
@@ -69,6 +71,7 @@ const DEFAULT_FORM_STATE: FlightFormState = {
   departureDate: '',
   bookingDate: '',
   airline: '',
+  bookingAirline: '',
   flightNumber: '',
   includedAirlines: '',
   excludedAirlines: '',
@@ -144,7 +147,7 @@ export function useFlightModalState({
   const isPointsFlight = useMemo(() => {
     return (
       formData.paymentType === 'points' ||
-      formData.currency === 'PTS' ||
+      isPointsCurrency(formData.currency) ||
       Boolean(formData.currency && pointsList.includes(formData.currency))
     );
   }, [formData.paymentType, formData.currency, pointsList]);
@@ -218,7 +221,10 @@ export function useFlightModalState({
           ? 'flight_watch'
           : 'route_watch';
 
-        const isPoints = Boolean(initialFlight.currency && pointsList.includes(initialFlight.currency));
+        const isPoints = Boolean(
+          initialFlight.currency &&
+            (isPointsCurrency(initialFlight.currency) || pointsList.includes(initialFlight.currency))
+        );
         const paymentType: PaymentType = isPoints ? 'points' : 'cash';
         const isManual = initialFlight.isManual === 1;
 
@@ -232,6 +238,10 @@ export function useFlightModalState({
           departureDate: initialFlight.departureDate || '',
           bookingDate: initialFlight.bookingDate || todayStr,
           airline: initialFlight.airline || '',
+          bookingAirline:
+            initialFlight.bookingAirline && initialFlight.bookingAirline !== initialFlight.airline
+              ? initialFlight.bookingAirline
+              : '',
           flightNumber: initialFlight.flightNumber || '',
           includedAirlines: initialFlight.includedAirlines || '',
           excludedAirlines: initialFlight.excludedAirlines || '',
@@ -385,7 +395,7 @@ export function useFlightModalState({
   }, [pointsList, defaultSettings]);
 
   const handleCurrencyChange = useCallback((newCurrency: string) => {
-    const isPoints = newCurrency === 'PTS' || pointsList.includes(newCurrency);
+    const isPoints = isPointsCurrency(newCurrency) || pointsList.includes(newCurrency);
     setFormData(prev => ({
       ...prev,
       currency: newCurrency,
@@ -443,7 +453,15 @@ export function useFlightModalState({
       }
     } else if (formData.trackingType === 'flight_watch') {
       if (!formData.airline.trim() || !formData.flightNumber.trim()) {
-        setError('Carrier code and flight number are required to watch a specific flight.');
+        setError('Carrier and flight number are required to watch a specific flight.');
+        return;
+      }
+      if (!isValidAirlineCode(formData.airline)) {
+        setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
+        return;
+      }
+      if (formData.bookingAirline.trim() && !isValidAirlineCode(formData.bookingAirline)) {
+        setError("Booking Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
         return;
       }
       if (formData.showRouteDetails && (!formData.origin.trim() || !formData.destination.trim())) {
@@ -456,7 +474,15 @@ export function useFlightModalState({
       }
     } else if (formData.trackingType === 'flight_booked') {
       if (!formData.airline.trim() || !formData.flightNumber.trim()) {
-        setError('Carrier code and flight number are required for booked flights.');
+        setError('Carrier and flight number are required for booked flights.');
+        return;
+      }
+      if (!isValidAirlineCode(formData.airline)) {
+        setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
+        return;
+      }
+      if (formData.bookingAirline.trim() && !isValidAirlineCode(formData.bookingAirline)) {
+        setError("Booking Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
         return;
       }
       if (!formData.purchasePrice.trim() || parseFloat(formData.purchasePrice) <= 0) {
@@ -520,11 +546,15 @@ export function useFlightModalState({
     const effectiveDest = (formData.destination.trim() || detectedRoute?.destination || '').toUpperCase();
     const effectiveSearchModeVal: SearchMode = formData.trackingType === 'route_watch' ? 'Route' : 'FlightNumber';
 
+    const cleanAirline = formData.airline ? formData.airline.trim().toUpperCase() : '';
+    const cleanBookingAirline = formData.bookingAirline ? formData.bookingAirline.trim().toUpperCase() : '';
+
     const payload = {
       searchMode: effectiveSearchModeVal,
       origin: effectiveOrigin,
       destination: effectiveDest,
-      airline: formData.airline ? formData.airline.trim().toUpperCase() : '',
+      airline: cleanAirline,
+      bookingAirline: cleanBookingAirline || cleanAirline || null,
       flightNumber: effectiveSearchModeVal === 'FlightNumber' && formData.flightNumber.trim() ? formData.flightNumber.trim() : null,
       includedAirlines: formData.includedAirlines ? formData.includedAirlines.trim().toUpperCase() : null,
       excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,

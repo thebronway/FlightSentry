@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lookupFlightRoute } from '@/services/flightLookup';
+import { isValidAirlineCode } from '@/utils/airline';
 import { logsDb } from '@/db/logs';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     const cleanAirline = airline ? airline.toUpperCase() : '';
     const cleanFlightNumber = flightNumber ? flightNumber.replace(/\D/g, '') : '';
 
-    if (!cleanAirline || !/^[A-Z0-9]{2,3}$/.test(cleanAirline) || !cleanFlightNumber || !/^\d{1,5}$/.test(cleanFlightNumber)) {
+    if (!isValidAirlineCode(cleanAirline) || !cleanFlightNumber || !/^\d{1,5}$/.test(cleanFlightNumber)) {
       console.warn('[RouteLookup API] Invalid or missing carrier code or flight number in request body.');
       return NextResponse.json(
         { success: false, error: 'Valid carrier code and numeric flight number are required' },

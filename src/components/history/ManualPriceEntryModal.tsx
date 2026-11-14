@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Flight } from '@/types';
 import { X, Calendar, DollarSign, Coins, AlertCircle, CheckCircle2, Layers, ArrowRight } from 'lucide-react';
 import { getCurrencySymbol, isPointsCurrency } from '@/utils/format';
-import { normalizeAirlineCode, getCurrentPriceAirline, expandAlliancesToAirlines } from '@/utils/airline';
+import { normalizeAirlineCode, getCurrentPriceAirline, expandAlliancesToAirlines, isValidAirlineCode } from '@/utils/airline';
 import { resolveLocationDisplay } from '@/utils/coLocations';
 import AirlineTagInput from '../common/AirlineTagInput';
 
@@ -129,6 +129,12 @@ export default function ManualPriceEntryModal({
 
     if (!airline.trim()) {
       setError('Carrier code is required.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidAirlineCode(airline)) {
+      setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
       setLoading(false);
       return;
     }
@@ -322,7 +328,7 @@ export default function ManualPriceEntryModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Carrier Code *
+                Carrier *
               </label>
               <AirlineTagInput
                 value={airline}

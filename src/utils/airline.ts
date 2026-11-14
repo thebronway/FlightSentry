@@ -2,53 +2,83 @@ export * from './airlineThemes';
 import { AIRLINE_NAMES, BRAND_COLORS, AIRLINE_THEMES, AIRLINE_ALIASES, getAirlineName, getAirlineColor } from './airlineThemes';
 import { buildGoogleFlightsUrl } from './googleFlightsUrl';
 
+export const INVALID_AIRLINE_CODES = new Set(['XX', 'UN']);
+export const IATA_CARRIER_REGEX = /^(?=[A-Z0-9]*[A-Z])[A-Z0-9]{2}$/;
+
+export function isValidAirlineCode(code?: string | null): boolean {
+  if (!code) return false;
+  const upper = code.trim().toUpperCase();
+  if (INVALID_AIRLINE_CODES.has(upper)) return false;
+  return IATA_CARRIER_REGEX.test(upper);
+}
+
 export function normalizeAirlineCode(rawNameOrCode: string, rawFlightNum?: string): string {
   if (!rawNameOrCode && !rawFlightNum) return 'UN';
 
   // 1. Check if flight number string starts with a 2-character carrier code containing at least one letter (e.g. "DL 523", "B6 142")
   if (rawFlightNum) {
-    const match = rawFlightNum.trim().match(/^((?:[A-Z]{2}|[A-Z]\d|\d[A-Z]))\s*\d+/i);
-    if (match) return match[1].toUpperCase();
+    const match = rawFlightNum.trim().match(/^((?:[A-Z]{2}|[A-Z]\d|\\d[A-Z]))\s*\d+/i);
+    if (match) {
+      const prefix = match[1].toUpperCase();
+      if (isValidAirlineCode(prefix)) return prefix;
+    }
   }
 
   const input = (rawNameOrCode || '').trim();
   const upper = input.toUpperCase();
 
+  // Explicitly reject unknown/placeholder IATA codes
+  if (INVALID_AIRLINE_CODES.has(upper)) return 'UN';
+
   // 2. Check explicit common aliases and catchalls (e.g. SW -> WN, JB -> B6, DELTA -> DL)
-  if (AIRLINE_ALIASES[upper]) return AIRLINE_ALIASES[upper];
+  if (AIRLINE_ALIASES[upper] && isValidAirlineCode(AIRLINE_ALIASES[upper])) {
+    return AIRLINE_ALIASES[upper];
+  }
 
   // 3. Known official 2-character codes in the airline theme catalog
-  if (AIRLINE_THEMES[upper]) return upper;
+  if (AIRLINE_THEMES[upper] && isValidAirlineCode(upper)) return upper;
 
-  // 4. Substring matching for full/partial airline names
+  // 4. Dynamic lookup derived from AIRLINE_THEMES and AIRLINE_ALIASES (longest match first)
   const lower = input.toLowerCase();
-  if (lower.includes('delta')) return 'DL';
-  if (lower.includes('american')) return 'AA';
-  if (lower.includes('united')) return 'UA';
-  if (lower.includes('jetblue') || lower.includes('jet blue')) return 'B6';
-  if (lower.includes('southwest') || lower.includes('south west')) return 'WN';
-  if (lower.includes('alaska')) return 'AS';
-  if (lower.includes('frontier')) return 'F9';
-  if (lower.includes('spirit')) return 'NK';
-  if (lower.includes('allegiant')) return 'G4';
-  if (lower.includes('hawaiian')) return 'HA';
-  if (lower.includes('sun country') || lower.includes('suncountry')) return 'SY';
-  if (lower.includes('breeze')) return 'MX';
-  if (lower.includes('avelo')) return 'XP';
-  if (lower.includes('air canada')) return 'AC';
-  if (lower.includes('westjet') || lower.includes('west jet')) return 'WS';
-  if (lower.includes('british')) return 'BA';
-  if (lower.includes('air france')) return 'AF';
-  if (lower.includes('lufthansa')) return 'LH';
-  if (lower.includes('klm')) return 'KL';
-  if (lower.includes('virgin')) return 'VS';
+  if (lower.length >= 3) {
+    const catalogCandidates: Array<{ term: string; code: string }> = [];
+    for (const theme of Object.values(AIRLINE_THEMES)) {
+      if (!isValidAirlineCode(theme.code)) continue;
+      catalogCandidates.push({ term: theme.name.toLowerCase(), code: theme.code });
+      catalogCandidates.push({ term: theme.shortName.toLowerCase(), code: theme.code });
+    }
+    for (const [alias, code] of Object.entries(AIRLINE_ALIASES)) {
+      if (!isValidAirlineCode(code)) continue;
+      catalogCandidates.push({ term: alias.toLowerCase(), code });
+    }
 
-  // 5. If already a 2-character code
-  if (upper.length === 2) return upper;
+    catalogCandidates.sort((a, b) => b.term.length - a.term.length);
 
-  // Fallback: take first 2 letters if alphabetic
-  const letters = input.replace(/[^A-Za-z]/g, '').toUpperCase();
-  return letters.length >= 2 ? letters.slice(0, 2) : (letters || 'UN');
+    // Exact name/alias match first
+    for (const candidate of catalogCandidates) {
+      if (lower === candidate.term) {
+        return candidate.code;
+      }
+    }
+
+    // Substring match for descriptive strings (e.g. "Operated by Delta Air Lines")
+    for (const candidate of catalogCandidates) {
+      if (candidate.term.length >= 4 && lower.includes(candidate.term)) {
+        return candidate.code;
+      }
+      if (candidate.term.length === 3) {
+        const wordRegex = new RegExp(`\\b${candidate.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+        if (wordRegex.test(lower)) {
+          return candidate.code;
+        }
+      }
+    }
+  }
+
+  // 5. If already a valid 2-character IATA carrier code (not XX or UN)
+  if (isValidAirlineCode(upper)) return upper;
+
+  return 'UN';
 }
 
 export function cleanFlightNumber(rawFlightNumber: string, airlineCode?: string): string {

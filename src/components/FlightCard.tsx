@@ -126,8 +126,9 @@ export default function FlightCard({
             </div>
 
             <div className="text-right flex-shrink-0">
-              <p className="text-[11px] text-gunmetal-muted uppercase tracking-wider font-semibold whitespace-nowrap">
-                {benchmarkLabel}: {formatCurrency(benchmarkPrice, flight.currency)}
+              <p className="text-sm font-bold text-slate-200 whitespace-nowrap">
+                <span className="text-gunmetal-muted font-semibold">{benchmarkLabel}:</span>{' '}
+                {formatCurrency(benchmarkPrice, flight.currency)}
               </p>
               {delta !== 0 && (
                 <div className={`text-sm font-bold flex items-center justify-end whitespace-nowrap ${isDrop ? 'text-green-400' : 'text-red-400'}`}>

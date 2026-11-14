@@ -1,5 +1,29 @@
 import { z } from 'zod';
 import { isMetroCode } from './coLocations';
+import { isValidAirlineCode } from './airline';
+import { isAllianceKey } from './airlineThemes';
+
+export const INVALID_AIRLINE_MESSAGE =
+  "Carrier must be a valid 2-character IATA code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'";
+
+export const airlineCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .refine((val) => isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE);
+
+const commaSeparatedAirlinesOrAlliancesSchema = z
+  .string()
+  .optional()
+  .nullable()
+  .refine((val) => {
+    if (!val || !val.trim()) return true;
+    const tokens = val
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+    return tokens.every((token) => isAllianceKey(token) || isValidAirlineCode(token));
+  }, "All airlines must be valid 2-character IATA codes (excluding 'XX' and 'UN') or recognized alliances");
 
 export const flightSchema = z.object({
   searchMode: z.enum(['Route', 'FlightNumber']),
@@ -16,10 +40,17 @@ export const flightSchema = z.object({
     .optional()
     .nullable(),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
-  airline: z.string().optional().nullable(),
+  airline: z.string().trim().toUpperCase().optional().nullable(),
+  bookingAirline: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine((val) => !val || isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE)
+    .optional()
+    .nullable(),
   flightNumber: z.string().regex(/^\d+$/, "Flight number must be numbers only").optional().nullable(),
-  includedAirlines: z.string().optional().nullable(),
-  excludedAirlines: z.string().optional().nullable(),
+  includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+  excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
   pnr: z.string().max(10).optional().nullable(),
   fareTier: z.enum(['Basic Economy', 'Standard']).default('Standard'),
   cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).default('economy'),
@@ -49,6 +80,23 @@ export const flightSchema = z.object({
   includedAlliances: z.string().optional().nullable(),
   excludedAlliances: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
+  const cleanAirline = (data.airline || '').trim().toUpperCase();
+  if (data.searchMode === 'FlightNumber') {
+    if (!isValidAirlineCode(cleanAirline)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['airline'],
+        message: INVALID_AIRLINE_MESSAGE,
+      });
+    }
+  } else if (cleanAirline && cleanAirline !== 'POINTS' && cleanAirline !== 'MANUAL' && !isValidAirlineCode(cleanAirline)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['airline'],
+      message: INVALID_AIRLINE_MESSAGE,
+    });
+  }
+
   if (data.searchMode === 'FlightNumber' && data.monitorRouteAlternatives !== 1) {
     if (data.origin && (!/^[A-Z]{3}$/.test(data.origin) || isMetroCode(data.origin))) {
       ctx.addIssue({
@@ -165,8 +213,8 @@ export const settingsSchema = z.object({
   defaultFareTier: z.enum(['Basic Economy', 'Standard']).optional(),
   defaultNoRedeye: z.number().min(0).max(1).optional(),
   defaultMaxStops: z.number().int().min(0).max(2).optional().nullable(),
-  defaultIncludedAirlines: z.string().optional().nullable(),
-  defaultExcludedAirlines: z.string().optional().nullable(),
+  defaultIncludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+  defaultExcludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
   maxStoredItineraries: z.number().int().min(6).max(24).optional(),
   carrierDiversityEnabled: z.number().min(0).max(1).optional(),
   defaultMaxLayoverMinutes: z.number().int().nonnegative().optional().nullable(),
@@ -216,7 +264,7 @@ export const manualPriceEntrySchema = z.object({
       },
       "Date and time cannot be in the future"
     ),
-  airline: z.string().min(1, "Carrier code is required").toUpperCase(),
+  airline: airlineCodeSchema,
   flightNumber: z.string().regex(/^\d+$/, "Flight number must be numeric").optional().nullable().or(z.literal('')),
   origin: z.string().regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, "Origin must be a 3-letter IATA code or comma-separated IATA codes").optional().nullable().or(z.literal('')),
   destination: z.string().regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, "Destination must be a 3-letter IATA code or comma-separated IATA codes").optional().nullable().or(z.literal('')),
@@ -296,6 +344,14 @@ export const devProviderTestSchema = z.object({
     .string()
     .trim()
     .max(32)
+    .refine((val) => {
+      if (!val || val.toUpperCase() === 'ALL') return true;
+      const tokens = val
+        .split(',')
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
+      return tokens.every((token) => isAllianceKey(token) || isValidAirlineCode(token));
+    }, INVALID_AIRLINE_MESSAGE)
     .optional()
     .nullable()
     .or(z.literal('')),

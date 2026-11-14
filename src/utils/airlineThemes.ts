@@ -90,11 +90,14 @@ export const AIRLINE_ALIASES: Record<string, string> = {
   // KLM
   KLM: 'KL',
 
-  // Virgin Atlantic
+  // Virgin Atlantic & Virgin Australia
   VIRGIN: 'VS',
   'VIRGIN ATLANTIC': 'VS',
   VIRGINATLANTIC: 'VS',
   VIR: 'VS',
+  'VIRGIN AUSTRALIA': 'VA',
+  VIRGINAUSTRALIA: 'VA',
+  VOZ: 'VA',
 
   // Aeromexico
   AEROMEXICO: 'AM',
@@ -307,4 +310,287 @@ export function expandAlliancesToAirlines(alliancesOrAirlinesStr?: string | null
     }
   }
   return Array.from(carriers);
+}
+
+export interface LoyaltyProgramDefinition {
+  id: string;
+  programLabel: string;
+  keywords: string[];
+  hostCarriers: string[];
+  alliance: AirlineAllianceKey | null;
+  partnerCarriers: string[];
+}
+
+export interface ResolvedLoyaltyProgram {
+  id: string;
+  programLabel: string;
+  hostCarriers: string[];
+  alliance: AirlineAllianceKey | null;
+  allianceName: string | null;
+  partnerCarriers: string[];
+  allowedCarriers: string[];
+}
+
+export const LOYALTY_PROGRAMS: LoyaltyProgramDefinition[] = [
+  {
+    id: 'aadvantage',
+    programLabel: 'American Airlines AAdvantage',
+    keywords: ['aadvantage', 'aavantage', 'aa', 'american', 'oneworld'],
+    hostCarriers: ['AA'],
+    alliance: 'ONEWORLD',
+    partnerCarriers: ['HA', 'EY', 'G3', 'GF', 'TN', 'WS', 'YX'],
+  },
+  {
+    id: 'mileageplus',
+    programLabel: 'United MileagePlus',
+    keywords: ['mileageplus', 'mileage plus', 'ua', 'united', 'star alliance'],
+    hostCarriers: ['UA'],
+    alliance: 'STAR_ALLIANCE',
+    partnerCarriers: ['B6', 'EI', 'VA', 'EY', 'EN', 'WK', '4Y', 'EW', 'YX', 'G3', 'AD', 'ZK'],
+  },
+  {
+    id: 'trueblue',
+    programLabel: 'JetBlue TrueBlue',
+    keywords: ['trueblue', 'true blue', 'b6', 'jb', 'jetblue', 'jet blue'],
+    hostCarriers: ['B6'],
+    alliance: null,
+    partnerCarriers: ['UA', 'AA', 'EI', 'EY', 'HA', 'AS', 'QR', 'SQ', 'TP', 'TK', 'WS', 'UX', 'JX'],
+  },
+  {
+    id: 'skymiles',
+    programLabel: 'Delta SkyMiles',
+    keywords: ['skymiles', 'sky miles', 'dl', 'delta', 'skyteam'],
+    hostCarriers: ['DL'],
+    alliance: 'SKYTEAM',
+    partnerCarriers: ['WS', 'LA', 'AM', 'KE', 'AF', 'KL', 'VS', 'VA', 'HA', 'G3', 'CM'],
+  },
+  {
+    id: 'alaska_atmos',
+    programLabel: 'Alaska Mileage Plan / Atmos',
+    keywords: ['mileage plan', 'atmos', 'as', 'alaska'],
+    hostCarriers: ['AS'],
+    alliance: 'ONEWORLD',
+    partnerCarriers: ['HA', 'DE', 'EI', 'FI', 'KE', 'LA', 'SQ', 'TN', 'JX', 'PR'],
+  },
+  {
+    id: 'rapid_rewards',
+    programLabel: 'Southwest Rapid Rewards',
+    keywords: ['rapid rewards', 'wn', 'sw', 'southwest', 'south west'],
+    hostCarriers: ['WN'],
+    alliance: null,
+    partnerCarriers: ['FI'],
+  },
+  {
+    id: 'aeroplan',
+    programLabel: 'Air Canada Aeroplan',
+    keywords: ['aeroplan', 'ac', 'air canada'],
+    hostCarriers: ['AC'],
+    alliance: 'STAR_ALLIANCE',
+    partnerCarriers: ['EY', 'EK', 'VA', 'GF', 'OM', 'G3', 'AD', '4Y', 'WK', 'EN', 'EW', 'EI'],
+  },
+  {
+    id: 'avios',
+    programLabel: 'Avios (oneworld)',
+    keywords: ['avios', 'ba', 'qr', 'ib', 'ay', 'ei', 'british', 'qatar', 'iberia', 'finnair', 'aer lingus'],
+    hostCarriers: ['BA', 'QR', 'IB', 'AY', 'EI'],
+    alliance: 'ONEWORLD',
+    partnerCarriers: ['LA', 'VY'],
+  },
+  {
+    id: 'flying_blue',
+    programLabel: 'Air France / KLM Flying Blue',
+    keywords: ['flying blue', 'af', 'kl', 'air france', 'klm'],
+    hostCarriers: ['AF', 'KL'],
+    alliance: 'SKYTEAM',
+    partnerCarriers: ['WS', 'JL', 'QF', 'EY', 'G3', 'CM'],
+  },
+  {
+    id: 'miles_and_more',
+    programLabel: 'Lufthansa Miles & More',
+    keywords: ['miles & more', 'miles and more', 'lh', 'lx', 'os', 'lufthansa', 'swiss', 'austrian'],
+    hostCarriers: ['LH', 'LX', 'OS'],
+    alliance: 'STAR_ALLIANCE',
+    partnerCarriers: ['EN', '4Y', 'EW', 'WK'],
+  },
+  {
+    id: 'krisflyer',
+    programLabel: 'Singapore KrisFlyer',
+    keywords: ['krisflyer', 'kris flyer', 'sq', 'singapore'],
+    hostCarriers: ['SQ'],
+    alliance: 'STAR_ALLIANCE',
+    partnerCarriers: ['AS', 'B6', 'VA', 'VS'],
+  },
+  {
+    id: 'asia_miles',
+    programLabel: 'Cathay Asia Miles',
+    keywords: ['asia miles', 'cx', 'cathay'],
+    hostCarriers: ['CX'],
+    alliance: 'ONEWORLD',
+    partnerCarriers: ['LH', 'LX', 'OS'],
+  },
+  {
+    id: 'skywards',
+    programLabel: 'Emirates Skywards',
+    keywords: ['skywards', 'ek', 'emirates'],
+    hostCarriers: ['EK'],
+    alliance: null,
+    partnerCarriers: ['UA', 'AC', 'QF', 'B6', 'AS', 'KE', 'MH', 'TP', 'JL'],
+  },
+  {
+    id: 'etihad_guest',
+    programLabel: 'Etihad Guest',
+    keywords: ['etihad', 'ey'],
+    hostCarriers: ['EY'],
+    alliance: null,
+    partnerCarriers: ['AA', 'AC', 'AF', 'KL', 'B6', 'KE', 'SK', 'SV', 'VA'],
+  },
+  {
+    id: 'virgin_points',
+    programLabel: 'Virgin Atlantic Flying Club',
+    keywords: ['virgin', 'flying club', 'vs'],
+    hostCarriers: ['VS'],
+    alliance: 'SKYTEAM',
+    partnerCarriers: ['NH', 'NZ', 'SQ', 'VA', 'HA'],
+  },
+  {
+    id: 'lifemiles',
+    programLabel: 'Avianca LifeMiles',
+    keywords: ['lifemiles', 'life miles', 'av', 'avianca'],
+    hostCarriers: ['AV'],
+    alliance: 'STAR_ALLIANCE',
+    partnerCarriers: ['IB', 'AM'],
+  },
+  {
+    id: 'hawaiianmiles',
+    programLabel: 'HawaiianMiles',
+    keywords: ['hawaiian', 'ha'],
+    hostCarriers: ['HA'],
+    alliance: 'ONEWORLD',
+    partnerCarriers: ['AA', 'AS', 'B6', 'DL', 'JL', 'KE', 'VA'],
+  },
+];
+
+const TRANSFERABLE_BANK_KEYWORDS = [
+  'chase',
+  'ultimate rewards',
+  'amex',
+  'american express',
+  'membership rewards',
+  'capital one',
+  'citi',
+  'thankyou',
+  'thank you',
+  'bilt',
+  'wells fargo',
+];
+
+function buildResolvedLoyaltyProgram(def: LoyaltyProgramDefinition): ResolvedLoyaltyProgram {
+  const allowed = new Set<string>(def.hostCarriers);
+  let allianceName: string | null = null;
+  if (def.alliance && AIRLINE_ALLIANCES[def.alliance]) {
+    allianceName = AIRLINE_ALLIANCES[def.alliance].name;
+    AIRLINE_ALLIANCES[def.alliance].memberCarriers.forEach(c => allowed.add(c));
+  }
+  def.partnerCarriers.forEach(c => allowed.add(c));
+
+  return {
+    id: def.id,
+    programLabel: def.programLabel,
+    hostCarriers: def.hostCarriers,
+    alliance: def.alliance,
+    allianceName,
+    partnerCarriers: def.partnerCarriers,
+    allowedCarriers: Array.from(allowed),
+  };
+}
+
+export function resolveLoyaltyProgram(currencyName?: string | null): ResolvedLoyaltyProgram | null {
+  if (!currencyName) return null;
+  const trimmed = currencyName.trim();
+  if (!trimmed || trimmed.toUpperCase() === 'PTS') return null;
+  const lower = trimmed.toLowerCase();
+
+  // Exclude transferable bank currencies (e.g., Chase UR, Amex MR, Capital One, Bilt)
+  if (TRANSFERABLE_BANK_KEYWORDS.some(kw => lower.includes(kw))) {
+    return null;
+  }
+
+  const wordTokens = lower.split(/[^a-z0-9]+/).filter(Boolean);
+  for (const def of LOYALTY_PROGRAMS) {
+    const matched = def.keywords.some(kw =>
+      kw.length <= 2 ? wordTokens.includes(kw) : lower.includes(kw)
+    );
+    if (matched) {
+      return buildResolvedLoyaltyProgram(def);
+    }
+  }
+
+  // Fallback: check if currency starts with a known 2-letter IATA airline code (e.g. "JL miles", "HA points")
+  const prefixMatch = trimmed.toUpperCase().match(/^([A-Z0-9]{2})\b/);
+  if (prefixMatch) {
+    const code = AIRLINE_ALIASES[prefixMatch[1]] || prefixMatch[1];
+    if (AIRLINE_THEMES[code]) {
+      const matchedAlliance = (Object.keys(AIRLINE_ALLIANCES) as AirlineAllianceKey[]).find(k =>
+        AIRLINE_ALLIANCES[k].memberCarriers.includes(code)
+      ) || null;
+      return buildResolvedLoyaltyProgram({
+        id: `carrier_${code.toLowerCase()}`,
+        programLabel: `${AIRLINE_THEMES[code].name} (${code})`,
+        keywords: [],
+        hostCarriers: [code],
+        alliance: matchedAlliance,
+        partnerCarriers: [],
+      });
+    }
+  }
+
+  return null;
+}
+
+export function checkLoyaltyCarrierCompatibility(
+  currencyName?: string | null,
+  operatingCarrier?: string | null,
+  bookingCarrier?: string | null
+): {
+  hasWarning: boolean;
+  program: ResolvedLoyaltyProgram | null;
+  message: string | null;
+} {
+  const program = resolveLoyaltyProgram(currencyName);
+  if (!program) {
+    return { hasWarning: false, program: null, message: null };
+  }
+
+  const opCode = (operatingCarrier || '').trim().toUpperCase();
+  const bookCode = (bookingCarrier || '').trim().toUpperCase();
+
+  if (!opCode && !bookCode) {
+    return { hasWarning: false, program, message: null };
+  }
+
+  const opAllowed = opCode ? program.allowedCarriers.includes(opCode) : null;
+  const bookAllowed = bookCode ? program.allowedCarriers.includes(bookCode) : null;
+
+  // If operating carrier is entered, it must be in the loyalty program's allowed alliance/partner network
+  if (opCode && opAllowed) {
+    return { hasWarning: false, program, message: null };
+  }
+  if (!opCode && bookCode && bookAllowed) {
+    return { hasWarning: false, program, message: null };
+  }
+
+  const networkDesc = program.allianceName
+    ? `${program.allianceName} alliance or partner airline`
+    : program.partnerCarriers.length > 0
+    ? `${program.hostCarriers.join('/')} or an eligible partner airline`
+    : `${program.hostCarriers.join('/')}`;
+
+  const sampleCarriers = program.allowedCarriers.slice(0, 8).join(', ');
+  const enteredLabel = opCode && !opAllowed ? opCode : bookCode;
+
+  return {
+    hasWarning: true,
+    program,
+    message: `${currencyName} (${program.programLabel}) typically requires a ${networkDesc} (e.g. ${sampleCarriers}). "${enteredLabel}" is not listed as an eligible alliance or partner carrier. You can still save if this is a special partner redemption.`,
+  };
 }

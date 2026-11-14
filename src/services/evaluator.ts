@@ -43,12 +43,19 @@ export const evaluatePrice = async (
     const isLowerThanPrevious = newPrice < previousPrice;
     const isLowerThanBenchmark = newPrice < benchmarkPrice;
 
+    const hasFlightDropDollar = flight.minDropDollar !== null && flight.minDropDollar !== undefined && flight.minDropDollar > 0;
+    const hasFlightDropPercent = flight.minDropPercent !== null && flight.minDropPercent !== undefined && flight.minDropPercent > 0;
+
     const minDropDollar = (flight.minDropDollar !== null && flight.minDropDollar !== undefined)
       ? flight.minDropDollar
+      : hasFlightDropPercent
+      ? 0
       : settings.minDropDollar;
 
     const minDropPercent = (flight.minDropPercent !== null && flight.minDropPercent !== undefined)
       ? flight.minDropPercent
+      : hasFlightDropDollar
+      ? 0
       : settings.minDropPercent;
 
     const hasDollarRule = minDropDollar !== null && minDropDollar !== undefined && minDropDollar > 0;
@@ -74,12 +81,19 @@ export const evaluatePrice = async (
     const isHigherThanBenchmark = newPrice > benchmarkPrice;
 
     // Use per-flight surge overrides, fallback to global defaults
+    const hasFlightIncDollar = flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined && flight.minIncreaseDollar > 0;
+    const hasFlightIncPercent = flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined && flight.minIncreasePercent > 0;
+
     const minIncreaseDollar = (flight.minIncreaseDollar !== null && flight.minIncreaseDollar !== undefined)
       ? flight.minIncreaseDollar
+      : hasFlightIncPercent
+      ? 0
       : settings.minIncreaseDollar ?? 50;
 
     const minIncreasePercent = (flight.minIncreasePercent !== null && flight.minIncreasePercent !== undefined)
       ? flight.minIncreasePercent
+      : hasFlightIncDollar
+      ? 0
       : settings.minIncreasePercent ?? 10;
 
     const hasIncreaseDollarRule = minIncreaseDollar !== null && minIncreaseDollar !== undefined && minIncreaseDollar > 0;

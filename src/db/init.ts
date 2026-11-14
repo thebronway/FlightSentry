@@ -72,6 +72,7 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN serpApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN pastFlightRetentionDays INTEGER",
+        "ALTER TABLE flights ADD COLUMN bookingAirline TEXT",
     ];
     for (const migration of migrations) {
         try {

@@ -49,6 +49,14 @@ export default function FlightRouteDisplay({
               {flight.flightNumber}
             </span>
           </span>
+          {flight.bookingAirline && flight.bookingAirline !== flight.airline && (
+            <span
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-300 whitespace-nowrap"
+              title={`Operated by ${flight.airline}, booked via ${flight.bookingAirline}`}
+            >
+              Booked via {flight.bookingAirline}
+            </span>
+          )}
         </div>
 
         <div className={`text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 ${isCondensed ? 'mt-1' : 'mt-1.5'}`}>

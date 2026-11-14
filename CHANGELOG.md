@@ -1,9 +1,17 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-13*  
-*Current Version: v0.8.5*
+*Current Version: v0.8.6*
 
 ## Changelog
+
+### Release v0.8.6
+- Enforced IATA carrier validation (`/^(?=[A-Z0-9]*[A-Z])[A-Z0-9]{2}$/`) and rejected `XX` and `UN` across UI inputs and API schemas.
+- Renamed **Carrier Code** to **Carrier**, added optional **Booking Carrier** (`bookingAirline`, defaulting to `airline`) with explanatory tooltips, and replaced hardcoded airline substring checks with catalog lookups.
+- Added non-blocking carrier compatibility warnings when points/miles currencies do not match the selected airline, alliance, or partner network, plus in-use currency removal checks in Settings.
+- Renamed **Route Mismatch** to **Potential Route Mismatch** with an explanatory tooltip.
+- Replaced dual dollar/percentage threshold inputs with a single `$` / `%` unit toggle in Flight Modal and Notification Settings.
+- Updated `Paid` / `Initial` benchmark text on `FlightCard` to match the delta font size.
 
 ### Release v0.8.5
 - Replaced query-based Google Flights links with a Protobuf `tfs` and `tfu` URL builder (`src/utils/googleFlightsUrl.ts`) supporting metro clusters, cabin classes, Standard vs. Basic Economy filtering, and active currency across cards, history modals, and alerts.

@@ -157,6 +157,7 @@ export default function FlightModal({
           {isFlightMode && (
             <FlightIdentitySection
               airline={formData.airline}
+              bookingAirline={formData.bookingAirline}
               flightNumber={formData.flightNumber}
               departureDate={formData.departureDate}
               minDepartureDate={todayStr}
@@ -168,7 +169,10 @@ export default function FlightModal({
               currentOrigin={formData.origin}
               currentDestination={formData.destination}
               isBooked={isBooked}
+              isPoints={isPointsFlight}
+              currency={formData.currency || defaultSettings?.currency || 'USD'}
               onAirlineChange={val => handleFieldChange({ airline: val })}
+              onBookingAirlineChange={val => handleFieldChange({ bookingAirline: val })}
               onFlightNumberChange={val => handleFieldChange({ flightNumber: val })}
               onDepartureDateChange={val => handleFieldChange({ departureDate: val })}
               onShowRouteDetailsChange={val => handleFieldChange({ showRouteDetails: val })}
@@ -205,6 +209,8 @@ export default function FlightModal({
             minDepartureDate={todayStr}
             includedAirlines={formData.includedAirlines}
             excludedAirlines={formData.excludedAirlines}
+            isPoints={isPointsFlight}
+            currency={formData.currency || defaultSettings?.currency || 'USD'}
             onOriginChange={val => handleFieldChange({ origin: val })}
             onDestinationChange={val => handleFieldChange({ destination: val })}
             onDepartureDateChange={val => handleFieldChange({ departureDate: val })}

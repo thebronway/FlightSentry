@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Flight } from '@/types';
 import { X, ShoppingBag, Loader2, AlertCircle, Pencil } from 'lucide-react';
 import { formatCurrency, getCurrencySymbol } from '@/utils/format';
-import { cleanDisplayTime, normalizeAirlineCode } from '@/utils/airline';
+import { cleanDisplayTime, normalizeAirlineCode, isValidAirlineCode } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
 import AirlineTagInput from './common/AirlineTagInput';
 import SearchPreferencesSection from './flightModal/SearchPreferencesSection';
@@ -172,6 +172,12 @@ export default function ConvertFlightModal({
 
     if (!airline.trim()) {
       setError('Please enter the airline carrier code.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidAirlineCode(airline)) {
+      setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
       setLoading(false);
       return;
     }

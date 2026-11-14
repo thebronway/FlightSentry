@@ -8,12 +8,13 @@ import {
   AirlineAllianceKey,
   resolveAllianceKey,
 } from '@/utils/airlineThemes';
-import { normalizeAirlineCode } from '@/utils/airline';
+import { normalizeAirlineCode, isValidAirlineCode } from '@/utils/airline';
 import Tooltip from './Tooltip';
 
 interface AirlineTagInputProps {
   value?: string | null;
   onChange: (val: string) => void;
+  onDraftChange?: (draft: string) => void;
   onBlur?: () => void;
   placeholder?: string;
   disabled?: boolean;
@@ -25,6 +26,7 @@ interface AirlineTagInputProps {
 export default function AirlineTagInput({
   value = '',
   onChange,
+  onDraftChange,
   onBlur,
   placeholder = 'e.g. DL, AA (type code & press space or comma)',
   disabled = false,
@@ -33,7 +35,22 @@ export default function AirlineTagInput({
   showAlliances = true,
 }: AirlineTagInputProps) {
   const [inputValue, setInputValue] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const resolveValidCarrierToken = (rawToken: string): string | null => {
+    const trimmed = rawToken.trim();
+    if (!trimmed) return null;
+    const normalized = normalizeAirlineCode(trimmed);
+    if (normalized !== 'UN' && isValidAirlineCode(normalized)) {
+      return normalized;
+    }
+    const upper = trimmed.toUpperCase();
+    if (isValidAirlineCode(upper)) {
+      return upper;
+    }
+    return null;
+  };
 
   const tags = React.useMemo(() => {
     if (!value) return [];
@@ -43,41 +60,62 @@ export default function AirlineTagInput({
       .filter(Boolean);
   }, [value]);
 
-  const commitToken = (raw: string) => {
-    if (!raw.trim()) return;
-    const allianceKey = resolveAllianceKey(raw);
-    if (allianceKey) {
-      if (maxTags === 1) {
-        onChange(allianceKey);
-      } else if (!tags.includes(allianceKey)) {
-        if (maxTags && tags.length >= maxTags) return;
-        onChange([...tags, allianceKey].join(', '));
+  const commitToken = (raw: string): boolean => {
+    if (!raw.trim()) return true;
+    if (showAlliances && maxTags !== 1) {
+      const allianceKey = resolveAllianceKey(raw);
+      if (allianceKey) {
+        setValidationError(null);
+        if (!tags.includes(allianceKey)) {
+          if (maxTags && tags.length >= maxTags) return true;
+          onChange([...tags, allianceKey].join(', '));
+        }
+        return true;
       }
-      return;
     }
 
-    const normalized = normalizeAirlineCode(raw);
-    const clean = normalized && normalized !== 'UN' ? normalized : raw.trim().toUpperCase();
-    if (clean) {
-      if (maxTags === 1) {
-        onChange(clean);
-      } else if (!tags.includes(clean)) {
-        if (maxTags && tags.length >= maxTags) return;
-        const updated = [...tags, clean];
-        onChange(updated.join(', '));
-      }
+    const clean = resolveValidCarrierToken(raw);
+    if (!clean) {
+      const upper = raw.trim().toUpperCase();
+      setValidationError(
+        upper === 'XX' || upper === 'UN'
+          ? `Carrier code "${upper}" is not allowed. Enter a valid 2-character IATA airline code (e.g. DL, B6).`
+          : `"${upper}" is not a valid 2-character IATA airline code (e.g. DL, B6, 9W).`
+      );
+      return false;
     }
+
+    setValidationError(null);
+    if (maxTags === 1) {
+      onChange(clean);
+    } else if (!tags.includes(clean)) {
+      if (maxTags && tags.length >= maxTags) return true;
+      const updated = [...tags, clean];
+      onChange(updated.join(', '));
+    }
+    return true;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
+    if (validationError) setValidationError(null);
+
     if (maxTags === 1) {
       if (text.includes(',') || text.includes(' ')) {
         const token = text.replace(/[, ]+/g, '').trim();
-        if (token) commitToken(token);
-        setInputValue('');
+        if (token) {
+          if (commitToken(token)) {
+            setInputValue('');
+            onDraftChange?.('');
+          }
+        } else {
+          setInputValue('');
+          onDraftChange?.('');
+        }
       } else {
-        setInputValue(text.toUpperCase());
+        const upper = text.toUpperCase();
+        setInputValue(upper);
+        onDraftChange?.(upper);
       }
       return;
     }
@@ -86,25 +124,42 @@ export default function AirlineTagInput({
       const rawTokens = text.split(/[, ]+/);
       const remaining = rawTokens.pop() || '';
       const currentTags = [...tags];
+      let invalidToken: string | null = null;
 
       for (const token of rawTokens) {
         if (!token.trim()) continue;
-        const allianceKey = resolveAllianceKey(token);
-        const clean = allianceKey || (() => {
-          const normalized = normalizeAirlineCode(token);
-          return normalized && normalized !== 'UN' ? normalized : token.trim().toUpperCase();
-        })();
+        const allianceKey = showAlliances ? resolveAllianceKey(token) : null;
+        const clean = allianceKey || resolveValidCarrierToken(token);
 
-        if (clean && !currentTags.includes(clean)) {
+        if (!clean) {
+          invalidToken = token.trim().toUpperCase();
+          continue;
+        }
+
+        if (!currentTags.includes(clean)) {
           if (maxTags && currentTags.length >= maxTags) break;
           currentTags.push(clean);
         }
       }
 
       onChange(currentTags.join(', '));
-      setInputValue(remaining.toUpperCase());
+      if (invalidToken) {
+        setValidationError(
+          invalidToken === 'XX' || invalidToken === 'UN'
+            ? `Carrier code "${invalidToken}" is not allowed. Enter a valid 2-character IATA airline code (e.g. DL, B6).`
+            : `"${invalidToken}" is not a valid 2-character IATA airline code (e.g. DL, B6, 9W).`
+        );
+        setInputValue(invalidToken);
+        onDraftChange?.(invalidToken);
+      } else {
+        const upperRem = remaining.toUpperCase();
+        setInputValue(upperRem);
+        onDraftChange?.(upperRem);
+      }
     } else {
-      setInputValue(text.toUpperCase());
+      const upper = text.toUpperCase();
+      setInputValue(upper);
+      onDraftChange?.(upper);
     }
   };
 
@@ -112,27 +167,35 @@ export default function AirlineTagInput({
     if (e.key === 'Enter') {
       e.preventDefault();
       if (inputValue.trim()) {
-        commitToken(inputValue);
-        setInputValue('');
+        if (commitToken(inputValue)) {
+          setInputValue('');
+          onDraftChange?.('');
+        }
       }
     } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
       e.preventDefault();
+      setValidationError(null);
       const updated = tags.slice(0, -1);
       onChange(updated.join(', '));
+      onDraftChange?.('');
     }
   };
 
   const handleBlur = () => {
     if (inputValue.trim()) {
-      commitToken(inputValue);
-      setInputValue('');
+      if (commitToken(inputValue)) {
+        setInputValue('');
+        onDraftChange?.('');
+      }
     }
     onBlur?.();
   };
 
   const removeTag = (idxToRemove: number) => {
+    setValidationError(null);
     const updated = tags.filter((_, idx) => idx !== idxToRemove);
     onChange(updated.join(', '));
+    onDraftChange?.('');
   };
 
   return (
@@ -227,6 +290,12 @@ export default function AirlineTagInput({
           />
         )}
       </div>
+
+      {validationError && (
+        <p className="text-[11px] text-rose-400 font-medium leading-snug">
+          {validationError}
+        </p>
+      )}
 
       {showAlliances && maxTags !== 1 && (
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
