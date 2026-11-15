@@ -49,9 +49,9 @@ export const checkFlightPrice = async (
     }
 
     if (flight.searchMode === 'Route') {
-      if (flight.maxStops !== undefined && flight.maxStops !== null) {
-        // SerpAPI stops: 1 = Nonstop only, 2 = 1 stop or fewer, 3 = 2 stops or fewer
-        const serpStopsMap: Record<number, string> = { 0: '1', 1: '2', 2: '3' };
+      if (flight.maxStops !== undefined && flight.maxStops !== null && flight.maxStops > 0) {
+        // SerpAPI stops: 2 = 1 stop or fewer, 3 = 2 stops or fewer (omit for nonstop so all itineraries are captured)
+        const serpStopsMap: Record<number, string> = { 1: '2', 2: '3' };
         if (serpStopsMap[flight.maxStops]) {
           url.searchParams.append('stops', serpStopsMap[flight.maxStops]);
         }
@@ -208,7 +208,8 @@ export const checkFlightPrice = async (
       if (targetFlight && targetPrice > 0) {
         let alternatives: RouteItinerary[] | undefined = undefined;
         if (flight.monitorRouteAlternatives === 1) {
-          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+          const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
           if (flight.includedAirlines) {
             const included = expandAlliancesToAirlines(flight.includedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
@@ -255,7 +256,8 @@ export const checkFlightPrice = async (
 
     // Apply time-of-day and redeye search preferences
     candidates = filterItinerariesBySearchPreferences(candidates, flight);
-    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+    const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
 
     if (candidates.length > 0) {
       candidates.sort((a, b) => a.price - b.price);

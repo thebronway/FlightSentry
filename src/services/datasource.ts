@@ -8,7 +8,7 @@ import {
   checkScraperHealth,
   redactScraperSecrets,
 } from './flightsentryScraper';
-import { selectDiverseItineraries } from '../utils/routeIntelligence';
+import { ensureStopCategoryRepresentation } from '../utils/routeIntelligence';
 
 export type DataSourceProvider = 'serpapi' | 'searchapi' | 'flightsentry-scraper';
 
@@ -101,7 +101,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     if (result.status === 'Success' && result.itineraries && result.itineraries.length > 0) {
       const maxStored = settings.maxStoredItineraries ?? 12;
       const diversityActive = settings.carrierDiversityEnabled !== 0;
-      result.itineraries = selectDiverseItineraries(result.itineraries, maxStored, diversityActive);
+      result.itineraries = ensureStopCategoryRepresentation(result.itineraries, maxStored, diversityActive);
     }
 
     if (result.status === 'Success') {

@@ -1,12 +1,16 @@
 import { PriceHistory, SearchMode } from '@/types';
+import { StopPriceBreakdown } from '@/utils/routeIntelligence';
 
 export interface PriceChartProps {
   history: PriceHistory[];
+  rawHistory?: PriceHistory[];
   baselinePrice: number;
   purchasePrice?: number | null;
   searchMode?: SearchMode;
   currency?: string | null;
   overlayRouteFloor?: boolean;
+  showStopComparison?: boolean;
+  flightMaxStops?: number | null;
 }
 
 export interface CarrierDeparture {
@@ -54,3 +58,5 @@ export interface AirlineSeries {
   points: { x: number; y: number; price: number; checkIdx: number }[];
   pathString: string;
 }
+
+export type { StopPriceBreakdown };

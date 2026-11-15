@@ -4,6 +4,54 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Flight, PriceHistory } from '@/types';
 import { DayGroup } from './types';
 
+export function buildDayGroups(recordsList: PriceHistory[]): DayGroup[] {
+  const groups: Record<string, PriceHistory[]> = {};
+
+  recordsList.forEach(item => {
+    const dateKey = new Date(item.checkedAt).toISOString().split('T')[0];
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(item);
+  });
+
+  return Object.keys(groups)
+    .sort((a, b) => b.localeCompare(a))
+    .map(dateKey => {
+      const records = groups[dateKey].sort(
+        (a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime()
+      );
+      const prices = records.map(r => r.price).filter(p => typeof p === 'number' && p > 0);
+
+      const dayHigh = prices.length > 0 ? Math.max(...prices) : 0;
+      const dayLow = prices.length > 0 ? Math.min(...prices) : 0;
+
+      const chrono = [...records].sort(
+        (a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime()
+      );
+      const firstPrice = chrono[0]?.price || 0;
+      const lastPrice = chrono[chrono.length - 1]?.price || 0;
+      const intradayDelta = lastPrice - firstPrice;
+
+      const displayDate = new Date(`${dateKey}T12:00:00Z`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+
+      return {
+        dateKey,
+        displayDate,
+        records,
+        dayHigh,
+        dayLow,
+        firstPrice,
+        lastPrice,
+        intradayDelta,
+        hasMultipleChecks: records.length > 1,
+      };
+    });
+}
+
 export function useFlightHistory(flight: Flight | null) {
   const [history, setHistory] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,53 +108,7 @@ export function useFlightHistory(flight: Flight | null) {
     }
   }, [flight?.currentPrice, flight?.updatedAt, flight?.id, loadHistory]);
 
-  const dayGroups: DayGroup[] = useMemo(() => {
-    const groups: Record<string, PriceHistory[]> = {};
-
-    history.forEach(item => {
-      const dateKey = new Date(item.checkedAt).toISOString().split('T')[0];
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(item);
-    });
-
-    return Object.keys(groups)
-      .sort((a, b) => b.localeCompare(a))
-      .map(dateKey => {
-        const records = groups[dateKey].sort(
-          (a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime()
-        );
-        const prices = records.map(r => r.price).filter(p => typeof p === 'number' && p > 0);
-
-        const dayHigh = prices.length > 0 ? Math.max(...prices) : 0;
-        const dayLow = prices.length > 0 ? Math.min(...prices) : 0;
-
-        const chrono = [...records].sort(
-          (a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime()
-        );
-        const firstPrice = chrono[0]?.price || 0;
-        const lastPrice = chrono[chrono.length - 1]?.price || 0;
-        const intradayDelta = lastPrice - firstPrice;
-
-        const displayDate = new Date(`${dateKey}T12:00:00Z`).toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-
-        return {
-          dateKey,
-          displayDate,
-          records,
-          dayHigh,
-          dayLow,
-          firstPrice,
-          lastPrice,
-          intradayDelta,
-          hasMultipleChecks: records.length > 1,
-        };
-      });
-  }, [history]);
+  const dayGroups: DayGroup[] = useMemo(() => buildDayGroups(history), [history]);
 
   return {
     history,

@@ -285,7 +285,7 @@ export const checkFlightSentryScraperPrice = async (
   };
 
   if (flight.searchMode === 'Route') {
-    if (flight.maxStops !== undefined && flight.maxStops !== null && flight.maxStops >= 0 && flight.maxStops <= 2) {
+    if (flight.maxStops !== undefined && flight.maxStops !== null && flight.maxStops > 0 && flight.maxStops <= 2) {
       payload.maxStops = flight.maxStops;
     }
 
@@ -503,7 +503,8 @@ export const checkFlightSentryScraperPrice = async (
     if (targetItinerary && targetItinerary.price > 0) {
       let alternatives: RouteItinerary[] | undefined = undefined;
       if (flight.monitorRouteAlternatives === 1) {
-        alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+        const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+        alternatives = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
         if (flight.includedAirlines) {
           const included = expandAlliancesToAirlines(flight.includedAirlines);
           alternatives = alternatives.filter((it) => included.includes(it.airline));
@@ -551,7 +552,8 @@ export const checkFlightSentryScraperPrice = async (
   }
 
   candidates = filterItinerariesBySearchPreferences(candidates, flight);
-  const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+  const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+  const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
 
   if (candidates.length > 0) {
     candidates.sort((a, b) => a.price - b.price);

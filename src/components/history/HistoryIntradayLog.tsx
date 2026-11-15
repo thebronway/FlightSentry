@@ -7,16 +7,20 @@ import HistoryCheckRow from './HistoryCheckRow';
 
 interface Props {
   dayGroups: DayGroup[];
+  rawHistoryById?: Record<number, PriceHistory>;
   flight: Flight;
   loading: boolean;
   totalChecks: number;
+  showStopComparison?: boolean;
 }
 
 export default function HistoryIntradayLog({
   dayGroups,
+  rawHistoryById,
   flight,
   loading,
   totalChecks,
+  showStopComparison = false,
 }: Props) {
   return (
     <div>
@@ -70,7 +74,13 @@ export default function HistoryIntradayLog({
 
               <div className="divide-y divide-gunmetal-border">
                 {group.records.map((record: PriceHistory) => (
-                  <HistoryCheckRow key={record.id} record={record} flight={flight} />
+                  <HistoryCheckRow
+                    key={record.id}
+                    record={record}
+                    rawRecord={rawHistoryById?.[record.id]}
+                    flight={flight}
+                    showStopComparison={showStopComparison}
+                  />
                 ))}
               </div>
             </div>

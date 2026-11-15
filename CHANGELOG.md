@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-13*  
-*Current Version: v0.8.6*
+*Last updated: 2026-11-15*  
+*Current Version: v0.8.7*
 
 ## Changelog
+
+### Release v0.8.7
+- Updated `SerpAPI`, `SearchApi.io`, and `FlightSentry-Scraper` adapters to fetch all itineraries when `maxStops` is set to Nonstop while keeping primary prices, baselines, all-time lows, and alerts scoped to non-stop fares.
+- Added stop-category preservation (`ensureStopCategoryRepresentation`) so stored check metadata retains both non-stop and connecting itineraries within `maxStoredItineraries`.
+- Added an ephemeral **Stops View** toggle in `HistoryModal` (`Include Stops` for non-stop flights and `Non-Stop Only` for flights allowing stops) that resets on close without modifying saved flight settings.
+- Added dual `Non-stop` and `With stops` price readouts across Current Fare, Initial Baseline, All-Time Low/High, `PriceChart`, tooltips, `CarrierBreakdownTable`, and check history rows when previewing alternate stop filters.
 
 ### Release v0.8.6
 - Enforced IATA carrier validation (`/^(?=[A-Z0-9]*[A-Z])[A-Z0-9]{2}$/`) and rejected `XX` and `UN` across UI inputs and API schemas.

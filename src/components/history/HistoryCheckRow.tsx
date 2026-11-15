@@ -7,14 +7,22 @@ import AirlineBadge from '../common/AirlineBadge';
 import GoogleIcon from '../GoogleIcon';
 import { resolveLocationDisplay } from '@/utils/coLocations';
 import { getGoogleFlightsUrl } from '@/utils/airline';
+import { computeCheckStopPrices } from '@/utils/routeIntelligence';
 import HistoryCheckBadges from './HistoryCheckBadges';
 
 interface Props {
   record: PriceHistory;
+  rawRecord?: PriceHistory;
   flight: Flight;
+  showStopComparison?: boolean;
 }
 
-export default function HistoryCheckRow({ record, flight }: Props) {
+export default function HistoryCheckRow({
+  record,
+  rawRecord,
+  flight,
+  showStopComparison = false,
+}: Props) {
   const checkTime = new Date(record.checkedAt).toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -26,6 +34,10 @@ export default function HistoryCheckRow({ record, flight }: Props) {
       ? flight.purchasePrice
       : flight.baselinePrice;
   const dropFromBenchmark = activeBenchmark - record.price;
+  const stopBreakdown =
+    showStopComparison && record.status === 'Success'
+      ? computeCheckStopPrices(rawRecord || record, flight.maxStops)
+      : null;
 
   // Resolve route for this check record
   let checkOrigin = flight.origin || '';
@@ -111,6 +123,17 @@ export default function HistoryCheckRow({ record, flight }: Props) {
         {dropFromBenchmark < 0 && (
           <span className="text-red-400 font-semibold text-[11px] font-mono">
             ▲ {formatCurrency(Math.abs(dropFromBenchmark), flight.currency)}
+          </span>
+        )}
+        {stopBreakdown && (stopBreakdown.nonstop !== null || stopBreakdown.withStops !== null) && (
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono bg-gunmetal-canvas/90 border border-gunmetal-border rounded px-1.5 py-0.5 text-slate-300">
+            <span className="text-sky-300">
+              Non-stop: {stopBreakdown.nonstop !== null ? formatCurrency(stopBreakdown.nonstop, flight.currency) : '—'}
+            </span>
+            <span className="text-gunmetal-muted">·</span>
+            <span className="text-amber-300">
+              With stops: {stopBreakdown.withStops !== null ? formatCurrency(stopBreakdown.withStops, flight.currency) : '—'}
+            </span>
           </span>
         )}
       </div>

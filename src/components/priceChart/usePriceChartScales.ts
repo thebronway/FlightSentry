@@ -3,23 +3,33 @@
 import { useState, useMemo } from 'react';
 import { PriceHistory, SearchMode } from '@/types';
 import { CarrierCheckSummary, PlottedDot, AirlineSeries } from './types';
-import { parseHistoryItineraries } from '@/utils/routeIntelligence';
+import {
+  parseHistoryItineraries,
+  computeCheckStopPrices,
+  StopPriceBreakdown,
+} from '@/utils/routeIntelligence';
 import { getAirlineColor } from '@/utils/airline';
 
 interface ScaleParams {
   history: PriceHistory[];
+  rawHistory?: PriceHistory[];
   baselinePrice: number;
   purchasePrice?: number | null;
   searchMode?: SearchMode;
   overlayRouteFloor?: boolean;
+  showStopComparison?: boolean;
+  flightMaxStops?: number | null;
 }
 
 export function usePriceChartScales({
   history,
+  rawHistory,
   baselinePrice,
   purchasePrice,
   searchMode = 'Route',
   overlayRouteFloor = false,
+  showStopComparison = false,
+  flightMaxStops,
 }: ScaleParams) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -142,6 +152,23 @@ export function usePriceChartScales({
     });
   }, [sorted]);
 
+  const rawRecordById = useMemo(() => {
+    const map: Record<number, PriceHistory> = {};
+    (rawHistory || history).forEach(r => {
+      map[r.id] = r;
+    });
+    return map;
+  }, [rawHistory, history]);
+
+  const checkStopBreakdowns = useMemo(() => {
+    return sorted.map(record => {
+      const sourceRecord = rawRecordById[record.id] || record;
+      return computeCheckStopPrices(sourceRecord, flightMaxStops);
+    });
+  }, [sorted, rawRecordById, flightMaxStops]);
+
+  const showNonstopReferenceLine = Boolean(showStopComparison && flightMaxStops === 0);
+
   const isMultiAirlineMode = (searchMode === 'Route' || overlayRouteFloor) && allOperatingAirlines.length > 1;
 
   // Chart dimensions & margins
@@ -158,6 +185,12 @@ export function usePriceChartScales({
   const allPlottedPrices: number[] = [];
   sorted.forEach((d, idx) => {
     allPlottedPrices.push(d.price);
+    if (showNonstopReferenceLine) {
+      const nsPrice = checkStopBreakdowns[idx]?.nonstop;
+      if (typeof nsPrice === 'number' && nsPrice > 0) {
+        allPlottedPrices.push(nsPrice);
+      }
+    }
     if (isMultiAirlineMode) {
       const summaries = checkCarrierSummaries[idx];
       Object.values(summaries).forEach(s => {
@@ -215,6 +248,29 @@ export function usePriceChartScales({
 
   const areaPath = !isMultiAirlineMode && sorted.length > 1
     ? `${floorLinePath} L ${xCoords[xCoords.length - 1].toFixed(1)} ${padTop + plotHeight} L ${xCoords[0].toFixed(1)} ${padTop + plotHeight} Z`
+    : '';
+
+  const nonstopOverlayPoints = useMemo(() => {
+    if (!showNonstopReferenceLine) return [];
+    const pts: { x: number; y: number; price: number; checkIdx: number }[] = [];
+    sorted.forEach((_, idx) => {
+      const nsPrice = checkStopBreakdowns[idx]?.nonstop;
+      if (typeof nsPrice === 'number' && nsPrice > 0) {
+        pts.push({
+          x: xCoords[idx],
+          y: getY(nsPrice),
+          price: nsPrice,
+          checkIdx: idx,
+        });
+      }
+    });
+    return pts;
+  }, [showNonstopReferenceLine, sorted, checkStopBreakdowns, xCoords, yMin, yRange]);
+
+  const nonstopOverlayPath = nonstopOverlayPoints.length > 1
+    ? nonstopOverlayPoints
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join(' ')
     : '';
 
   const airlineSeries: AirlineSeries[] = allOperatingAirlines
@@ -325,6 +381,8 @@ export function usePriceChartScales({
         s => !isMultiAirlineMode || activeAirlines[s.airline]
       )
     : [];
+  const activeStopBreakdown: StopPriceBreakdown | null =
+    hoveredIndex !== null ? (checkStopBreakdowns[hoveredIndex] || null) : null;
 
   return {
     sorted,
@@ -348,6 +406,8 @@ export function usePriceChartScales({
     benchmarkLabel,
     areaPath,
     floorLinePath,
+    nonstopOverlayPath,
+    nonstopOverlayPoints,
     airlineSeries,
     plottedDots,
     hoveredIndex,
@@ -357,5 +417,6 @@ export function usePriceChartScales({
     activeY,
     activeDelta,
     activeSummaries,
+    activeStopBreakdown,
   };
 }

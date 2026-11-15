@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { PriceHistory } from '@/types';
-import { CarrierCheckSummary } from './types';
+import { CarrierCheckSummary, StopPriceBreakdown } from './types';
 import { formatCurrency } from '@/utils/format';
 import { getAirlineColor, getAirlineName, cleanDisplayTime } from '@/utils/airline';
 import { ArrowRight, X } from 'lucide-react';
@@ -20,6 +20,8 @@ interface Props {
   currency?: string | null;
   isTouchPinned?: boolean;
   onDismiss?: () => void;
+  showStopComparison?: boolean;
+  activeStopBreakdown?: StopPriceBreakdown | null;
 }
 
 export default function ChartScrubberTooltip({
@@ -35,6 +37,8 @@ export default function ChartScrubberTooltip({
   currency,
   isTouchPinned = false,
   onDismiss,
+  showStopComparison = false,
+  activeStopBreakdown,
 }: Props) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ left: number; top: number; ready: boolean }>({
@@ -140,6 +144,17 @@ export default function ChartScrubberTooltip({
           </button>
         )}
       </div>
+
+      {showStopComparison && activeStopBreakdown && (activeStopBreakdown.nonstop !== null || activeStopBreakdown.withStops !== null) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono bg-gunmetal-canvas/80 border border-gunmetal-border/80 rounded px-2 py-1 mb-2">
+          <span className="text-sky-300 font-semibold">
+            Non-stop: {activeStopBreakdown.nonstop !== null ? formatCurrency(activeStopBreakdown.nonstop, currency) : '—'}
+          </span>
+          <span className="text-amber-300 font-semibold">
+            With stops: {activeStopBreakdown.withStops !== null ? formatCurrency(activeStopBreakdown.withStops, currency) : '—'}
+          </span>
+        </div>
+      )}
 
       {isMultiAirlineMode && activeSummaries.length > 0 ? (
         <div className="space-y-1.5">

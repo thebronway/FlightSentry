@@ -45,10 +45,9 @@ export const checkSearchApiPrice = async (
     }
 
     if (flight.searchMode === 'Route') {
-      if (flight.maxStops !== undefined && flight.maxStops !== null) {
-        // SearchApi.io stops: nonstop, one_stop_or_fewer, two_stops_or_fewer
+      if (flight.maxStops !== undefined && flight.maxStops !== null && flight.maxStops > 0) {
+        // SearchApi.io stops: one_stop_or_fewer, two_stops_or_fewer (omit for nonstop so all itineraries are captured)
         const searchApiStopsMap: Record<number, string> = {
-          0: 'nonstop',
           1: 'one_stop_or_fewer',
           2: 'two_stops_or_fewer',
         };
@@ -231,7 +230,8 @@ export const checkSearchApiPrice = async (
       if (targetFlight && targetPrice > 0) {
         let alternatives: RouteItinerary[] | undefined = undefined;
         if (flight.monitorRouteAlternatives === 1) {
-          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+          const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+          alternatives = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
           if (flight.includedAirlines) {
             const included = expandAlliancesToAirlines(flight.includedAirlines);
             alternatives = alternatives.filter((it: RouteItinerary) => included.includes(it.airline));
@@ -278,7 +278,8 @@ export const checkSearchApiPrice = async (
 
     // Apply time-of-day and redeye search preferences
     candidates = filterItinerariesBySearchPreferences(candidates, flight);
-    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, flight);
+    const metadataPreferences = flight.maxStops === 0 ? { ...flight, maxStops: null } : flight;
+    const eligibleItineraries = filterItinerariesBySearchPreferences(parsedItineraries, metadataPreferences);
 
     if (candidates.length > 0) {
       candidates.sort((a, b) => a.price - b.price);

@@ -9,11 +9,14 @@ import { formatCurrency } from '@/utils/format';
 
 export default function PriceChart({
   history,
+  rawHistory,
   baselinePrice,
   purchasePrice,
   searchMode = 'Route',
   currency,
   overlayRouteFloor = false,
+  showStopComparison = false,
+  flightMaxStops,
 }: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -42,6 +45,8 @@ export default function PriceChart({
     benchmarkLabel,
     areaPath,
     floorLinePath,
+    nonstopOverlayPath,
+    nonstopOverlayPoints,
     airlineSeries,
     plottedDots,
     hoveredIndex,
@@ -51,12 +56,16 @@ export default function PriceChart({
     activeY,
     activeDelta,
     activeSummaries,
+    activeStopBreakdown,
   } = usePriceChartScales({
     history,
+    rawHistory,
     baselinePrice,
     purchasePrice,
     searchMode,
     overlayRouteFloor,
+    showStopComparison,
+    flightMaxStops,
   });
 
   const scrubToClientX = useCallback(
@@ -90,8 +99,16 @@ export default function PriceChart({
   if (sorted.length === 0) {
     return (
       <div className="h-52 flex flex-col items-center justify-center border border-dashed border-gunmetal-border rounded-lg bg-gunmetal-canvas/40 text-gunmetal-muted text-xs">
-        <p className="font-medium text-slate-300">No successful price points recorded yet</p>
-        <p className="mt-1">Future automatic and manual checks will plot here.</p>
+        <p className="font-medium text-slate-300">
+          {showStopComparison
+            ? 'No matching itineraries recorded for this stop filter'
+            : 'No successful price points recorded yet'}
+        </p>
+        <p className="mt-1">
+          {showStopComparison
+            ? 'Switch back to your saved stop filter above to view all recorded checks.'
+            : 'Future automatic and manual checks will plot here.'}
+        </p>
       </div>
     );
   }
@@ -246,6 +263,32 @@ export default function PriceChart({
               );
             })}
 
+          {nonstopOverlayPath && (
+            <g>
+              <path
+                d={nonstopOverlayPath}
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="2"
+                strokeDasharray="5 4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.9"
+              />
+              {nonstopOverlayPoints.map(pt => (
+                <circle
+                  key={`ns-ref-${pt.checkIdx}`}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={3.5}
+                  fill="#38bdf8"
+                  stroke="#0f0f11"
+                  strokeWidth="1.2"
+                />
+              ))}
+            </g>
+          )}
+
           {activeX !== null && (
             <line
               x1={activeX}
@@ -327,6 +370,19 @@ export default function PriceChart({
           })}
         </svg>
 
+        {nonstopOverlayPoints.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 px-2 pt-1.5 text-[10px] text-gunmetal-muted">
+            <span className="inline-flex items-center gap-1.5 text-sky-300 font-semibold">
+              <span className="w-4 border-t-2 border-dashed border-sky-400 inline-block" />
+              Non-Stop Floor Trend
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-amber-300 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80 inline-block" />
+              All Itineraries (Including Stops)
+            </span>
+          </div>
+        )}
+
         {activeRecord && activeX !== null && activeY !== null && (
           <ChartScrubberTooltip
             activeRecord={activeRecord}
@@ -344,6 +400,8 @@ export default function PriceChart({
               setIsTouchPinned(false);
               setHoveredIndex(null);
             }}
+            showStopComparison={showStopComparison}
+            activeStopBreakdown={activeStopBreakdown}
           />
         )}
       </div>

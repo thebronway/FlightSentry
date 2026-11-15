@@ -1,12 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Flight, Settings } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Flight, PriceHistory, Settings } from '@/types';
 import RouteCorridorSummary from './RouteCorridorSummary';
 import CarrierBreakdownTable from './CarrierBreakdownTable';
-import { computeRouteCorridor } from '@/utils/routeIntelligence';
-import { useFlightHistory } from './history/useFlightHistory';
+import {
+  computeRouteCorridor,
+  computeStopComparisonMetrics,
+  filterHistoryForStopView,
+  StopViewMode,
+} from '@/utils/routeIntelligence';
+import { buildDayGroups, useFlightHistory } from './history/useFlightHistory';
 import HistoryModalHeader from './history/HistoryModalHeader';
+import HistoryStopFilterBar from './history/HistoryStopFilterBar';
 import FlightStatBadges from './history/FlightStatBadges';
 import HistoryChartSection from './history/HistoryChartSection';
 import HistoryIntradayLog from './history/HistoryIntradayLog';
@@ -21,15 +27,42 @@ interface Props {
 }
 
 export default function HistoryModal({ flight, settings, onClose, onUpdateFlight }: Props) {
-  const { history, loading, dayGroups, loadHistory } = useFlightHistory(flight);
+  const { history, loading, loadHistory } = useFlightHistory(flight);
   const [overlayRouteFloor, setOverlayRouteFloor] = useState(false);
+  const [previewOppositeStops, setPreviewOppositeStops] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isRebookOpen, setIsRebookOpen] = useState(false);
 
-  // Default route floor overlay to hidden on every flight modal open to prevent visual clutter
+  // Reset ephemeral modal-only toggles whenever a different flight is opened
   useEffect(() => {
     setOverlayRouteFloor(false);
+    setPreviewOppositeStops(false);
   }, [flight?.id]);
+
+  const isNonstopSaved = flight?.maxStops === 0;
+  const activeStopViewMode: StopViewMode = isNonstopSaved
+    ? (previewOppositeStops ? 'all-stops' : 'nonstop-only')
+    : (previewOppositeStops ? 'nonstop-only' : 'all-stops');
+
+  const rawHistoryById = useMemo(() => {
+    const map: Record<number, PriceHistory> = {};
+    history.forEach(item => {
+      map[item.id] = item;
+    });
+    return map;
+  }, [history]);
+
+  const filteredHistory = useMemo(() => {
+    if (!flight) return [];
+    return filterHistoryForStopView(history, activeStopViewMode, flight.maxStops);
+  }, [history, activeStopViewMode, flight]);
+
+  const filteredDayGroups = useMemo(() => buildDayGroups(filteredHistory), [filteredHistory]);
+
+  const stopComparison = useMemo(() => {
+    if (!flight) return null;
+    return computeStopComparisonMetrics(history, flight);
+  }, [history, flight]);
 
   if (!flight) return null;
 
@@ -38,7 +71,16 @@ export default function HistoryModal({ flight, settings, onClose, onUpdateFlight
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const isPast = flight.status === 'Past';
 
-  const corridorMetrics = computeRouteCorridor(history, flight.currentPrice);
+  const canToggleStops =
+    isRouteMode || flight.monitorRouteAlternatives === 1 || history.some(h => Boolean(h.metadata));
+
+  const effectiveCurrentFloor = isNonstopSaved
+    ? flight.currentPrice
+    : previewOppositeStops
+    ? (stopComparison?.current.nonstop ?? 0)
+    : flight.currentPrice;
+
+  const corridorMetrics = computeRouteCorridor(filteredHistory, effectiveCurrentFloor);
 
   return (
     <div
@@ -65,35 +107,65 @@ export default function HistoryModal({ flight, settings, onClose, onUpdateFlight
         />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 min-h-0">
+          {canToggleStops && (
+            <HistoryStopFilterBar
+              savedMaxStops={flight.maxStops}
+              previewOppositeStops={previewOppositeStops}
+              onTogglePreview={setPreviewOppositeStops}
+            />
+          )}
+
           {isRouteMode ? (
-            <RouteCorridorSummary metrics={corridorMetrics} currency={flight.currency} />
+            <RouteCorridorSummary
+              metrics={corridorMetrics}
+              currency={flight.currency}
+              baselinePrice={flight.baselinePrice}
+              purchasePrice={flight.purchasePrice}
+              stopComparison={stopComparison}
+              showStopComparison={previewOppositeStops}
+            />
           ) : (
             <FlightStatBadges
               flight={flight}
               allTimeLow={corridorMetrics.allTimeLow}
-              totalChecks={history.length}
+              totalChecks={filteredHistory.length}
+              stopComparison={stopComparison}
+              showStopComparison={previewOppositeStops}
             />
           )}
 
           {overlayRouteFloor && isFlightNumMode && (
-            <RouteCorridorSummary metrics={corridorMetrics} currency={flight.currency} />
+            <RouteCorridorSummary
+              metrics={corridorMetrics}
+              currency={flight.currency}
+              baselinePrice={flight.baselinePrice}
+              purchasePrice={flight.purchasePrice}
+              stopComparison={stopComparison}
+              showStopComparison={previewOppositeStops}
+            />
           )}
 
           <HistoryChartSection
             flight={flight}
-            history={history}
+            history={filteredHistory}
+            rawHistory={history}
             isFlightNumMode={isFlightNumMode}
             overlayRouteFloor={overlayRouteFloor}
             onToggleOverlay={() => setOverlayRouteFloor(prev => !prev)}
+            showStopComparison={previewOppositeStops}
           />
 
-          {(isRouteMode || overlayRouteFloor) && <CarrierBreakdownTable history={history} flight={flight} />}
+          {(isRouteMode || overlayRouteFloor) && (
+            <CarrierBreakdownTable history={filteredHistory} flight={flight} />
+          )}
 
           <HistoryIntradayLog
-            dayGroups={dayGroups}
+            dayGroups={filteredDayGroups}
+            rawHistoryById={rawHistoryById}
             flight={flight}
             loading={loading}
-            totalChecks={history.length}
+            totalChecks={filteredHistory.length}
+            showStopComparison={previewOppositeStops}
           />
         </div>
       </div>

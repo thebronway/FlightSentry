@@ -2,18 +2,28 @@
 
 import { useMemo } from 'react';
 import { Flight } from '@/types';
+import { StopComparisonMetrics } from '@/utils/routeIntelligence';
 import { formatCurrency, isPointsCurrency } from '@/utils/format';
 import { getCurrentPriceAirline } from '@/utils/airline';
 import AirlineBadge from '../common/AirlineBadge';
+import StopPriceComparisonNote from './StopPriceComparisonNote';
 import { Coins } from 'lucide-react';
 
 interface Props {
   flight: Flight;
   allTimeLow: number;
   totalChecks: number;
+  stopComparison?: StopComparisonMetrics | null;
+  showStopComparison?: boolean;
 }
 
-export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Props) {
+export default function FlightStatBadges({
+  flight,
+  allTimeLow,
+  totalChecks,
+  stopComparison,
+  showStopComparison = false,
+}: Props) {
   const isBooked = Boolean(flight.purchasePrice && flight.purchasePrice > 0);
   const benchmarkPrice = isBooked ? flight.purchasePrice! : flight.baselinePrice;
   const originalPaid = flight.baselinePrice > 0 ? flight.baselinePrice : benchmarkPrice;
@@ -52,6 +62,9 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
             {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
           </span>
         )}
+        {showStopComparison && stopComparison && (
+          <StopPriceComparisonNote breakdown={stopComparison.current} currency={flight.currency} />
+        )}
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
@@ -65,6 +78,9 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
             Original: {formatCurrency(originalPaid, flight.currency)}
           </span>
         )}
+        {showStopComparison && stopComparison && !isBooked && (
+          <StopPriceComparisonNote breakdown={stopComparison.baseline} currency={flight.currency} />
+        )}
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
@@ -77,6 +93,9 @@ export default function FlightStatBadges({ flight, allTimeLow, totalChecks }: Pr
           <span className="text-[10px] text-gunmetal-muted block mt-0.5">
             Low: {formatCurrency(allTimeLow, flight.currency)}
           </span>
+        )}
+        {showStopComparison && stopComparison && (
+          <StopPriceComparisonNote breakdown={stopComparison.allTimeLow} currency={flight.currency} />
         )}
       </div>
       <div className="bg-gunmetal-canvas/60 border border-gunmetal-border p-3 rounded-lg">

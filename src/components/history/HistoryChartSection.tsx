@@ -7,17 +7,21 @@ import PriceChart from '../PriceChart';
 interface Props {
   flight: Flight;
   history: PriceHistory[];
+  rawHistory?: PriceHistory[];
   isFlightNumMode: boolean;
   overlayRouteFloor: boolean;
   onToggleOverlay: () => void;
+  showStopComparison?: boolean;
 }
 
 export default function HistoryChartSection({
   flight,
   history,
+  rawHistory,
   isFlightNumMode,
   overlayRouteFloor,
   onToggleOverlay,
+  showStopComparison = false,
 }: Props) {
   const canOverlayRouteFloor =
     isFlightNumMode && (flight.monitorRouteAlternatives === 1 || history.some(h => Boolean(h.metadata)));
@@ -52,11 +56,14 @@ export default function HistoryChartSection({
       </div>
       <PriceChart
         history={history}
+        rawHistory={rawHistory}
         baselinePrice={flight.baselinePrice}
         purchasePrice={flight.purchasePrice}
         searchMode={overlayRouteFloor ? 'Route' : flight.searchMode}
         overlayRouteFloor={overlayRouteFloor}
         currency={flight.currency}
+        showStopComparison={showStopComparison}
+        flightMaxStops={flight.maxStops}
       />
     </div>
   );

@@ -4,3 +4,6 @@ export * from './corridorCalculator';
 export * from './carrierMatrix';
 export * from './itineraryFilter';
 export * from './carrierDiversity';
+export * from './stopFilter';
+export * from './stopDiversity';
+export * from './stopMetrics';

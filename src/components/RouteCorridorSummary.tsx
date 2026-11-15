@@ -1,16 +1,29 @@
 'use client';
 
-import { RouteCorridorMetrics } from '@/utils/routeIntelligence';
+import { RouteCorridorMetrics, StopComparisonMetrics } from '@/utils/routeIntelligence';
 import { formatCurrency } from '@/utils/format';
-import { ArrowDown, ArrowUp, Gauge } from 'lucide-react';
+import { ArrowDown, ArrowUp, Gauge, Bookmark } from 'lucide-react';
+import StopPriceComparisonNote from './history/StopPriceComparisonNote';
 
 interface Props {
   metrics: RouteCorridorMetrics;
   compact?: boolean;
   currency?: string | null;
+  baselinePrice?: number;
+  purchasePrice?: number | null;
+  stopComparison?: StopComparisonMetrics | null;
+  showStopComparison?: boolean;
 }
 
-export default function RouteCorridorSummary({ metrics, compact = false, currency }: Props) {
+export default function RouteCorridorSummary({
+  metrics,
+  compact = false,
+  currency,
+  baselinePrice,
+  purchasePrice,
+  stopComparison,
+  showStopComparison = false,
+}: Props) {
   const { currentFloor, allTimeLow, allTimeHigh, spreadPercent, hasSpread } = metrics;
 
   // Resolve human-readable deal label
@@ -68,35 +81,63 @@ export default function RouteCorridorSummary({ metrics, compact = false, currenc
     );
   }
 
+  const isBooked = Boolean(purchasePrice && purchasePrice > 0);
+  const benchmarkPrice = isBooked ? purchasePrice! : (baselinePrice ?? 0);
+  const hasBenchmark = benchmarkPrice > 0 || Boolean(showStopComparison && stopComparison);
+
   return (
     <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 sm:p-4 space-y-4">
-      {/* 3 Corridor Stat Cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-        <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-0.5 sm:gap-1">
-            <ArrowDown className="w-3 h-3 flex-shrink-0" /> <span className="truncate">Low</span>
-          </span>
-          <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
-            {formatCurrency(allTimeLow, currency)}
-          </span>
-        </div>
-
+      {/* Corridor Stat Cards */}
+      <div className={`grid ${hasBenchmark ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-2 sm:gap-3 text-center`}>
         <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-slate-600/70 shadow-sm min-w-0">
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sky-400 flex items-center justify-center gap-0.5 sm:gap-1">
-            <Gauge className="w-3 h-3 flex-shrink-0" /> <span className="truncate">Current</span>
+            <Gauge className="w-3 h-3 flex-shrink-0" /> <span className="truncate">Current Fare</span>
           </span>
           <span className="text-base sm:text-lg font-black text-white block mt-0.5 truncate">
             {formatCurrency(currentFloor, currency)}
           </span>
+          {showStopComparison && stopComparison && (
+            <StopPriceComparisonNote breakdown={stopComparison.current} currency={currency} align="center" />
+          )}
+        </div>
+
+        {hasBenchmark && (
+          <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-300 flex items-center justify-center gap-0.5 sm:gap-1">
+              <Bookmark className="w-3 h-3 flex-shrink-0" />{' '}
+              <span className="truncate">{isBooked ? 'Price Paid' : 'Initial Baseline'}</span>
+            </span>
+            <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
+              {benchmarkPrice > 0 ? formatCurrency(benchmarkPrice, currency) : '—'}
+            </span>
+            {showStopComparison && stopComparison && !isBooked && (
+              <StopPriceComparisonNote breakdown={stopComparison.baseline} currency={currency} align="center" />
+            )}
+          </div>
+        )}
+
+        <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-0.5 sm:gap-1">
+            <ArrowDown className="w-3 h-3 flex-shrink-0" /> <span className="truncate">All-Time Low</span>
+          </span>
+          <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
+            {formatCurrency(allTimeLow, currency)}
+          </span>
+          {showStopComparison && stopComparison && (
+            <StopPriceComparisonNote breakdown={stopComparison.allTimeLow} currency={currency} align="center" />
+          )}
         </div>
 
         <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center justify-center gap-0.5 sm:gap-1">
-            <ArrowUp className="w-3 h-3 flex-shrink-0" /> <span className="truncate">High</span>
+            <ArrowUp className="w-3 h-3 flex-shrink-0" /> <span className="truncate">All-Time High</span>
           </span>
           <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
             {formatCurrency(allTimeHigh, currency)}
           </span>
+          {showStopComparison && stopComparison && (
+            <StopPriceComparisonNote breakdown={stopComparison.allTimeHigh} currency={currency} align="center" />
+          )}
         </div>
       </div>
 
