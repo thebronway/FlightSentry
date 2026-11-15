@@ -71,6 +71,7 @@ export default function FlightModal({
   const isBooked = formData.trackingType === 'flight_booked';
   const isRouteWatch = formData.trackingType === 'route_watch';
   const isFlightMode = formData.trackingType === 'flight_watch' || isBooked;
+  const isAutomatedDisabled = isPointsFlight || formData.isManual || formData.pauseTracking;
   const isAutomatedSubmissionBlocked = !initialFlight && !dsStatus.available && !isPointsFlight && !formData.isManual;
   const isPurchasePriceLocked = Boolean(
     initialFlight &&
@@ -119,9 +120,11 @@ export default function FlightModal({
                 type="button"
                 onClick={() =>
                   handleFieldChange({
+                    trackingType: isRouteWatch ? 'flight_watch' : formData.trackingType,
                     isManual: true,
                     pauseTracking: true,
-                    showRouteDetails: isFlightMode ? true : formData.showRouteDetails,
+                    monitorRouteAlternatives: false,
+                    showRouteDetails: true,
                   })
                 }
                 className="self-start sm:self-center flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-900/60 hover:bg-amber-800/70 border border-amber-600/70 text-amber-100 font-semibold transition-colors cursor-pointer whitespace-nowrap"
@@ -146,9 +149,11 @@ export default function FlightModal({
             onCurrencyChange={handleCurrencyChange}
             onManualChange={val =>
               handleFieldChange({
+                trackingType: val && isRouteWatch ? 'flight_watch' : formData.trackingType,
                 isManual: val,
                 pauseTracking: val ? true : formData.pauseTracking,
-                showRouteDetails: val && isFlightMode ? true : formData.showRouteDetails,
+                monitorRouteAlternatives: val ? false : formData.monitorRouteAlternatives,
+                showRouteDetails: val ? true : formData.showRouteDetails,
               })
             }
           />
@@ -218,8 +223,8 @@ export default function FlightModal({
             onExcludedAirlinesChange={val => handleFieldChange({ excludedAirlines: val })}
           />
 
-          {/* 4b. Dual Route Monitoring (Always accessible for Flight Watch and Booked Flights) */}
-          {isFlightMode && (
+          {/* 4b. Dual Route Monitoring (Hidden in Route mode or when automated checks are disabled) */}
+          {isFlightMode && !isAutomatedDisabled && (
             <DualRouteSection
               origin={formData.origin || detectedRoute?.origin || ''}
               destination={formData.destination || detectedRoute?.destination || ''}
@@ -281,7 +286,7 @@ export default function FlightModal({
           </div>
 
           {/* 6. Search Preferences (Stops, Time Windows, Redeye, Layovers, Duration) */}
-          {(isRouteWatch || formData.monitorRouteAlternatives) && (
+          {(isRouteWatch || (formData.monitorRouteAlternatives && !isAutomatedDisabled)) && (
             <SearchPreferencesSection
               earliestDeparture={formData.earliestDeparture}
               latestDeparture={formData.latestDeparture}
@@ -340,18 +345,20 @@ export default function FlightModal({
             />
           </div>
 
-          {/* 9. Schedule Cadence Overrides */}
-          <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5">
-            <CadenceOverridesSection
-              overrideFarOut={formData.overrideFarOut}
-              overrideStandard={formData.overrideStandard}
-              overrideFinalStretch={formData.overrideFinalStretch}
-              defaultSettings={defaultSettings}
-              onFarOutChange={val => handleFieldChange({ overrideFarOut: val })}
-              onStandardChange={val => handleFieldChange({ overrideStandard: val })}
-              onFinalStretchChange={val => handleFieldChange({ overrideFinalStretch: val })}
-            />
-          </div>
+          {/* 9. Schedule Cadence Overrides (Hidden when automated checks are disabled) */}
+          {!isAutomatedDisabled && (
+            <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-xl p-4 sm:p-5">
+              <CadenceOverridesSection
+                overrideFarOut={formData.overrideFarOut}
+                overrideStandard={formData.overrideStandard}
+                overrideFinalStretch={formData.overrideFinalStretch}
+                defaultSettings={defaultSettings}
+                onFarOutChange={val => handleFieldChange({ overrideFarOut: val })}
+                onStandardChange={val => handleFieldChange({ overrideStandard: val })}
+                onFinalStretchChange={val => handleFieldChange({ overrideFinalStretch: val })}
+              />
+            </div>
+          )}
 
           </form>
 

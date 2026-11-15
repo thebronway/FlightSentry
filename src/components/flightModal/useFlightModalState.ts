@@ -363,6 +363,9 @@ export function useFlightModalState({
 
   const handleTrackingTypeChange = useCallback((newType: TrackingOption) => {
     setFormData(prev => {
+      if (newType === 'route_watch' && (prev.isManual || prev.paymentType === 'points')) {
+        return prev;
+      }
       const restrictSingle = newType !== 'route_watch' && !prev.monitorRouteAlternatives;
       return {
         ...prev,
@@ -383,28 +386,54 @@ export function useFlightModalState({
       } else {
         nextCurrency = defaultSettings?.currency || 'USD';
       }
+      const preserveManual = !isPoints && Boolean(initialFlight?.isManual === 1 && !isPointsCurrency(initialFlight?.currency));
+      const nextManual = isPoints ? true : preserveManual;
+      const nextTrackingType: TrackingOption =
+        (isPoints || nextManual) && prev.trackingType === 'route_watch'
+          ? 'flight_watch'
+          : prev.trackingType;
+      const restrictSingle = nextTrackingType !== 'route_watch' && !prev.monitorRouteAlternatives;
       return {
         ...prev,
+        trackingType: nextTrackingType,
         paymentType: newPaymentType,
         currency: nextCurrency,
-        isManual: isPoints ? true : prev.isManual,
-        pauseTracking: isPoints ? true : prev.pauseTracking,
-        showRouteDetails: isPoints && prev.trackingType !== 'route_watch' ? true : prev.showRouteDetails,
+        isManual: nextManual,
+        pauseTracking: isPoints ? true : preserveManual,
+        monitorRouteAlternatives: isPoints ? false : prev.monitorRouteAlternatives,
+        showRouteDetails: isPoints ? true : prev.showRouteDetails,
+        origin: restrictSingle ? sanitizeSingleAirport(prev.origin) : prev.origin,
+        destination: restrictSingle ? sanitizeSingleAirport(prev.destination) : prev.destination,
       };
     });
-  }, [pointsList, defaultSettings]);
+  }, [pointsList, defaultSettings, initialFlight]);
 
   const handleCurrencyChange = useCallback((newCurrency: string) => {
     const isPoints = isPointsCurrency(newCurrency) || pointsList.includes(newCurrency);
-    setFormData(prev => ({
-      ...prev,
-      currency: newCurrency,
-      paymentType: isPoints ? 'points' : 'cash',
-      isManual: isPoints ? true : prev.isManual,
-      pauseTracking: isPoints ? true : prev.pauseTracking,
-      showRouteDetails: isPoints && prev.trackingType !== 'route_watch' ? true : prev.showRouteDetails,
-    }));
-  }, [pointsList]);
+    setFormData(prev => {
+      const wasPoints = prev.paymentType === 'points';
+      const preserveManual = !isPoints && Boolean(initialFlight?.isManual === 1 && !isPointsCurrency(initialFlight?.currency));
+      const nextManual = isPoints ? true : wasPoints ? preserveManual : prev.isManual;
+      const nextPause = isPoints ? true : wasPoints ? preserveManual : prev.pauseTracking;
+      const nextTrackingType: TrackingOption =
+        (isPoints || nextManual) && prev.trackingType === 'route_watch'
+          ? 'flight_watch'
+          : prev.trackingType;
+      const restrictSingle = nextTrackingType !== 'route_watch' && !prev.monitorRouteAlternatives;
+      return {
+        ...prev,
+        trackingType: nextTrackingType,
+        currency: newCurrency,
+        paymentType: isPoints ? 'points' : 'cash',
+        isManual: nextManual,
+        pauseTracking: nextPause,
+        monitorRouteAlternatives: isPoints || nextManual || nextPause ? false : prev.monitorRouteAlternatives,
+        showRouteDetails: isPoints ? true : prev.showRouteDetails,
+        origin: restrictSingle ? sanitizeSingleAirport(prev.origin) : prev.origin,
+        destination: restrictSingle ? sanitizeSingleAirport(prev.destination) : prev.destination,
+      };
+    });
+  }, [pointsList, initialFlight]);
 
   const handleToggleRouteAlternatives = useCallback((enabled: boolean) => {
     setFormData(prev => {
@@ -527,7 +556,9 @@ export function useFlightModalState({
 
     setLoading(true);
 
-    const scheduleOverride = (formData.overrideFarOut !== '' || formData.overrideStandard !== '' || formData.overrideFinalStretch !== '')
+    const isAutomatedDisabled = isPointsFlight || formData.isManual || formData.pauseTracking;
+
+    const scheduleOverride = !isAutomatedDisabled && (formData.overrideFarOut !== '' || formData.overrideStandard !== '' || formData.overrideFinalStretch !== '')
       ? JSON.stringify({
           farOut: formData.overrideFarOut !== '' ? parseInt(formData.overrideFarOut, 10) : undefined,
           standard: formData.overrideStandard !== '' ? parseInt(formData.overrideStandard, 10) : undefined,
@@ -560,7 +591,7 @@ export function useFlightModalState({
       excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,
       departureDate: formData.departureDate,
       bookingDate: formData.trackingType === 'flight_booked' ? formData.bookingDate : null,
-      isManual: formData.isManual ? 1 : 0,
+      isManual: isPointsFlight || formData.isManual ? 1 : 0,
       fareTier: formData.fareTier,
       cabinClass: formData.cabinClass,
       baselinePrice: parsedBaseline,
@@ -570,8 +601,8 @@ export function useFlightModalState({
       minDropPercent: formData.minDropPercent ? parseFloat(formData.minDropPercent) : null,
       pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,
       notes: formData.notes ? formData.notes.trim() : null,
-      status: formData.pauseTracking || isPointsFlight || formData.isManual ? 'Paused' : (formData.trackingType === 'flight_booked' ? 'Booked' : 'Watching'),
-      disableNotifications: isPointsFlight || formData.disableNotifications ? 1 : 0,
+      status: isAutomatedDisabled ? 'Paused' : (formData.trackingType === 'flight_booked' ? 'Booked' : 'Watching'),
+      disableNotifications: isPointsFlight || formData.isManual || formData.disableNotifications ? 1 : 0,
       scheduleOverride,
       earliestDeparture: formData.earliestDeparture ? formData.earliestDeparture.trim() : null,
       latestDeparture: formData.latestDeparture ? formData.latestDeparture.trim() : null,
@@ -580,7 +611,7 @@ export function useFlightModalState({
       priceTrackingDirection: formData.trackingType === 'flight_booked' ? 'drop' : formData.priceTrackingDirection,
       minIncreaseDollar: formData.minIncreaseDollar ? parseFloat(formData.minIncreaseDollar) : null,
       minIncreasePercent: formData.minIncreasePercent ? parseFloat(formData.minIncreasePercent) : null,
-      monitorRouteAlternatives: effectiveSearchModeVal === 'FlightNumber' ? (formData.monitorRouteAlternatives ? 1 : 0) : 0,
+      monitorRouteAlternatives: effectiveSearchModeVal === 'FlightNumber' && !isAutomatedDisabled ? (formData.monitorRouteAlternatives ? 1 : 0) : 0,
       maxLayoverMinutes: formData.maxLayoverMinutes !== null && formData.maxLayoverMinutes !== undefined ? formData.maxLayoverMinutes : null,
       excludedConnectingAirports: formData.excludedConnectingAirports ? formData.excludedConnectingAirports.trim().toUpperCase() : null,
       maxTotalDurationMinutes: formData.maxTotalDurationMinutes !== null && formData.maxTotalDurationMinutes !== undefined ? formData.maxTotalDurationMinutes : null,

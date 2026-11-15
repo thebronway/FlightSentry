@@ -62,26 +62,28 @@ export default function TrackingModeSelector({
             </span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <button
-              type="button"
-              onClick={() => onTrackingTypeChange('route_watch')}
-              className={`min-h-[48px] p-3 rounded-lg border text-left transition-all flex items-start gap-3 cursor-pointer ${
-                trackingType === 'route_watch'
-                  ? 'bg-slate-800/70 border-slate-400 text-slate-100 ring-1 ring-slate-400/40 shadow-sm'
-                  : 'bg-gunmetal-canvas/50 border-gunmetal-border text-gunmetal-muted hover:text-slate-200 hover:border-slate-600'
-              }`}
-            >
-              <PlaneTakeoff className="w-5 h-5 flex-shrink-0 text-sky-400 mt-0.5" />
-              <div>
-                <span className="font-bold text-xs sm:text-sm text-slate-200 block">
-                  Watching Route
-                </span>
-                <span className="text-[11px] text-gunmetal-muted block mt-0.5 leading-snug">
-                  Monitor city pair for lowest fare
-                </span>
-              </div>
-            </button>
+          <div className={`grid grid-cols-1 ${isManual || paymentType === 'points' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-2.5`}>
+            {!isManual && paymentType !== 'points' && (
+              <button
+                type="button"
+                onClick={() => onTrackingTypeChange('route_watch')}
+                className={`min-h-[48px] p-3 rounded-lg border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                  trackingType === 'route_watch'
+                    ? 'bg-slate-800/70 border-slate-400 text-slate-100 ring-1 ring-slate-400/40 shadow-sm'
+                    : 'bg-gunmetal-canvas/50 border-gunmetal-border text-gunmetal-muted hover:text-slate-200 hover:border-slate-600'
+                }`}
+              >
+                <PlaneTakeoff className="w-5 h-5 flex-shrink-0 text-sky-400 mt-0.5" />
+                <div>
+                  <span className="font-bold text-xs sm:text-sm text-slate-200 block">
+                    Watching Route
+                  </span>
+                  <span className="text-[11px] text-gunmetal-muted block mt-0.5 leading-snug">
+                    Monitor city pair for lowest fare
+                  </span>
+                </div>
+              </button>
+            )}
 
             <button
               type="button"
@@ -188,36 +190,38 @@ export default function TrackingModeSelector({
           </div>
         </div>
 
-        {/* Manual Tracking Mode Toggle */}
+        {/* Manual Tracking Mode Control */}
         <div className="flex items-center">
-          <label className={`flex items-center gap-2 select-none px-2.5 py-1.5 rounded-lg border transition-colors ${
-            paymentType === 'points'
-              ? 'border-transparent opacity-60 cursor-not-allowed'
-              : automatedUnavailable && !isManual
-              ? 'border-amber-600/70 bg-amber-950/30 cursor-pointer'
-              : 'border-transparent cursor-pointer'
-          }`}>
-            <input
-              type="checkbox"
-              disabled={paymentType === 'points'}
-              checked={paymentType === 'points' ? true : isManual}
-              onChange={e => onManualChange(e.target.checked)}
-              className="w-4 h-4 accent-slate-500 rounded disabled:cursor-not-allowed"
-            />
-            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5 text-slate-400" />
-              <span>Manual Tracking Mode</span>
-              {paymentType === 'points' ? (
-                <span className="text-[10px] text-amber-400 font-normal">
-                  (Locked for Points)
-                </span>
-              ) : automatedUnavailable && !isManual ? (
-                <span className="text-[10px] text-amber-300 font-semibold">
-                  (Required while paused)
-                </span>
-              ) : null}
+          {paymentType === 'points' ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-950/40 border border-amber-800/50 text-xs font-semibold text-amber-300 select-none">
+              <Wrench className="w-3.5 h-3.5 text-amber-400" />
+              <span>Points-Only Manual Tracking</span>
             </span>
-          </label>
+          ) : (
+            <label
+              className={`flex items-center gap-2 select-none px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                automatedUnavailable && !isManual
+                  ? 'border-amber-600/70 bg-amber-950/30'
+                  : 'border-transparent hover:bg-gunmetal-canvas/60'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isManual}
+                onChange={e => onManualChange(e.target.checked)}
+                className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
+              />
+              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Wrench className="w-3.5 h-3.5 text-slate-400" />
+                <span>Manual Tracking Mode</span>
+                {automatedUnavailable && !isManual && (
+                  <span className="text-[10px] text-amber-300 font-semibold">
+                    (Required while paused)
+                  </span>
+                )}
+              </span>
+            </label>
+          )}
         </div>
       </div>
 
@@ -225,7 +229,15 @@ export default function TrackingModeSelector({
         <div className="p-2.5 rounded-lg bg-gunmetal-card/80 border border-gunmetal-border text-[11px] text-slate-300 flex items-center gap-2 animate-in fade-in duration-150">
           <Wrench className="w-4 h-4 text-sky-400 flex-shrink-0" />
           <span>
-            <strong>Manual Mode Active:</strong> {paymentType === 'points' ? 'Points flights cannot be searched via Google Flights and are tracked manually.' : 'Automated scraper searches are disabled. You can log price points or updates manually from the history modal at any time.'}
+            {paymentType === 'points' ? (
+              <>
+                <strong>Points Tracking:</strong> Starts with a specific flight (Watching or Booked). Additional flights on the route can be logged anytime in the price history modal.
+              </>
+            ) : (
+              <>
+                <strong>Manual Mode Active:</strong> Starts with a specific flight (Watching or Booked). Log updates or additional flights on the route anytime from the price history modal.
+              </>
+            )}
           </span>
         </div>
       )}

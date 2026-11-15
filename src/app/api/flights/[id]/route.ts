@@ -100,7 +100,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       priceTrackingDirection: parsed.priceTrackingDirection ?? existing.priceTrackingDirection ?? 'drop',
       minIncreaseDollar: parsed.minIncreaseDollar !== undefined ? parsed.minIncreaseDollar : existing.minIncreaseDollar,
       minIncreasePercent: parsed.minIncreasePercent !== undefined ? parsed.minIncreasePercent : existing.minIncreasePercent,
-      monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : (existing.monitorRouteAlternatives ?? 0),
+      monitorRouteAlternatives: (effectiveIsManual === 1 || updatedStatus === 'Paused')
+        ? 0
+        : (parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : (existing.monitorRouteAlternatives ?? 0)),
       bookingDate: parsed.bookingDate !== undefined ? parsed.bookingDate : existing.bookingDate,
       isManual: effectiveIsManual,
       maxLayoverMinutes: parsed.maxLayoverMinutes !== undefined ? parsed.maxLayoverMinutes : existing.maxLayoverMinutes,
@@ -126,6 +128,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const flight = flightDb.getById(id);
     if (!flight) return NextResponse.json({ error: 'Flight not found' }, { status: 404 });
+
+    const isManualOrPoints = flight.isManual === 1 || isPointsCurrency(flight.currency);
+    if (isManualOrPoints && parsed.status !== 'Paused' && parsed.status !== 'Past') {
+      return NextResponse.json(
+        { error: 'Automated tracking cannot be resumed for Manual or Points flights. Edit the flight to switch back to automated Cash tracking.' },
+        { status: 400 }
+      );
+    }
 
     flightDb.updateStatus(id, parsed.status);
     return NextResponse.json({ success: true, status: parsed.status });

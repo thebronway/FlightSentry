@@ -6,6 +6,7 @@ import { calculateNextCheck } from '@/utils/queue';
 import { airlineCodeSchema } from '@/utils/validation';
 import { isValidAirlineCode } from '@/utils/airline';
 import { isAllianceKey } from '@/utils/airlineThemes';
+import { isPointsCurrency } from '@/utils/format';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -55,10 +56,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const cleanFlightNumber = parsed.flightNumber ? parsed.flightNumber.trim() : null;
     const cleanPnr = parsed.pnr ? parsed.pnr.trim().toUpperCase() : null;
     const searchMode = cleanFlightNumber ? 'FlightNumber' : existing.searchMode;
+    const effectiveCurrency = parsed.currency || existing.currency;
+    const isPointsBooking = isPointsCurrency(effectiveCurrency);
+    const effectiveIsManual = isPointsBooking ? 1 : (existing.isManual ?? 0);
 
     // Update flight record in place
     flightDb.update(id, {
-      status: existing.status === 'Paused' ? 'Paused' : 'Booked',
+      status: effectiveIsManual === 1 || existing.status === 'Paused' ? 'Paused' : 'Booked',
+      isManual: effectiveIsManual,
+      disableNotifications: effectiveIsManual === 1 ? 1 : existing.disableNotifications,
       purchasePrice: parsed.purchasePrice,
       priceTrackingDirection: 'drop',
       airline: cleanAirline,
@@ -66,8 +72,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       flightNumber: cleanFlightNumber,
       pnr: cleanPnr,
       searchMode,
-      currency: parsed.currency || existing.currency,
-      monitorRouteAlternatives: parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : 1,
+      currency: effectiveCurrency,
+      monitorRouteAlternatives: effectiveIsManual === 1 ? 0 : (parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : 1),
       origin: parsed.origin ? parsed.origin.trim().toUpperCase() : existing.origin,
       destination: parsed.destination ? parsed.destination.trim().toUpperCase() : existing.destination,
       includedAirlines: parsed.includedAirlines !== undefined ? parsed.includedAirlines : existing.includedAirlines,

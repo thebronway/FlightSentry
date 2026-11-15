@@ -6,6 +6,7 @@ import { evaluatePrice } from '@/services/evaluator';
 import { checkAndResetQuota, canMakeApiCall } from '@/services/quota';
 import { historyDb } from '@/db/history';
 import { calculateNextCheck } from '@/utils/queue';
+import { isPointsCurrency } from '@/utils/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const flight = flightDb.getById(id);
     
     if (!flight) return NextResponse.json({ error: 'Flight not found' }, { status: 404 });
+
+    if (flight.isManual === 1 || isPointsCurrency(flight.currency)) {
+      return NextResponse.json(
+        { error: 'Automated price checks are disabled for Manual and Points flights. Use Log Manual Price Check instead.' },
+        { status: 400 }
+      );
+    }
 
     let settings = settingsDb.get();
 

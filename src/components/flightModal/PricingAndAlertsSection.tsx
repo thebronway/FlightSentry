@@ -5,6 +5,7 @@ import { Settings, PriceTrackingDirection } from '@/types';
 import { formatCurrency, computeAlertTargets, computeIncreaseAlertTargets, getCurrencySymbol } from '@/utils/format';
 import { Bell, TrendingDown, TrendingUp, ArrowUpDown, Coins } from 'lucide-react';
 import { TrackingOption, PaymentType } from './useFlightModalState';
+import ManualModeNoticeCard from './ManualModeNoticeCard';
 
 interface Props {
   trackingType: TrackingOption;
@@ -257,22 +258,11 @@ export default function PricingAndAlertsSection({
         </div>
       )}
 
-      {/* 2. Points Alert Suppression Banner */}
+      {/* 2. Points / Manual Mode Notice Banner */}
       {isPoints ? (
-        <div className="bg-amber-950/20 border border-amber-900/40 rounded-xl p-4 sm:p-5 space-y-2 text-xs text-amber-200/90 leading-relaxed">
-          <div className="flex items-center gap-2 font-bold text-amber-100">
-            <Coins className="w-4 h-4 text-amber-400" />
-            <span>Award Points Flight Configuration</span>
-          </div>
-          <p>
-            Flight search providers and scrapers only index standard cash fares and do not support dynamic loyalty reward charts or award space availability.
-          </p>
-          <ul className="list-disc list-inside space-y-1 text-gunmetal-muted text-[11px] pt-1">
-            <li>Price drop & surge alerts are hidden</li>
-            <li>Notification dispatch is disabled</li>
-            <li>Automated price polling is locked to disabled</li>
-          </ul>
-        </div>
+        <ManualModeNoticeCard variant="points" />
+      ) : isManual ? (
+        <ManualModeNoticeCard variant="cash-manual" />
       ) : (
         <>
           {/* 3. Cash Alerts: Price Alert Direction */}
@@ -507,7 +497,7 @@ export default function PricingAndAlertsSection({
           </div>
         </label>
 
-        {!isPoints && (
+        {!isAutomatedLockedOff && (
           <label className="flex items-start gap-2.5 text-sm font-medium text-slate-300 cursor-pointer pt-2 border-t border-gunmetal-border/70">
             <input
               type="checkbox"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Flight } from '@/types';
 import { X, ShoppingBag, Loader2, AlertCircle, Pencil } from 'lucide-react';
-import { formatCurrency, getCurrencySymbol } from '@/utils/format';
+import { formatCurrency, getCurrencySymbol, isPointsCurrency } from '@/utils/format';
 import { cleanDisplayTime, normalizeAirlineCode, isValidAirlineCode } from '@/utils/airline';
 import AirlineBadge from './common/AirlineBadge';
 import AirlineTagInput from './common/AirlineTagInput';
@@ -154,7 +154,7 @@ export default function ConvertFlightModal({
     }
   }, [isOpen]);
 
-  const isPoints = pointsCurrencies.includes(currency);
+  const isPoints = pointsCurrencies.includes(currency) || isPointsCurrency(currency);
 
   if (!isOpen || !flight) return null;
 
@@ -198,7 +198,7 @@ export default function ConvertFlightModal({
           flightNumber: flightNumber.trim() || null,
           pnr: pnr.trim().toUpperCase() || null,
           currency: currency || fiatCurrency,
-          monitorRouteAlternatives: monitorRouteAlternatives ? 1 : 0,
+          monitorRouteAlternatives: isPoints ? 0 : (monitorRouteAlternatives ? 1 : 0),
           origin: origin.trim().toUpperCase(),
           destination: destination.trim().toUpperCase(),
           includedAirlines: includedAirlines ? includedAirlines.trim().toUpperCase() : null,
@@ -445,7 +445,8 @@ export default function ConvertFlightModal({
             />
           </div>
 
-          {/* Also Monitor Route Alternatives Toggle (Enabled by default on conversion) */}
+          {/* Also Monitor Route Alternatives Toggle (Hidden when converting to Points) */}
+          {!isPoints && (
           <div className="bg-gunmetal-canvas/60 border border-gunmetal-border rounded-lg p-3.5 space-y-3">
             <label className="flex items-center justify-between cursor-pointer select-none">
               <div className="space-y-0.5">
@@ -520,6 +521,7 @@ export default function ConvertFlightModal({
               </div>
             )}
           </div>
+          )}
 
           <div className="pt-3 border-t border-gunmetal-border flex items-center justify-end gap-2.5">
             <button

@@ -31,6 +31,7 @@ export const expireOldFlights = (timezone: string): void => {
 
 import { executeSearchStrategy } from './datasource';
 import { calculateNextCheck } from '../utils/queue';
+import { isPointsCurrency } from '../utils/format';
 
 export const processNextFlight = async (): Promise<boolean> => {
   let settings = settingsDb.get();
@@ -50,6 +51,12 @@ export const processNextFlight = async (): Promise<boolean> => {
 
   const flight = flightDb.getNextDueFlight();
   if (!flight) return false; // No jobs due
+
+  if (flight.isManual === 1 || isPointsCurrency(flight.currency)) {
+    flightDb.update(flight.id, { isManual: 1, status: 'Paused' });
+    flightDb.updateNextCheckAt(flight.id, new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString());
+    return false;
+  }
 
   console.log(`Processing Flight ${flight.id}...`);
   

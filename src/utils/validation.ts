@@ -89,6 +89,13 @@ export const flightSchema = z.object({
         message: INVALID_AIRLINE_MESSAGE,
       });
     }
+    if (!data.flightNumber || !data.flightNumber.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['flightNumber'],
+        message: 'Flight number is required when tracking a specific flight',
+      });
+    }
   } else if (cleanAirline && cleanAirline !== 'POINTS' && cleanAirline !== 'MANUAL' && !isValidAirlineCode(cleanAirline)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

@@ -38,6 +38,7 @@ export default function FlightActionBar({
   const { toggleStatus, checkNow } = useFlightActions(onRefresh);
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const isPast = flight.status === 'Past';
+  const isManualOrPoints = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const googleFlightsUrl = getGoogleFlightsUrl(flight, settings?.currency);
   const isCard = variant === 'card';
 
@@ -68,7 +69,7 @@ export default function FlightActionBar({
             <RefreshCw className={iconSize} />
           </button>
         </Tooltip>
-      ) : (flight.status === 'Paused' || isPointsCurrency(flight.currency)) && onOpenManualCheck ? (
+      ) : (flight.status === 'Paused' || isManualOrPoints) && onOpenManualCheck ? (
         <Tooltip content="Log manual price check" align="center" className={tooltipWrapperClass}>
           <button
             onClick={e => {
@@ -189,7 +190,15 @@ export default function FlightActionBar({
 
       {/* 7. Pause / Resume */}
       <Tooltip
-        content={isPast ? 'Past flight' : flight.status !== 'Paused' ? 'Pause automated price checks' : 'Resume automated price checks'}
+        content={
+          isPast
+            ? 'Past flight'
+            : isManualOrPoints
+            ? 'Automated checks disabled in Manual / Points mode'
+            : flight.status !== 'Paused'
+            ? 'Pause automated price checks'
+            : 'Resume automated price checks'
+        }
         align="center"
         className={tooltipWrapperClass}
       >
@@ -198,7 +207,7 @@ export default function FlightActionBar({
             e.stopPropagation();
             toggleStatus(flight);
           }}
-          disabled={isPast}
+          disabled={isPast || isManualOrPoints}
           className={`${btnBaseClass} text-amber-400 hover:text-amber-300 hover:bg-amber-950/30 disabled:opacity-25 disabled:pointer-events-none`}
         >
           {flight.status !== 'Paused' ? <Pause className={iconSize} /> : <Play className={iconSize} />}

@@ -28,12 +28,15 @@ export default function ManualPriceEntryModal({
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [notes, setNotes] = useState('');
+  const [entryScope, setEntryScope] = useState<'tracked' | 'alternative'>('tracked');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isPoints = useMemo(() => {
     return isPointsCurrency(flight?.currency);
   }, [flight?.currency]);
+
+  const isSpecificFlight = Boolean(flight?.searchMode === 'FlightNumber' && flight?.flightNumber);
 
   // Format local ISO datetime for datetime-local input: YYYY-MM-DDTHH:mm
   const getNowLocalDatetime = () => {
@@ -53,6 +56,7 @@ export default function ManualPriceEntryModal({
         (includedList.length === 1 ? includedList[0] : '');
 
       setEntryDate(getNowLocalDatetime());
+      setEntryScope('tracked');
       setAirline(resolvedCarrier);
       setFlightNumber(flight.flightNumber || '');
       setOrigin(firstOrigin);
@@ -62,6 +66,19 @@ export default function ManualPriceEntryModal({
       setError(null);
     }
   }, [isOpen, flight]);
+
+  const handleEntryScopeChange = (nextScope: 'tracked' | 'alternative') => {
+    setEntryScope(nextScope);
+    setError(null);
+    if (!flight) return;
+    if (nextScope === 'tracked') {
+      setAirline((flight.airline || '').trim().toUpperCase());
+      setFlightNumber(flight.flightNumber || '');
+    } else {
+      setAirline('');
+      setFlightNumber('');
+    }
+  };
 
   const associationInfo = useMemo(() => {
     if (!flight) return null;
@@ -254,6 +271,39 @@ export default function ManualPriceEntryModal({
             </div>
           )}
 
+          {/* Quick Target Toggle for Specific Flights */}
+          {isSpecificFlight && (
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-gunmetal-canvas/70 border border-gunmetal-border p-2.5 rounded-lg">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Log Check For:
+              </span>
+              <div className="inline-flex rounded-md bg-gunmetal-card border border-gunmetal-border p-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleEntryScopeChange('tracked')}
+                  className={`min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    entryScope === 'tracked'
+                      ? 'bg-sky-950/80 text-sky-300 border border-sky-600/70 shadow-sm'
+                      : 'text-gunmetal-muted hover:text-slate-200 border border-transparent'
+                  }`}
+                >
+                  Tracked Flight ({flight.airline} {flight.flightNumber})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEntryScopeChange('alternative')}
+                  className={`min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                    entryScope === 'alternative'
+                      ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-600/70 shadow-sm'
+                      : 'text-gunmetal-muted hover:text-slate-200 border border-transparent'
+                  }`}
+                >
+                  Alternative Flight on Route
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Association Logic Guidance Indicator */}
           {associationInfo && (
             <div className={`p-3.5 rounded-lg border text-xs flex items-center gap-2.5 ${
@@ -340,13 +390,21 @@ export default function ManualPriceEntryModal({
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Flight Number {flight.searchMode === 'FlightNumber' ? '*' : '(Optional)'}
+                Flight Number {isSpecificFlight && entryScope === 'tracked' ? '*' : '(Optional)'}
               </label>
               <input
                 pattern="\d*"
                 placeholder="e.g. 523"
                 value={flightNumber}
-                onChange={e => setFlightNumber(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value;
+                  setFlightNumber(val);
+                  if (isSpecificFlight) {
+                    const sameCarrier = airline.trim().toUpperCase() === (flight.airline || '').trim().toUpperCase();
+                    const sameNum = val.trim() === (flight.flightNumber || '').trim();
+                    setEntryScope(sameCarrier && sameNum ? 'tracked' : 'alternative');
+                  }
+                }}
                 className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
               />
             </div>

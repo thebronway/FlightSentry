@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-15*  
-*Current Version: v0.8.7*
+*Current Version: v0.8.8*
 
 ## Changelog
+
+### Release v0.8.8
+- Restricted Manual and Points tracking modes to specific flights (`Watching Flight` or `Booked Flight`), auto-switching away from `Watching Route` and requiring a carrier and flight number.
+- Blocked automated API polling and card Play/Resume toggles for `isManual` and points flights across `scheduler.ts`, `flightDb.getNextDueFlight()`, `/api/flights/[id]/check`, `/api/flights/[id]`, and `/api/flights/[id]/convert`.
+- Replaced the locked manual checkbox in `TrackingModeSelector` with a **Points-Only Manual Tracking** badge and reset manual/pause flags when switching from Points back to Cash.
+- Hid **Also Monitor Route Alternatives** and **Schedule Cadence Overrides** when automated checks are disabled, and collapsed **Schedule Cadence Overrides** by default when using global defaults.
+- Added a **Tracked Flight** vs. **Alternative Flight on Route** toggle in `ManualPriceEntryModal` for logging competing flights onto an existing flight's history.
 
 ### Release v0.8.7
 - Updated `SerpAPI`, `SearchApi.io`, and `FlightSentry-Scraper` adapters to fetch all itineraries when `maxStops` is set to Nonstop while keeping primary prices, baselines, all-time lows, and alerts scoped to non-stop fares.

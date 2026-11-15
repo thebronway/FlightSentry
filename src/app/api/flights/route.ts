@@ -75,17 +75,23 @@ export async function POST(req: NextRequest) {
       parsed.currency && (isPointsCurrency(parsed.currency) || pointsList.includes(parsed.currency))
     );
 
-    // For points flights or manual tracking mode, automated searches are bypassed
+    // For points flights or manual tracking mode, require a specific flight (Watching or Booked) and bypass automated searches
     if (isPointsFlight || parsed.isManual === 1) {
+      if (parsed.searchMode === 'Route' || !parsed.airline || !parsed.flightNumber) {
+        return NextResponse.json(
+          { error: 'Manual and Points tracking require a specific flight (Carrier and Flight Number). Add additional route flights in Price History.' },
+          { status: 400 }
+        );
+      }
+
       const initialAmount = isBooked ? (parsed.purchasePrice || 0) : (baselinePrice || 0);
       const manualNextCheckAt = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString();
 
-      const manualCarrier = parsed.airline || (isPointsFlight ? 'POINTS' : 'MANUAL');
       const newFlightId = flightDb.create({
         ...parsed,
-        airline: manualCarrier,
+        airline: parsed.airline,
         bookingAirline: parsed.bookingAirline || parsed.airline || null,
-        flightNumber: parsed.flightNumber || null,
+        flightNumber: parsed.flightNumber,
         cabinClass: parsed.cabinClass,
         fareTier: parsed.fareTier,
         baselinePrice: initialAmount,
@@ -96,7 +102,8 @@ export async function POST(req: NextRequest) {
         currentPrice: initialAmount,
         currency: parsed.currency,
         status: 'Paused',
-        isManual: parsed.isManual ? 1 : 0,
+        isManual: (isPointsFlight || parsed.isManual === 1) ? 1 : 0,
+        monitorRouteAlternatives: 0,
         nextCheckAt: manualNextCheckAt,
       });
 
