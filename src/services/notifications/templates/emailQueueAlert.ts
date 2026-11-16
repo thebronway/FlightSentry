@@ -33,7 +33,7 @@ export function formatEmailQueueAlert(
   defaultCurrency: string = 'USD'
 ): EmailQueueAlertPayload {
   const baseUrl = resolveBaseUrl(appBaseUrl);
-  const queueReviewUrl = `${baseUrl}/?emailQueue=1`;
+  const queueReviewUrl = `${baseUrl}/dashboard/email-queue`;
 
   const isSingle = items.length === 1;
   const first = items[0];
@@ -54,7 +54,7 @@ export function formatEmailQueueAlert(
       ? `${carrierCode}${item.flightNumber ? ` ${item.flightNumber}` : ''} (${carrierName})`
       : 'Flight Details Pending';
     const routeStr = `${item.origin || '???'} → ${item.destination || '???'}`;
-    const itemUrl = `${baseUrl}/?emailQueue=1&queueItemId=${item.id}`;
+    const itemUrl = `${baseUrl}/dashboard/email-queue?itemId=${item.id}`;
 
     if (!isSingle) {
       body += `**${index + 1}. ${EVENT_TYPE_LABELS[item.eventType]}** — Inbox: \`${item.accountLabel}\`\n`;
@@ -97,7 +97,7 @@ export function formatEmailQueueAlert(
   items.forEach((item) => {
     const carrierCode = (item.airline || '').toUpperCase();
     const carrierName = carrierCode ? getAirlineName(carrierCode) : 'Unknown Carrier';
-    const itemUrl = `${baseUrl}/?emailQueue=1&queueItemId=${item.id}`;
+    const itemUrl = `${baseUrl}/dashboard/email-queue?itemId=${item.id}`;
 
     htmlBody += `<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px;">`;
     htmlBody += `<p style="margin: 0 0 6px 0; font-size: 13px; color: #0284c7; font-weight: 700;">${escapeHtml(

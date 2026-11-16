@@ -70,10 +70,10 @@ export default function Navbar() {
   }, [isLoginPage, fetchAuthStatus, fetchQueueCount]);
 
   const handleOpenEmailQueue = () => {
-    if (pathname === '/') {
+    if (pathname === '/dashboard/email-queue') {
       window.dispatchEvent(new CustomEvent('flightsentry:open-email-queue'));
     } else {
-      router.push('/?emailQueue=1');
+      router.push('/dashboard/email-queue');
     }
   };
 
@@ -96,7 +96,7 @@ export default function Navbar() {
   return (
     <nav className="bg-gunmetal-nav shadow-sm border-b border-gunmetal-border transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-3 text-white">
+        <Link href="/dashboard" className="flex items-center space-x-3 text-white">
           <Image src="/FlightSentry-Main-icon-sm.png" alt="FlightSentry Logo" width={160} height={40} className="h-[42px] w-auto object-contain rounded" />
           <span className="font-bold text-xl tracking-tight">FlightSentry</span>
         </Link>
@@ -116,17 +116,17 @@ export default function Navbar() {
             </button>
           )}
           <Link 
-              href="/" 
+              href="/dashboard" 
               title="Dashboard"
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === '/' ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/dashboard') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
           >
             <LayoutDashboard className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
           </Link>
           <Link 
-              href="/settings" 
+              href="/settings/general" 
               title="Settings"
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === '/settings' ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/settings') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
           >
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>

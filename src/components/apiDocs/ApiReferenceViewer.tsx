@@ -521,7 +521,7 @@ export default function ApiReferenceViewer({ specVersion }: Props) {
         </div>
 
         <Link
-          href="/settings"
+          href="/settings/security"
           className="self-start sm:self-center min-h-[38px] px-3 py-1.5 rounded-md bg-gunmetal-card hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-200 inline-flex items-center gap-1.5 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, FormEvent } from 'react';
-import { X, Pencil, Check, AlertCircle, DollarSign, Coins, Compass } from 'lucide-react';
+import { X, Pencil, Check, Trash2, AlertCircle, DollarSign, Coins, Compass } from 'lucide-react';
 import { CabinClass, EmailQueueEventType, EmailQueueItem, FareTier } from '@/types';
 import { getCurrencySymbol, isPointsCurrency } from '@/utils/format';
 import { isValidAirlineCode } from '@/utils/airline';
@@ -197,7 +197,9 @@ export default function EmailQueueEditModal({
             <div className="flex items-center gap-2">
               <Pencil className="w-4 h-4 text-sky-400" />
               <h3 className="text-base font-bold text-slate-100">
-                Review &amp; Edit Email Event Before Applying
+                {eventType === 'cancellation'
+                  ? 'Select Tracked Flight to Delete'
+                  : 'Review & Edit Email Event Before Applying'}
               </h3>
             </div>
             <button
@@ -234,7 +236,7 @@ export default function EmailQueueEditModal({
                     Schedule Change (Update Tracked Flight)
                   </option>
                   <option value="cancellation" className="bg-gunmetal-card text-slate-200">
-                    Cancellation (Pause Tracked Flight)
+                    Cancellation (Delete Tracked Flight)
                   </option>
                 </SettingsSelect>
               </div>
@@ -283,6 +285,8 @@ export default function EmailQueueEditModal({
               )}
             </div>
 
+            {eventType !== 'cancellation' ? (
+              <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -567,6 +571,12 @@ export default function EmailQueueEditModal({
                 </SettingsSelect>
               </div>
             </div>
+              </>
+            ) : (
+              <div className="p-3 rounded-lg bg-rose-950/30 border border-rose-800/60 text-xs text-rose-200">
+                Confirming this cancellation will permanently delete the selected tracked flight and its price history.
+              </div>
+            )}
 
             <div className="pt-3 border-t border-gunmetal-border flex items-center justify-end gap-2">
               <button
@@ -579,10 +589,26 @@ export default function EmailQueueEditModal({
               <button
                 type="submit"
                 disabled={submitting}
-                className="min-h-[42px] px-5 py-2 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                className={`min-h-[42px] px-5 py-2 rounded-md text-xs font-bold text-white flex items-center gap-1.5 disabled:opacity-50 cursor-pointer ${
+                  eventType === 'cancellation'
+                    ? 'bg-rose-600 hover:bg-rose-500'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
+                }`}
               >
-                <Check className="w-4 h-4" />
-                <span>{submitting ? 'Applying...' : 'Save & Apply'}</span>
+                {eventType === 'cancellation' ? (
+                  <Trash2 className="w-4 h-4" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                <span>
+                  {submitting
+                    ? eventType === 'cancellation'
+                      ? 'Deleting...'
+                      : 'Applying...'
+                    : eventType === 'cancellation'
+                    ? 'Delete Flight'
+                    : 'Save & Apply'}
+                </span>
               </button>
             </div>
           </form>

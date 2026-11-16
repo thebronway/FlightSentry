@@ -8,6 +8,11 @@ export interface PriceDropAlertPayload {
   htmlBody: string;
 }
 
+function resolveBaseUrl(appBaseUrl?: string | null): string {
+  const cleaned = (appBaseUrl || '').trim().replace(/\/+$/, '');
+  return cleaned || 'http://localhost:4000';
+}
+
 export function formatPriceDropAlert(
   flight: Flight,
   newPrice: number,
@@ -18,7 +23,8 @@ export function formatPriceDropAlert(
     sourceUsed?: string | null;
     itineraries?: RouteItinerary[];
   },
-  currency: string = 'USD'
+  currency: string = 'USD',
+  appBaseUrl?: string | null
 ): PriceDropAlertPayload {
   const isPurchased = flight.purchasePrice !== null && flight.purchasePrice !== undefined && flight.purchasePrice > 0;
   const benchmarkPrice = isPurchased ? flight.purchasePrice! : flight.baselinePrice;
@@ -36,6 +42,7 @@ export function formatPriceDropAlert(
     : leadingAirlineName || leadingAirlineCode || 'Route Flight';
 
   const googleFlightsUrl = getGoogleFlightsUrl(flight, currency);
+  const flightHistoryUrl = `${resolveBaseUrl(appBaseUrl)}/dashboard/flights/${flight.id}`;
 
   const title = `${alertType}: ${flight.origin} → ${flight.destination} via ${leadingAirlineCode}${leadingFlightNum ? ` #${leadingFlightNum}` : ''} (${formatCurrency(newPrice, currency)})`;
 
@@ -118,7 +125,7 @@ export function formatPriceDropAlert(
     body += `\n`;
   }
 
-  body += `🔗 [Verify & Book on Google Flights](${googleFlightsUrl})`;
+  body += `📊 [View Price History in FlightSentry](${flightHistoryUrl}) · 🔗 [Verify & Book on Google Flights](${googleFlightsUrl})`;
 
   // HTML Body (SMTP Email)
   let htmlBody = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">`;
@@ -154,7 +161,7 @@ export function formatPriceDropAlert(
     htmlBody += `</table>`;
   }
 
-  htmlBody += `<p style="margin-top: 24px;"><a href="${googleFlightsUrl}" style="background-color: #0f172a; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">Verify & Book on Google Flights</a></p>`;
+  htmlBody += `<p style="margin-top: 24px;"><a href="${flightHistoryUrl}" style="background-color: #0284c7; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block; margin-right: 10px;">View Price History</a><a href="${googleFlightsUrl}" style="background-color: #0f172a; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">Verify &amp; Book on Google Flights</a></p>`;
   htmlBody += `</div>`;
 
   return { title, body, htmlBody };

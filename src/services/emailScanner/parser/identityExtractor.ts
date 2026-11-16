@@ -66,7 +66,7 @@ export function isKnownTravelSender(domain: string, text: string): boolean {
     return true;
   }
 
-  return /\b(?:pnr|confirmation\s*(?:code|number|#)|record\s*locator|booking\s*reference|e-?ticket|flight\s*itinerary|schedule\s*change|flight\s*cancel(?:ed|led)|boarding\s*pass)\b/i.test(
+  return /\b(?:pnr|confirmation\s*(?:code|number|#)|record\s*locator|booking\s*reference|e-?ticket|flight\s*itinerary|schedule\s*change|(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|boarding\s*pass)\b/i.test(
     text
   );
 }
@@ -93,7 +93,7 @@ export function classifyEventType(
   }
 
   if (
-    /\b(?:flight\s+(?:has\s+been\s+)?cancel(?:ed|led)|reservation\s+(?:has\s+been\s+)?cancel(?:ed|led)|booking\s+(?:has\s+been\s+)?cancel(?:ed|led)|trip\s+(?:has\s+been\s+)?cancel(?:ed|led)|itinerary\s+cancel(?:ed|led))\b/i.test(
+    /\b(?:(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|cancel(?:l)?ation\s+confirmation)\b/i.test(
       combined
     )
   ) {

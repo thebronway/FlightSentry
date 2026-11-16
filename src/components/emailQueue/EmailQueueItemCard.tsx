@@ -1,17 +1,6 @@
 'use client';
 
-import {
-  Mail,
-  Plane,
-  Calendar,
-  Clock,
-  Check,
-  Pencil,
-  XCircle,
-  Link2,
-  AlertCircle,
-  Coins,
-} from 'lucide-react';
+import { Mail, Plane, Calendar, Clock, Check, Pencil, Trash2, XCircle, Link2, AlertCircle, Coins } from 'lucide-react';
 import { EmailQueueItem } from '@/types';
 import { formatCurrency, isPointsCurrency } from '@/utils/format';
 import { getAirlineName } from '@/utils/airline';
@@ -57,7 +46,7 @@ const EVENT_BADGES: Record<
   cancellation: {
     label: 'Cancellation',
     badgeClass: 'bg-rose-950/60 text-rose-300 border-rose-800/60',
-    applyLabel: 'Pause Flight',
+    applyLabel: 'Delete Flight',
   },
 };
 
@@ -76,6 +65,7 @@ export default function EmailQueueItemCard({
   const meta = EVENT_BADGES[item.eventType] || EVENT_BADGES.new_booking;
   const carrierCode = (item.airline || '').toUpperCase();
   const carrierName = carrierCode ? getAirlineName(carrierCode) : null;
+  const isCancellation = item.eventType === 'cancellation';
   const isPointsItem = item.isPoints === 1 || isPointsCurrency(item.currency);
   const isConvertingWatched = item.eventType === 'new_booking' && Boolean(matchedFlight);
   const applyButtonLabel = isConvertingWatched
@@ -224,11 +214,19 @@ export default function EmailQueueItemCard({
         )}
 
         {!matchedFlight &&
-          (item.eventType === 'schedule_change' || item.eventType === 'cancellation') && (
+          (item.eventType === 'schedule_change' || isCancellation) && (
             <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-800/50 flex items-center gap-2 text-[11px] text-amber-200">
               <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               <span>
-                No tracked flight matched automatically. Click <strong>Edit Before Adding</strong> to select which flight to update.
+                {isCancellation ? (
+                  <>
+                    No tracked flight matched automatically. Click <strong>Select Flight</strong> to choose which flight to delete, or <strong>Deny</strong> to dismiss.
+                  </>
+                ) : (
+                  <>
+                    No tracked flight matched automatically. Click <strong>Edit Before Applying</strong> to select which flight to update.
+                  </>
+                )}
               </span>
             </div>
           )}
@@ -253,23 +251,45 @@ export default function EmailQueueItemCard({
           <span>Deny</span>
         </button>
 
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onEdit(item)}
-          className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
-        >
-          <Pencil className="w-3.5 h-3.5 text-sky-400" />
-          <span>Edit Before Adding</span>
-        </button>
+        {!isCancellation ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onEdit(item)}
+            className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+          >
+            <Pencil className="w-3.5 h-3.5 text-sky-400" />
+            <span>
+              {item.eventType === 'schedule_change' ? 'Edit Before Applying' : 'Edit Before Adding'}
+            </span>
+          </button>
+        ) : !matchedFlight ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onEdit(item)}
+            className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+          >
+            <Link2 className="w-3.5 h-3.5 text-sky-400" />
+            <span>Select Flight</span>
+          </button>
+        ) : null}
 
         <button
           type="button"
           disabled={busy}
           onClick={() => onApply(item)}
-          className="min-h-[38px] px-4 py-1.5 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-40 cursor-pointer"
+          className={`min-h-[38px] px-4 py-1.5 rounded-md text-xs font-bold text-white flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-40 cursor-pointer ${
+            isCancellation
+              ? 'bg-rose-600 hover:bg-rose-500'
+              : 'bg-emerald-600 hover:bg-emerald-500'
+          }`}
         >
-          <Check className="w-3.5 h-3.5" />
+          {isCancellation ? (
+            <Trash2 className="w-3.5 h-3.5" />
+          ) : (
+            <Check className="w-3.5 h-3.5" />
+          )}
           <span>{applyButtonLabel}</span>
         </button>
       </div>

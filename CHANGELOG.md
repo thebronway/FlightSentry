@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-16*  
-*Current Version: v0.9.1*
+*Current Version: v0.9.2*
 
 ## Changelog
+
+### Release v0.9.2
+- Moved the homepage to `/dashboard` (`/` redirects to `/dashboard`) and added modal routes for `/dashboard/flights/new`, `/dashboard/flights/[id]`, `/dashboard/flights/[id]/edit`, and `/dashboard/email-queue`, with direct history links in price drop and surge alerts.
+- Added URL-persisted Settings tabs (`/settings/[tab]`, with `/settings` redirecting to `/settings/general`) and reordered tabs.
+- Added SMTP provider presets (**Gmail / Google**, **AWS SES**, **Outlook / M365**, **iCloud Mail**, **Fastmail**, and **Custom SMTP**) with default ports and setup hints.
+- Expanded Email Scanner cancellation detection to match passive phrasing (`has been cancelled`), refreshed the Navbar **Email Queue** badge after manual scans, and removed the duplicate **Email Queue** button from the Dashboard toolbar.
+- Updated Email Queue cancellation items to delete the matched flight and its price history instead of pausing it, and removed **Edit Before Adding** from cancellation items.
 
 ### Release v0.9.1
 - Named API key generation, optional expiration, revocation, and permanent deletion under **Settings → Security** (`api_keys` SQLite table storing SHA-256 hashes, `fss_live_...` prefixes, `lastUsedAt`, and one-time raw token display).

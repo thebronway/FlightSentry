@@ -197,6 +197,24 @@ export default function NotificationsTab({
                 onAutoSave(updated, 'smtp', undefined, `SMTP email channel ${val ? 'enabled' : 'disabled'}`);
               }
             }}
+            onApplyPreset={(presetHost, presetPort, providerName) => {
+              const updated = {
+                ...settings,
+                smtpHost: presetHost || settings.smtpHost,
+                smtpPort: presetPort,
+              };
+              onChange(updated);
+              if (onAutoSave) {
+                onAutoSave(
+                  updated,
+                  'smtp',
+                  undefined,
+                  presetHost
+                    ? `Applied ${providerName} SMTP settings (${presetHost}:${presetPort})`
+                    : `Set SMTP port to ${presetPort}`
+                );
+              }
+            }}
             onFieldChange={(field, value) => {
               onChange({ ...settings, [field]: value });
             }}

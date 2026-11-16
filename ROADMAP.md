@@ -1,19 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-15*  
-*Current Version: v0.9.0*
+*Current Version: v0.9.2*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.9.2
-- Make Settings Tabs Persistent like settings/general and make /dashboard the homepage. 
-- Does settings tab order make sense?
-- Notifications SMTP standard settings suggestions (google, aws, etc.)
-- If I scan the email for this itineraty has been canceld (its new I re-forwarded it), it shows in the scan it shows that it scaned the new email, but it doesnt show up anywhere in an email queue - do you need to see the email?
-  - Email queue in two places, only need one
 
 ### Release v0.9.3a: Brand Optimization
 - go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.

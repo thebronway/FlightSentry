@@ -104,7 +104,13 @@ export const sendPriceDropAlert = async (
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
   const activeCurrency = settings.currency || 'USD';
-  const { title, body, htmlBody } = formatPriceDropAlert(flight, newPrice, details, activeCurrency);
+  const { title, body, htmlBody } = formatPriceDropAlert(
+    flight,
+    newPrice,
+    details,
+    activeCurrency,
+    settings.appBaseUrl
+  );
   await sendNotification(settings, title, body, htmlBody);
 };
 
@@ -123,7 +129,13 @@ export const sendPriceIncreaseAlert = async (
   if (settings.notificationsEnabled === 0 || flight.disableNotifications === 1) return;
 
   const activeCurrency = settings.currency || 'USD';
-  const { title, body, htmlBody } = formatPriceIncreaseAlert(flight, newPrice, details, activeCurrency);
+  const { title, body, htmlBody } = formatPriceIncreaseAlert(
+    flight,
+    newPrice,
+    details,
+    activeCurrency,
+    settings.appBaseUrl
+  );
   await sendNotification(settings, title, body, htmlBody);
 };
 

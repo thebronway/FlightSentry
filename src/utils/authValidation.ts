@@ -82,11 +82,11 @@ export const sessionDurationSchema = z.object({
  * application paths are allowed (preventing open-redirect attacks).
  */
 export function sanitizeRedirectPath(rawNext?: string | null): string {
-  if (!rawNext || typeof rawNext !== 'string') return '/';
+  if (!rawNext || typeof rawNext !== 'string') return '/dashboard';
   const trimmed = rawNext.trim();
-  if (!trimmed.startsWith('/')) return '/';
-  if (trimmed.startsWith('//') || trimmed.startsWith('/\\')) return '/';
-  if (/[\x00-\x1f\x7f]/.test(trimmed)) return '/';
-  if (trimmed === '/login' || trimmed.startsWith('/login?')) return '/';
+  if (!trimmed.startsWith('/')) return '/dashboard';
+  if (trimmed.startsWith('//') || trimmed.startsWith('/\\')) return '/dashboard';
+  if (/[\x00-\x1f\x7f]/.test(trimmed)) return '/dashboard';
+  if (trimmed === '/' || trimmed === '/login' || trimmed.startsWith('/login?')) return '/dashboard';
   return trimmed;
 }

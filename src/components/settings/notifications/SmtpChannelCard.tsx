@@ -1,5 +1,61 @@
 'use client';
 
+import { useState } from 'react';
+import { Info } from 'lucide-react';
+
+interface SmtpProviderPreset {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  hint: string;
+}
+
+const SMTP_PROVIDER_PRESETS: SmtpProviderPreset[] = [
+  {
+    id: 'gmail',
+    name: 'Gmail / Google',
+    host: 'smtp.gmail.com',
+    port: 587,
+    hint: 'Uses STARTTLS on port 587 (or SSL on 465). Requires 2-Step Verification and a 16-character Google App Password.',
+  },
+  {
+    id: 'aws-ses',
+    name: 'AWS SES',
+    host: 'email-smtp.us-east-1.amazonaws.com',
+    port: 587,
+    hint: 'Update us-east-1 in the SMTP Host if your SES region differs. Use IAM SMTP credentials and a verified From address or domain.',
+  },
+  {
+    id: 'outlook',
+    name: 'Outlook / M365',
+    host: 'smtp.office365.com',
+    port: 587,
+    hint: 'Uses STARTTLS on port 587. Ensure Authenticated SMTP is enabled for your mailbox in Microsoft 365.',
+  },
+  {
+    id: 'icloud',
+    name: 'iCloud Mail',
+    host: 'smtp.mail.me.com',
+    port: 587,
+    hint: 'Uses STARTTLS on port 587 with your @icloud.com address and an Apple ID App-Specific Password.',
+  },
+  {
+    id: 'fastmail',
+    name: 'Fastmail',
+    host: 'smtp.fastmail.com',
+    port: 465,
+    hint: 'Uses implicit SSL/TLS on port 465 (or STARTTLS on 587) with a Fastmail SMTP app password.',
+  },
+  {
+    id: 'custom',
+    name: 'Custom SMTP',
+    host: '',
+    port: 587,
+    hint: 'Enter your self-hosted relay or custom SMTP server hostname and port (587 for STARTTLS, 465 for SSL/TLS, or 25 for local relay).',
+  },
+];
+
 interface Props {
   enabled: boolean;
   host: string;
@@ -11,6 +67,7 @@ interface Props {
   testing: boolean;
   status?: { type: 'success' | 'error'; message: string } | null;
   onToggleEnabled: (checked: boolean) => void;
+  onApplyPreset?: (host: string, port: number, providerName: string) => void;
   onFieldChange: (field: 'smtpHost' | 'smtpPort' | 'smtpUser' | 'smtpPass' | 'smtpFrom' | 'smtpTo', value: string | number | null) => void;
   onFieldBlur: (toastMessage: string) => void;
   onTest: () => void;
@@ -27,10 +84,38 @@ export default function SmtpChannelCard({
   testing,
   status,
   onToggleEnabled,
+  onApplyPreset,
   onFieldChange,
   onFieldBlur,
   onTest,
 }: Props) {
+  const [activeHint, setActiveHint] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+
+  const normalizedHost = host.trim().toLowerCase();
+
+  const isPresetMatched = (preset: SmtpProviderPreset): boolean => {
+    if (selectedPresetId === preset.id) return true;
+    if (!normalizedHost) return false;
+    if (preset.id === 'aws-ses') {
+      return normalizedHost.startsWith('email-smtp.') && normalizedHost.endsWith('.amazonaws.com');
+    }
+    return preset.host !== '' && normalizedHost === preset.host;
+  };
+
+  const handleSelectPreset = (preset: SmtpProviderPreset) => {
+    setSelectedPresetId(preset.id);
+    setActiveHint(preset.hint);
+    if (onApplyPreset) {
+      onApplyPreset(preset.host, preset.port, preset.name);
+      return;
+    }
+    if (preset.host) {
+      onFieldChange('smtpHost', preset.host);
+    }
+    onFieldChange('smtpPort', preset.port);
+  };
+
   return (
     <div
       className={`p-4 rounded-lg border transition-all ${
@@ -56,6 +141,37 @@ export default function SmtpChannelCard({
         )}
       </div>
       <div className="space-y-3">
+        <div>
+          <span className="block text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted mb-1.5">
+            Quick Provider Presets
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {SMTP_PROVIDER_PRESETS.map(preset => {
+              const matched = isPresetMatched(preset);
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  disabled={!enabled}
+                  onClick={() => handleSelectPreset(preset)}
+                  className={`min-h-[34px] px-2.5 py-1.5 rounded-md text-xs font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+                    matched
+                      ? 'bg-sky-950/60 border-sky-700/80 text-sky-200'
+                      : 'bg-gunmetal-canvas border-gunmetal-border text-slate-300 hover:text-white hover:border-slate-500'
+                  }`}
+                >
+                  {preset.name}
+                </button>
+              );
+            })}
+          </div>
+          {activeHint && enabled && (
+            <div className="mt-2 p-2.5 rounded-md bg-sky-950/30 border border-sky-800/50 flex items-start gap-2 text-xs text-sky-200">
+              <Info className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
+              <span>{activeHint}</span>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-xs font-medium mb-1 text-slate-300">SMTP Host</label>

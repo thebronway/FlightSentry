@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Settings as SettingsType } from '@/types';
+import {
+  DEFAULT_SETTINGS_TAB,
+  SETTINGS_TABS,
+  SettingsTabId,
+} from './settings/settingsTabs';
 import GeneralTab from './settings/GeneralTab';
 import DataSourcesTab from './settings/DataSourcesTab';
 import SearchPreferencesTab from './settings/SearchPreferencesTab';
@@ -11,9 +17,25 @@ import NotificationsTab from './settings/NotificationsTab';
 import EmailScannerTab from './settings/EmailScannerTab';
 import SecurityTab from './settings/SecurityTab';
 
-export default function SettingsForm() {
+interface SettingsFormProps {
+  initialTab?: SettingsTabId;
+}
+
+export default function SettingsForm({
+  initialTab = DEFAULT_SETTINGS_TAB,
+}: SettingsFormProps) {
+  const router = useRouter();
   const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications' | 'emailscanner' | 'security'>('general');
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const handleTabChange = (nextTab: SettingsTabId) => {
+    setActiveTab(nextTab);
+    router.push(`/settings/${nextTab}`);
+  };
 
   // Status & toast states
   const [providerStatus, setProviderStatus] = useState<Record<string, { type: 'success' | 'error'; message: string } | null>>({});
@@ -32,7 +54,8 @@ export default function SettingsForm() {
     fetch('/api/settings', { cache: 'no-store' })
       .then(res => {
         if (res.status === 401) {
-          window.location.assign('/login?next=%2Fsettings');
+          const nextPath = encodeURIComponent(`/settings/${initialTab}`);
+          window.location.assign(`/login?next=${nextPath}`);
           return null;
         }
         if (!res.ok) return null;
@@ -194,97 +217,22 @@ export default function SettingsForm() {
         aria-label="Settings sections"
         className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-0 bg-gunmetal-canvas/70 sm:bg-transparent border border-gunmetal-border sm:border-0 sm:border-b sm:border-gunmetal-border p-1.5 sm:p-0 rounded-lg sm:rounded-none"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'general'}
-          onClick={() => setActiveTab('general')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'general'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          General
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'searchprefs'}
-          onClick={() => setActiveTab('searchprefs')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'searchprefs'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Search Preferences
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'datasources'}
-          onClick={() => setActiveTab('datasources')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'datasources'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Data Sources
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'scheduling'}
-          onClick={() => setActiveTab('scheduling')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'scheduling'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Scheduling
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'notifications'}
-          onClick={() => setActiveTab('notifications')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'notifications'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Notifications
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'emailscanner'}
-          onClick={() => setActiveTab('emailscanner')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'emailscanner'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Email Scanner
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'security'}
-          onClick={() => setActiveTab('security')}
-          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
-            activeTab === 'security'
-              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
-              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
-          }`}
-        >
-          Security
-        </button>
+        {SETTINGS_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
+              activeTab === tab.id
+                ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+                : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === 'general' && (
@@ -295,15 +243,7 @@ export default function SettingsForm() {
         />
       )}
 
-      {activeTab === 'searchprefs' && (
-        <SearchPreferencesTab
-          settings={settings}
-          onChange={setSettings}
-          onAutoSave={handleAutoSave}
-        />
-      )}
-
-      {activeTab === 'datasources' && (
+      {activeTab === 'data-sources' && (
         <DataSourcesTab
           settings={settings}
           onChange={setSettings}
@@ -321,6 +261,14 @@ export default function SettingsForm() {
         />
       )}
 
+      {activeTab === 'search-preferences' && (
+        <SearchPreferencesTab
+          settings={settings}
+          onChange={setSettings}
+          onAutoSave={handleAutoSave}
+        />
+      )}
+
       {activeTab === 'notifications' && (
         <NotificationsTab
           settings={settings}
@@ -332,7 +280,7 @@ export default function SettingsForm() {
         />
       )}
 
-      {activeTab === 'emailscanner' && (
+      {activeTab === 'email-scanner' && (
         <EmailScannerTab
           settings={settings}
           onChange={setSettings}

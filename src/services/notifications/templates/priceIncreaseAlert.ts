@@ -8,6 +8,11 @@ export interface PriceIncreaseAlertPayload {
   htmlBody: string;
 }
 
+function resolveBaseUrl(appBaseUrl?: string | null): string {
+  const cleaned = (appBaseUrl || '').trim().replace(/\/+$/, '');
+  return cleaned || 'http://localhost:4000';
+}
+
 export function formatPriceIncreaseAlert(
   flight: Flight,
   newPrice: number,
@@ -18,7 +23,8 @@ export function formatPriceIncreaseAlert(
     sourceUsed?: string | null;
     itineraries?: RouteItinerary[];
   },
-  currency: string = 'USD'
+  currency: string = 'USD',
+  appBaseUrl?: string | null
 ): PriceIncreaseAlertPayload {
   const benchmarkPrice = flight.baselinePrice;
   const surgeAmount = newPrice - benchmarkPrice;
@@ -32,6 +38,7 @@ export function formatPriceIncreaseAlert(
     : leadingAirlineName || leadingAirlineCode || 'Route Flight';
 
   const googleFlightsUrl = getGoogleFlightsUrl(flight, currency);
+  const flightHistoryUrl = `${resolveBaseUrl(appBaseUrl)}/dashboard/flights/${flight.id}`;
 
   const title = `Price Surge Alert: ${flight.origin} → ${flight.destination} via ${leadingAirlineCode}${leadingFlightNum ? ` #${leadingFlightNum}` : ''} (${formatCurrency(newPrice)})`;
 
@@ -111,7 +118,7 @@ export function formatPriceIncreaseAlert(
     body += `\n`;
   }
 
-  body += `🔗 [Review on Google Flights](${googleFlightsUrl})`;
+  body += `📊 [View Price History in FlightSentry](${flightHistoryUrl}) · 🔗 [Review on Google Flights](${googleFlightsUrl})`;
 
   // HTML Body (SMTP Email)
   let htmlBody = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">`;
@@ -145,7 +152,7 @@ export function formatPriceIncreaseAlert(
     htmlBody += `</table>`;
   }
 
-  htmlBody += `<p style="margin-top: 24px;"><a href="${googleFlightsUrl}" style="background-color: #dc2626; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">Lock In Fare on Google Flights</a></p>`;
+  htmlBody += `<p style="margin-top: 24px;"><a href="${flightHistoryUrl}" style="background-color: #0f172a; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block; margin-right: 10px;">View Price History</a><a href="${googleFlightsUrl}" style="background-color: #dc2626; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">Lock In Fare on Google Flights</a></p>`;
   htmlBody += `</div>`;
 
   return { title, body, htmlBody };

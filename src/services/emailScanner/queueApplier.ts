@@ -359,44 +359,25 @@ export function applyEmailQueueItem(
   // eventType === 'cancellation'
   if (!item.matchedFlightId) {
     throw new Error(
-      'No existing tracked flight matched this cancellation notice. Click "Edit Before Adding" to select the flight to pause.'
+      'No existing tracked flight matched this cancellation notice. Select the flight to delete or deny this notice.'
     );
   }
 
   const targetFlight = flightDb.getById(item.matchedFlightId);
   if (!targetFlight) {
     throw new Error(
-      'The matched tracked flight no longer exists. Click "Edit Before Adding" to choose another flight.'
+      'The matched tracked flight no longer exists. Select another flight to delete or deny this notice.'
     );
   }
 
-  const cancelNote = `Flight cancelled per email (${item.accountLabel})`;
-  const nextNotes = targetFlight.notes
-    ? targetFlight.notes.includes(cancelNote)
-      ? targetFlight.notes
-      : `${targetFlight.notes} | ${cancelNote}`
-    : cancelNote;
-
-  flightDb.update(targetFlight.id, {
-    status: 'Paused',
-    notes: nextNotes,
-  });
-
-  historyDb.insert(targetFlight.id, targetFlight.currentPrice, 'Paused', {
-    airline: targetFlight.airline,
-    flightNumber: targetFlight.flightNumber,
-    metadata: JSON.stringify({
-      milestone: 'Flight Cancelled (Email)',
-      accountLabel: item.accountLabel,
-      pnr: item.pnr || targetFlight.pnr || null,
-    }),
-    sourceUsed: 'Email Scanner',
-  });
+  const deletedFlightId = targetFlight.id;
+  historyDb.deleteByFlightId(deletedFlightId);
+  flightDb.delete(deletedFlightId);
 
   emailQueueDb.markApplied(queueItemId);
   return {
     queueItemId,
-    flightId: targetFlight.id,
+    flightId: deletedFlightId,
     eventType: 'cancellation',
   };
 }

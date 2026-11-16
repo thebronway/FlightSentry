@@ -81,7 +81,7 @@ function classifyEventType(reservationStatus: unknown, subject: string, bodyText
 
   if (
     statusStr.includes('cancel') ||
-    /\b(?:flight|reservation|booking|itinerary)\s+(?:has been\s+|is\s+)?cancel(?:l)?ed\b/.test(combined) ||
+    /\b(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:l)?ed\b/.test(combined) ||
     /\bcancel(?:l)?ation\s+confirmation\b/.test(combined)
   ) {
     return 'cancellation';

@@ -154,6 +154,9 @@ export default function EmailScannerTab({
         const summary = `Scanned ${data.scannedAccounts} account(s): checked ${data.totalMessagesFetched} new message(s), queued ${data.totalEventsQueued} flight event(s) (${data.pendingQueueCount} pending review).`;
         setLastScanSummary(summary);
         if (onNotify) onNotify(summary, 'success');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('flightsentry:email-queue-updated'));
+        }
         void fetchAccounts();
       } else {
         if (onNotify) onNotify(data.error || 'Scan failed', 'error');

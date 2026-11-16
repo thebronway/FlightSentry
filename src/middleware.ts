@@ -84,7 +84,7 @@ export async function middleware(req: NextRequest) {
 
   if (pathname === '/login') {
     if (!sessionState.authEnabled || sessionState.authenticated) {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
     return NextResponse.next();
   }
@@ -92,7 +92,7 @@ export async function middleware(req: NextRequest) {
   if (sessionState.authEnabled && !sessionState.authenticated) {
     const loginUrl = new URL('/login', req.url);
     const requestedPath = `${pathname}${search}`;
-    if (requestedPath && requestedPath !== '/') {
+    if (requestedPath && requestedPath !== '/' && requestedPath !== '/dashboard') {
       loginUrl.searchParams.set('next', requestedPath);
     }
     return NextResponse.redirect(loginUrl);
