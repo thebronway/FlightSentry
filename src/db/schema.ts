@@ -230,4 +230,54 @@ CREATE TABLE IF NOT EXISTS release_sync_state (
     dismissedUpdateUntil TEXT,
     dismissedAnnouncementIds TEXT NOT NULL DEFAULT '[]'
 );
+
+CREATE TABLE IF NOT EXISTS auth_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled INTEGER NOT NULL DEFAULT 0,
+    username TEXT NOT NULL DEFAULT 'admin',
+    passwordHash TEXT,
+    passwordSalt TEXT,
+    sessionDurationDays INTEGER NOT NULL DEFAULT 30,
+    updatedAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    userAgent TEXT,
+    ipAddress TEXT,
+    createdAt TEXT NOT NULL,
+    lastActiveAt TEXT NOT NULL,
+    expiresAt TEXT NOT NULL,
+    revokedAt TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_active
+    ON auth_sessions(revokedAt, expiresAt);
+
+CREATE TABLE IF NOT EXISTS auth_passkeys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    credentialId TEXT NOT NULL UNIQUE,
+    publicKey TEXT NOT NULL,
+    counter INTEGER NOT NULL DEFAULT 0,
+    transports TEXT,
+    deviceType TEXT,
+    backedUp INTEGER NOT NULL DEFAULT 0,
+    name TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    lastUsedAt TEXT
+);
+
+CREATE TABLE IF NOT EXISTS auth_webauthn_challenges (
+    challenge TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    expiresAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auth_login_attempts (
+    ipAddress TEXT PRIMARY KEY,
+    failedCount INTEGER NOT NULL DEFAULT 0,
+    lockedUntil TEXT,
+    lastAttemptAt TEXT NOT NULL
+);
 `;

@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { imapAccountsDb } from '@/db/imapAccounts';
 import { imapConnectionTestSchema } from '@/utils/validation';
 import { decryptSecret, probeMailbox } from '@/services/emailScanner';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = imapConnectionTestSchema.safeParse(body);

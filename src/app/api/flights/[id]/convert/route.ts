@@ -7,6 +7,7 @@ import { airlineCodeSchema } from '@/utils/validation';
 import { isValidAirlineCode } from '@/utils/airline';
 import { isAllianceKey } from '@/utils/airlineThemes';
 import { isPointsCurrency } from '@/utils/format';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,9 @@ const convertSchema = z.object({
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     const existing = flightDb.getById(id);

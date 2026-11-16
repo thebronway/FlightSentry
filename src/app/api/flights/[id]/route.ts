@@ -5,10 +5,14 @@ import { flightStatusSchema } from '@/utils/validation';
 import { flightSchema } from '@/utils/validation';
 import { FlightStatus } from '@/types';
 import { isPointsCurrency } from '@/utils/format';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     const existing = flightDb.getById(id);
@@ -121,6 +125,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     const body = await req.json();
@@ -145,6 +152,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     // Because of ON DELETE CASCADE, history deletes automatically, but we can be explicit

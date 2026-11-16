@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { settingsDb } from '@/db/settings';
 import { testScraperSchema } from '@/utils/validation';
 import { checkScraperHealth, redactScraperSecrets } from '@/services/flightsentryScraper';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = testScraperSchema.safeParse(body);

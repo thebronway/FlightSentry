@@ -4,6 +4,7 @@ import { settingsDb } from '@/db/settings';
 import { expireOldFlights } from '@/services/scheduler';
 import { cleanupPastFlightsSchema } from '@/utils/validation';
 import { getTodayDateString, subtractDaysFromDateString } from '@/utils/date';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,9 @@ const NO_STORE_HEADERS = {
 };
 
 export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const settings = settingsDb.get();
     expireOldFlights(settings.timezone);
@@ -55,6 +59,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const parsed = cleanupPastFlightsSchema.parse(body);

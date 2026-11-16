@@ -3,10 +3,14 @@ import { executeSearchStrategy } from '@/services/datasource';
 import { settingsDb } from '@/db/settings';
 import { checkAndResetQuota, canMakeApiCall } from '@/services/quota';
 import { Flight } from '@/types';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     let settings = settingsDb.get();

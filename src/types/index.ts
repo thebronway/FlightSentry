@@ -296,3 +296,80 @@ export interface UpdateBannerStatus {
   lastSyncStatus: 'never' | 'ok' | 'offline' | 'error';
   announcements: AnnouncementItem[];
 }
+
+export interface AuthConfig {
+  id: number;
+  enabled: number; // 0 (false) or 1 (true)
+  username: string;
+  passwordHash: string | null;
+  passwordSalt: string | null;
+  sessionDurationDays: number;
+  updatedAt: string;
+}
+
+export interface AuthSession {
+  id: string;
+  username: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  revokedAt?: string | null;
+}
+
+export interface AuthSessionPublic {
+  id: string;
+  username: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
+export interface AuthPasskey {
+  id: number;
+  credentialId: string;
+  publicKey: string;
+  counter: number;
+  transports?: string | null;
+  deviceType?: string | null;
+  backedUp: number; // 0 (false) or 1 (true)
+  name: string;
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+export interface AuthPasskeyPublic {
+  id: number;
+  credentialId: string;
+  deviceType: string | null;
+  backedUp: boolean;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface AuthStatusResponse {
+  authEnabled: boolean;
+  authenticated: boolean;
+  username: string;
+  envManaged: boolean;
+  hasPassword: boolean;
+  hasPasskeys: boolean;
+  passkeyCount: number;
+  currentSessionId: string | null;
+  sessionDurationDays: number;
+}
+
+export type AuthMethod = 'disabled' | 'session' | 'bearer';
+
+export interface AuthContext {
+  authenticated: boolean;
+  method: AuthMethod;
+  username?: string;
+  sessionId?: string;
+  scopes?: string[];
+}

@@ -42,11 +42,19 @@ export default function Dashboard() {
 
   const fetchFlights = async () => {
     const res = await fetch('/api/flights', { cache: 'no-store' });
+    if (res.status === 401) {
+      window.location.assign('/login');
+      return;
+    }
     if (res.ok) setFlights(await res.json());
   };
 
   const fetchSettings = async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
+    if (res.status === 401) {
+      window.location.assign('/login');
+      return;
+    }
     if (res.ok) {
       const data = await res.json();
       setSettings(data);

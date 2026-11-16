@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { settingsDb } from '@/db/settings';
 import { settingsSchema } from '@/utils/validation';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const settings = settingsDb.get();
     const containerTz = process.env.TZ;
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const parsed = settingsSchema.parse(body);

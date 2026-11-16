@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   ArrowUpCircle,
   BookOpen,
@@ -30,10 +31,13 @@ function isSafeHttpUrl(rawUrl?: string | null): rawUrl is string {
 }
 
 export default function SystemBanners() {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
   const [status, setStatus] = useState<UpdateBannerStatus | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
+    if (isLoginPage) return;
     try {
       const res = await fetch('/api/updates', { cache: 'no-store' });
       if (res.ok) {
@@ -46,6 +50,7 @@ export default function SystemBanners() {
   }, []);
 
   useEffect(() => {
+    if (isLoginPage) return;
     void loadStatus();
 
     const handleVisibility = () => {
@@ -75,7 +80,9 @@ export default function SystemBanners() {
       window.removeEventListener(UPDATES_CHANGED_EVENT, handleExternalUpdate);
       clearInterval(pollInterval);
     };
-  }, [loadStatus]);
+  }, [isLoginPage, loadStatus]);
+
+  if (isLoginPage) return null;
 
   const handleDismissUpdate = async (mode: '24h' | 'forever') => {
     if (!status?.latestVersion || busyAction) return;

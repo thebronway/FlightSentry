@@ -3,10 +3,14 @@ import { historyDb } from '@/db/history';
 import { flightDb } from '@/db/flights';
 import { manualPriceEntrySchema } from '@/utils/validation';
 import { expandAlliancesToAirlines } from '@/utils/airlineThemes';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: { flightId: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const flightId = parseInt(params.flightId, 10);
     const history = historyDb.getByFlightId(flightId);
@@ -18,6 +22,9 @@ export async function GET(req: NextRequest, { params }: { params: { flightId: st
 }
 
 export async function POST(req: NextRequest, { params }: { params: { flightId: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const flightId = parseInt(params.flightId, 10);
     const flight = flightDb.getById(flightId);

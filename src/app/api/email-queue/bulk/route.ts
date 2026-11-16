@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { emailQueueBulkSchema } from '@/utils/validation';
 import { applyBulkEmailQueueItems } from '@/services/emailScanner';
 import { emailQueueDb } from '@/db/emailQueue';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = emailQueueBulkSchema.safeParse(body);

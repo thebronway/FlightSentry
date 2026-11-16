@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { imapAccountsDb } from '@/db/imapAccounts';
 import { imapAccountCreateSchema } from '@/utils/validation';
 import { encryptSecret, probeMailbox } from '@/services/emailScanner';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const accounts = imapAccountsDb.getAllPublic();
     return NextResponse.json(
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const parsed = imapAccountCreateSchema.safeParse(body);

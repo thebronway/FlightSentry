@@ -1,6 +1,6 @@
 {
   "name": "flightsentry",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^11.0.0",
+    "@simplewebauthn/server": "^11.0.0",
     "better-sqlite3": "^11.1.2",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.412.0",

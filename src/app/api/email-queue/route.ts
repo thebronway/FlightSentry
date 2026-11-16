@@ -1,12 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { emailQueueDb } from '@/db/emailQueue';
 import { flightDb } from '@/db/flights';
 import { settingsDb } from '@/db/settings';
 import { parseConfiguredPointsCurrencies } from '@/services/emailScanner/pointsMatcher';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const items = emailQueueDb.listPending();
     const allFlights = flightDb.getAll();

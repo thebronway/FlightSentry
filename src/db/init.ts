@@ -307,6 +307,72 @@ export function initDb() {
         // Ignored
     }
             
+    // Ensure authentication tables and default disabled singleton row exist
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS auth_config (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                enabled INTEGER NOT NULL DEFAULT 0,
+                username TEXT NOT NULL DEFAULT 'admin',
+                passwordHash TEXT,
+                passwordSalt TEXT,
+                sessionDurationDays INTEGER NOT NULL DEFAULT 30,
+                updatedAt TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS auth_sessions (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                userAgent TEXT,
+                ipAddress TEXT,
+                createdAt TEXT NOT NULL,
+                lastActiveAt TEXT NOT NULL,
+                expiresAt TEXT NOT NULL,
+                revokedAt TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_auth_sessions_active
+                ON auth_sessions(revokedAt, expiresAt);
+
+            CREATE TABLE IF NOT EXISTS auth_passkeys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                credentialId TEXT NOT NULL UNIQUE,
+                publicKey TEXT NOT NULL,
+                counter INTEGER NOT NULL DEFAULT 0,
+                transports TEXT,
+                deviceType TEXT,
+                backedUp INTEGER NOT NULL DEFAULT 0,
+                name TEXT NOT NULL,
+                createdAt TEXT NOT NULL,
+                lastUsedAt TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS auth_webauthn_challenges (
+                challenge TEXT PRIMARY KEY,
+                type TEXT NOT NULL,
+                expiresAt TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS auth_login_attempts (
+                ipAddress TEXT PRIMARY KEY,
+                failedCount INTEGER NOT NULL DEFAULT 0,
+                lockedUntil TEXT,
+                lastAttemptAt TEXT NOT NULL
+            );
+        `);
+        try {
+            db.exec("ALTER TABLE auth_config ADD COLUMN sessionDurationDays INTEGER NOT NULL DEFAULT 30");
+        } catch {
+            // Column already exists
+        }
+        db.prepare(`
+            INSERT OR IGNORE INTO auth_config (id, enabled, username, passwordHash, passwordSalt, sessionDurationDays, updatedAt)
+            VALUES (1, 0, 'admin', NULL, NULL, 30, ?)
+        `).run(new Date().toISOString());
+    } catch {
+        // Ignored
+    }
+
     // Seed the single settings row if it doesn't exist (APIs disabled by default)
     const getSettings = db.prepare('SELECT id FROM settings WHERE id = 1');
     if (!getSettings.get()) {
@@ -322,16 +388,6 @@ export function initDb() {
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
                 defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
-                maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled,
-                emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl
-            ) 
-            VALUES (
-                1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
-                48, 24, 12, 7, 23, 'serpapi,searchapi,flightsentry-scraper',
-                'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
-                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1,
-                0, 15, 1, NULL
-            )defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
                 maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled,
                 emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl
             ) 

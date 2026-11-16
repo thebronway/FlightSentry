@@ -9,10 +9,11 @@ import SearchPreferencesTab from './settings/SearchPreferencesTab';
 import SchedulingTab from './settings/SchedulingTab';
 import NotificationsTab from './settings/NotificationsTab';
 import EmailScannerTab from './settings/EmailScannerTab';
+import SecurityTab from './settings/SecurityTab';
 
 export default function SettingsForm() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications' | 'emailscanner'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications' | 'emailscanner' | 'security'>('general');
 
   // Status & toast states
   const [providerStatus, setProviderStatus] = useState<Record<string, { type: 'success' | 'error'; message: string } | null>>({});
@@ -28,9 +29,17 @@ export default function SettingsForm() {
   };
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.json())
+    fetch('/api/settings', { cache: 'no-store' })
+      .then(res => {
+        if (res.status === 401) {
+          window.location.assign('/login?next=%2Fsettings');
+          return null;
+        }
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then(data => {
+        if (!data) return;
         const allKeys = ['serpapi', 'searchapi', 'flightsentry-scraper'];
         const normalized = (data.dataSourceStrategy || '')
           .split(',')
@@ -263,6 +272,19 @@ export default function SettingsForm() {
         >
           Email Scanner
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'security'}
+          onClick={() => setActiveTab('security')}
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
+            activeTab === 'security'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
+          }`}
+        >
+          Security
+        </button>
       </div>
 
       {activeTab === 'general' && (
@@ -317,6 +339,10 @@ export default function SettingsForm() {
           onAutoSave={handleAutoSave}
           onNotify={showToast}
         />
+      )}
+
+      {activeTab === 'security' && (
+        <SecurityTab onNotify={showToast} />
       )}
 
       {/* Floating In-App Toast */}

@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { releaseSyncDb } from '@/db/releaseSync';
 import { getUpdateBannerStatus } from '@/services/githubSync';
 import { bannerDismissSchema } from '@/utils/validation';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const parsed = bannerDismissSchema.parse(body);

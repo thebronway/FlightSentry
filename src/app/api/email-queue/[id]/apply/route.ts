@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { emailQueueItemEditSchema } from '@/utils/validation';
 import { applyEmailQueueItem } from '@/services/emailScanner';
 import { emailQueueDb } from '@/db/emailQueue';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id) || id <= 0) {

@@ -7,8 +7,12 @@ import {
   sendSmtpEmail,
   NotificationChannel,
 } from '@/services/apprise';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const channel: NotificationChannel = body.channel;

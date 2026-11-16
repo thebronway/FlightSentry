@@ -11,10 +11,14 @@ import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
 import { expireOldFlights } from '@/services/scheduler';
 import { getTodayDateString } from '@/utils/date';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const settings = settingsDb.get();
     expireOldFlights(settings.timezone);
@@ -27,6 +31,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const body = await req.json();
     const parsed = flightSchema.parse(body);

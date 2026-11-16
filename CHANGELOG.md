@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-15*  
-*Current Version: v0.8.9*
+*Current Version: v0.9.0*
 
 ## Changelog
+
+### Release v0.9.0
+- Optional single-user username and password authentication (disabled by default) configured under **Settings → Security** with Node `crypto.scrypt` password hashing and per-user salts.
+- `/login` sign-in screen, `Navbar` **Sign Out** button, Next.js route middleware, and SQLite-backed `auth_sessions` validation with immediate revocation on logout, password update, or auth disable.
+- Progressive brute-force rate limiting and lockout backoff on login attempts.
+- Optional `AUTH_USERNAME` and `AUTH_PASSWORD` environment variables for locked first-boot deployments and lockout recovery.
+- Optional multi-device WebAuthn passkey enrollment and sign-in (`@simplewebauthn/server` and `@simplewebauthn/browser`) stored in `auth_passkeys` with reverse-proxy RP ID resolution and HTTP guidance.
 
 ### Release v0.8.9
 - Email Scanner points and miles booking detection with loyalty currency mapping and separate taxes and fees tracking.

@@ -3,6 +3,7 @@ import { isApiTesterEnabled } from '@/utils/devGate';
 import { devProviderTestSchema } from '@/utils/validation';
 import { runDevProviderComparison } from '@/services/devApiTester';
 import { redactScraperSecrets } from '@/services/flightsentryScraper';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,10 @@ const NO_STORE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   if (!isApiTesterEnabled()) {
     return NextResponse.json({ error: 'Not Found' }, { status: 404, headers: NO_STORE_HEADERS });
   }
@@ -21,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   if (!isApiTesterEnabled()) {
     return NextResponse.json({ error: 'Not Found' }, { status: 404, headers: NO_STORE_HEADERS });
   }

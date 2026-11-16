@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { lookupFlightRoute } from '@/services/flightLookup';
 import { isValidAirlineCode } from '@/utils/airline';
 import { logsDb } from '@/db/logs';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   const startTime = Date.now();
   let airline: string | undefined;
   let flightNumber: string | undefined;

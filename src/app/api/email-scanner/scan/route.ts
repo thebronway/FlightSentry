@@ -1,12 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { scanAllEnabledAccounts } from '@/services/emailScanner';
 import { emailQueueDb } from '@/db/emailQueue';
 import { settingsDb } from '@/db/settings';
 import { sendEmailQueueAlert } from '@/services/notifications';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const result = await scanAllEnabledAccounts();
     if (result.queuedItems.length > 0) {

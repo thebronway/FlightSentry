@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logsDb } from '@/db/logs';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const provider = searchParams.get('provider');

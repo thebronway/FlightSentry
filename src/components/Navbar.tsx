@@ -3,15 +3,32 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Settings, LayoutDashboard, Mail } from 'lucide-react';
+import { Settings, LayoutDashboard, Mail, LogOut } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const isLoginPage = pathname === '/login';
   const [pendingQueueCount, setPendingQueueCount] = useState(0);
+  const [authEnabled, setAuthEnabled] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const fetchAuthStatus = useCallback(async () => {
+    if (isLoginPage) return;
+    try {
+      const res = await fetch('/api/auth/session', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setAuthEnabled(Boolean(data.authEnabled && data.authenticated));
+      }
+    } catch {
+      // Ignore transient network errors
+    }
+  }, [isLoginPage]);
 
   const fetchQueueCount = useCallback(async () => {
+    if (isLoginPage) return;
     try {
       const res = await fetch('/api/email-queue', { cache: 'no-store' });
       if (res.ok) {
@@ -21,16 +38,22 @@ export default function Navbar() {
     } catch {
       // Ignore transient network errors
     }
-  }, []);
+  }, [isLoginPage]);
 
   useEffect(() => {
+    if (isLoginPage) return;
+    void fetchAuthStatus();
     void fetchQueueCount();
 
     const handleQueueUpdated = () => {
       void fetchQueueCount();
     };
+    const handleAuthChanged = () => {
+      void fetchAuthStatus();
+    };
 
     window.addEventListener('flightsentry:email-queue-updated', handleQueueUpdated);
+    window.addEventListener('flightsentry:auth-changed', handleAuthChanged);
     window.addEventListener('focus', handleQueueUpdated);
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
@@ -40,10 +63,11 @@ export default function Navbar() {
 
     return () => {
       window.removeEventListener('flightsentry:email-queue-updated', handleQueueUpdated);
+      window.removeEventListener('flightsentry:auth-changed', handleAuthChanged);
       window.removeEventListener('focus', handleQueueUpdated);
       clearInterval(interval);
     };
-  }, [fetchQueueCount]);
+  }, [isLoginPage, fetchAuthStatus, fetchQueueCount]);
 
   const handleOpenEmailQueue = () => {
     if (pathname === '/') {
@@ -52,6 +76,22 @@ export default function Navbar() {
       router.push('/?emailQueue=1');
     }
   };
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Proceed to login even on transient error
+    } finally {
+      window.location.assign('/login');
+    }
+  };
+
+  if (isLoginPage) {
+    return null;
+  }
 
   return (
     <nav className="bg-gunmetal-nav shadow-sm border-b border-gunmetal-border transition-colors">
@@ -91,6 +131,18 @@ export default function Navbar() {
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
           </Link>
+          {authEnabled && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              title="Sign Out"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-gunmetal-muted hover:text-rose-200 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/60 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">{signingOut ? 'Signing Out...' : 'Sign Out'}</span>
+            </button>
+          )}
         </div>
       </div>
     </nav>

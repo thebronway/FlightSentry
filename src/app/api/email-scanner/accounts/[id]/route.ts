@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { imapAccountsDb } from '@/db/imapAccounts';
 import { imapAccountUpdateSchema } from '@/utils/validation';
 import { decryptSecret, encryptSecret, probeMailbox } from '@/services/emailScanner';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id) || id <= 0) {
@@ -106,6 +110,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id) || id <= 0) {
@@ -130,7 +137,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     if (Number.isNaN(id) || id <= 0) {

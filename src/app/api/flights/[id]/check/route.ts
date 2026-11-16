@@ -7,10 +7,14 @@ import { checkAndResetQuota, canMakeApiCall } from '@/services/quota';
 import { historyDb } from '@/db/history';
 import { calculateNextCheck } from '@/utils/queue';
 import { isPointsCurrency } from '@/utils/format';
+import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const authCheck = await requireApiAuth(req);
+  if (authCheck.response) return authCheck.response;
+
   try {
     const id = parseInt(params.id, 10);
     const flight = flightDb.getById(id);
