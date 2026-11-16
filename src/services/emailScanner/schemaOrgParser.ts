@@ -1,5 +1,6 @@
 import { CabinClass, EmailQueueEventType, FareTier, ParsedFlightEmailEvent } from '../../types';
 import { cleanFlightNumber, isValidAirlineCode, normalizeAirlineCode } from '../../utils/airline';
+import { resolvePointsCurrencyLabel } from './pointsMatcher';
 
 function parseIsoDateAndTime(raw?: unknown): { date: string | null; time: string | null } {
   if (typeof raw !== 'string' || !raw.trim()) {
@@ -117,7 +118,8 @@ function extractAirportCode(airportObj: any): string | null {
 export function extractSchemaOrgFlightEvents(
   htmlContent: string,
   subject: string,
-  bodyText: string
+  bodyText: string,
+  configuredPointsCurrencies: string[] = []
 ): ParsedFlightEmailEvent[] {
   if (!htmlContent || !htmlContent.includes('ld+json')) {
     return [];
@@ -150,11 +152,17 @@ export function extractSchemaOrgFlightEvents(
     const eventType = classifyEventType(res.reservationStatus, subject, bodyText);
 
     const rawPrice = res.totalPrice !== undefined ? Number(res.totalPrice) : NaN;
-    const price = !Number.isNaN(rawPrice) && rawPrice > 0 ? rawPrice : null;
-    const currency =
-      typeof res.priceCurrency === 'string' && /^[A-Z]{3}$/i.test(res.priceCurrency.trim())
-        ? res.priceCurrency.trim().toUpperCase()
-        : null;
+    const parsedPrice = !Number.isNaN(rawPrice) && rawPrice > 0 ? rawPrice : null;
+    const rawCurrency = typeof res.priceCurrency === 'string' ? res.priceCurrency.trim() : '';
+    const isPoints = Boolean(
+      rawCurrency &&
+        (rawCurrency.toUpperCase() === 'PTS' || !/^[A-Z]{3}$/i.test(rawCurrency))
+    );
+    const currency = rawCurrency
+      ? isPoints
+        ? rawCurrency
+        : rawCurrency.toUpperCase()
+      : null;
 
     const seatCabin =
       res.ticketedSeat?.seatingType ||
@@ -171,11 +179,21 @@ export function extractSchemaOrgFlightEvents(
 
     if (flightsList.length === 0) {
       if (pnr) {
+        const resolvedFallbackCurrency = isPoints
+          ? resolvePointsCurrencyLabel({
+              detectedProgramLabel: currency,
+              airlineCode: null,
+              configuredCurrencies: configuredPointsCurrencies,
+            })
+          : currency;
         events.push({
           eventType,
           pnr,
-          price,
-          currency,
+          price: parsedPrice,
+          currency: resolvedFallbackCurrency,
+          isPoints: isPoints ? 1 : 0,
+          taxesAmount: null,
+          taxesCurrency: null,
           cabinClass,
           fareTier,
           confidence: 'medium',
@@ -209,6 +227,13 @@ export function extractSchemaOrgFlightEvents(
       const arr = parseIsoDateAndTime(flightObj.arrivalTime);
 
       const hasCoreFields = Boolean(origin && destination && dep.date && (airline || pnr));
+      const resolvedCurrency = isPoints
+        ? resolvePointsCurrencyLabel({
+            detectedProgramLabel: currency,
+            airlineCode: airline,
+            configuredCurrencies: configuredPointsCurrencies,
+          })
+        : currency;
 
       events.push({
         eventType,
@@ -223,8 +248,11 @@ export function extractSchemaOrgFlightEvents(
         cabinClass,
         fareTier,
         // Attach total reservation price to the first segment so multi-leg totals aren't duplicated
-        price: idx === 0 ? price : null,
-        currency: idx === 0 ? currency : null,
+        price: idx === 0 ? parsedPrice : null,
+        currency: idx === 0 ? resolvedCurrency : null,
+        isPoints: idx === 0 && isPoints ? 1 : 0,
+        taxesAmount: null,
+        taxesCurrency: null,
         confidence: hasCoreFields ? 'high' : 'medium',
         parserSource: 'schema_org',
       });

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { emailQueueDb } from '@/db/emailQueue';
 import { flightDb } from '@/db/flights';
+import { settingsDb } from '@/db/settings';
+import { parseConfiguredPointsCurrencies } from '@/services/emailScanner/pointsMatcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +10,8 @@ export async function GET() {
   try {
     const items = emailQueueDb.listPending();
     const allFlights = flightDb.getAll();
+    const settings = settingsDb.get();
+    const pointsCurrencies = parseConfiguredPointsCurrencies(settings?.pointsCurrencies);
 
     const activeFlights = allFlights
       .filter((f) => f.status !== 'Past')
@@ -27,6 +31,8 @@ export async function GET() {
         items,
         count: items.length,
         flights: activeFlights,
+        pointsCurrencies,
+        defaultCurrency: settings?.currency || 'USD',
       },
       {
         headers: {

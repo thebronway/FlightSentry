@@ -22,6 +22,8 @@ export default function EmailQueueModal({
 }: Props) {
   const [items, setItems] = useState<EmailQueueItem[]>([]);
   const [flights, setFlights] = useState<ActiveFlightSummary[]>([]);
+  const [pointsCurrencies, setPointsCurrencies] = useState<string[]>([]);
+  const [defaultFiatCurrency, setDefaultFiatCurrency] = useState<string>('USD');
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [busyIds, setBusyIds] = useState<number[]>([]);
@@ -38,6 +40,10 @@ export default function EmailQueueModal({
         const loadedItems = (data.items || []) as EmailQueueItem[];
         setItems(loadedItems);
         setFlights((data.flights || []) as ActiveFlightSummary[]);
+        setPointsCurrencies(Array.isArray(data.pointsCurrencies) ? data.pointsCurrencies : []);
+        if (typeof data.defaultCurrency === 'string' && data.defaultCurrency) {
+          setDefaultFiatCurrency(data.defaultCurrency);
+        }
         setSelectedIds((prev) =>
           prev.filter((id) => loadedItems.some((it) => it.id === id))
         );
@@ -294,6 +300,8 @@ export default function EmailQueueModal({
         isOpen={Boolean(editingItem)}
         item={editingItem}
         flights={flights}
+        pointsCurrencies={pointsCurrencies}
+        defaultFiatCurrency={defaultFiatCurrency}
         onClose={() => setEditingItem(null)}
         onApplied={(appliedId) => {
           setItems((prev) => prev.filter((it) => it.id !== appliedId));

@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-15*  
-*Current Version: v0.8.8*
+*Current Version: v0.8.9*
 
 ## Changelog
+
+### Release v0.8.9
+- Email Scanner points and miles booking detection with loyalty currency mapping and separate taxes and fees tracking.
+- Automatic matching and in-place conversion (`Convert to Booked`) of watched flights and routes (including metropolitan co-locations) from incoming booking emails while preserving price history.
+- Cash vs. Points/Miles toggle, loyalty program selector, and booking destination selector in the Email Queue edit modal.
+- Forwarded confirmation email support for itinerary extraction and original carrier detection.
 
 ### Release v0.8.8
 - Restricted Manual and Points tracking modes to specific flights (`Watching Flight` or `Booked Flight`), auto-switching away from `Watching Route` and requiring a carrier and flight number.

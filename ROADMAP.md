@@ -1,25 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-15*  
-*Current Version: v0.8.8*
+*Current Version: v0.8.9*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.8.9
-- **Multi-Account IMAP Email Scanner (New Emails Only)**
-  - Store multiple email accounts in an `imap_accounts` SQLite table (`label`, `host`, `port`, `tls`, `username`, encrypted/masked password, optional monitored folder/label tag defaulting to `INBOX`, `enabled`, `lastUid`, `lastCheckedAt`, `lastError`).
-  - Record mailbox `UIDNEXT` / connection timestamp when an account is added so only newly arriving emails are scanned (no historical inbox backfills).
-  - Parse airline emails via `Schema.org/FlightReservation` JSON-LD extraction and airline domain/text pattern heuristics for new bookings, flight number/schedule changes, and cancellations using `ImapFlow` and `mailparser`.
-  - Deduplicate across inboxes via `Message-ID` and `PNR + Carrier + Flight Number + Departure Date` without persisting raw email bodies to disk.
-- **Dedicated Email Scanner Settings Tab (Modular Architecture)**
-  - Add a dedicated **Email Scanner** tab in **Settings** (`EmailScannerTab.tsx`) split into single-responsibility sub-components under `src/components/settings/emailScanner/` (account list/status cards, add/edit account modal, polling interval card, connection test) and dedicated service modules under `src/services/emailScanner/`.
-- **Multi-Item Email Review Queue & Notifications**
-  - Store parsed email events in an `email_queue` table (tagged with source account label) rather than modifying flights automatically.
-  - Add a dashboard **Email Queue** manager modal supporting multiple pending items with per-item and bulk **Add / Apply**, **Edit Before Adding**, and **Deny** actions.
-  - Dispatch optional notifications (Discord, Slack, Generic Webhook, SMTP) when new email events are queued with deep links to review, edit, or deny items.
 
 ### Release v0.9.0: Optional Authentication & Passkeys
 - **Optional Single-User Username & Password Auth**

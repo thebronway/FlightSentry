@@ -10,9 +10,10 @@ import {
   XCircle,
   Link2,
   AlertCircle,
+  Coins,
 } from 'lucide-react';
 import { EmailQueueItem } from '@/types';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, isPointsCurrency } from '@/utils/format';
 import { getAirlineName } from '@/utils/airline';
 
 export interface ActiveFlightSummary {
@@ -75,6 +76,15 @@ export default function EmailQueueItemCard({
   const meta = EVENT_BADGES[item.eventType] || EVENT_BADGES.new_booking;
   const carrierCode = (item.airline || '').toUpperCase();
   const carrierName = carrierCode ? getAirlineName(carrierCode) : null;
+  const isPointsItem = item.isPoints === 1 || isPointsCurrency(item.currency);
+  const isConvertingWatched = item.eventType === 'new_booking' && Boolean(matchedFlight);
+  const applyButtonLabel = isConvertingWatched
+    ? isPointsItem
+      ? 'Convert to Booked (Points)'
+      : 'Convert to Booked'
+    : item.eventType === 'new_booking' && isPointsItem
+    ? 'Add Points Flight'
+    : meta.applyLabel;
 
   return (
     <div
@@ -101,6 +111,13 @@ export default function EmailQueueItemCard({
           <span className={`px-2 py-0.5 rounded border text-[11px] font-bold ${meta.badgeClass}`}>
             {meta.label}
           </span>
+
+          {isPointsItem && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-amber-950/50 text-amber-300 border-amber-800/60 text-[11px] font-semibold">
+              <Coins className="w-3 h-3 text-amber-400" />
+              <span>{item.currency && item.currency !== 'PTS' ? item.currency : 'Points / Miles'}</span>
+            </span>
+          )}
 
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gunmetal-card border border-gunmetal-border text-[11px] font-semibold text-sky-300">
             <Mail className="w-3 h-3 text-sky-400" />
@@ -159,12 +176,15 @@ export default function EmailQueueItemCard({
 
         <div className="p-2.5 rounded-lg bg-gunmetal-card/80 border border-gunmetal-border">
           <span className="text-[10px] uppercase tracking-wider text-gunmetal-muted block">
-            PNR / Paid Fare
+            {isPointsItem ? 'PNR / Points Redeemed' : 'PNR / Paid Fare'}
           </span>
           <span className="font-mono text-slate-100 block mt-0.5">
             {item.pnr ? `PNR ${item.pnr}` : 'No PNR'}
             {item.price && item.price > 0
-              ? ` · ${formatCurrency(item.price, item.currency || 'USD')}`
+              ? ` · ${formatCurrency(item.price, isPointsItem ? (item.currency || 'PTS') : (item.currency || 'USD'))}`
+              : ''}
+            {isPointsItem && item.taxesAmount && item.taxesAmount > 0
+              ? ` (+${formatCurrency(item.taxesAmount, item.taxesCurrency || 'USD')})`
               : ''}
           </span>
         </div>
@@ -187,13 +207,18 @@ export default function EmailQueueItemCard({
           <div className="p-2 rounded-lg bg-sky-950/30 border border-sky-800/50 flex items-center gap-2 text-[11px] text-sky-200">
             <Link2 className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
             <span>
-              Matched Tracked Flight:{' '}
+              {item.eventType === 'new_booking' ? 'Matches Watched ' : 'Matched Tracked Flight: '}
               <strong className="font-mono">
-                {matchedFlight.airline} {matchedFlight.flightNumber || ''} (
-                {matchedFlight.origin || '?'} &rarr; {matchedFlight.destination || '?'} on{' '}
+                {matchedFlight.airline && matchedFlight.flightNumber
+                  ? `${matchedFlight.airline} ${matchedFlight.flightNumber}`
+                  : 'Route Watch'}{' '}
+                ({matchedFlight.origin || '?'} &rarr; {matchedFlight.destination || '?'} on{' '}
                 {matchedFlight.departureDate})
               </strong>{' '}
               [{matchedFlight.status}]
+              {item.eventType === 'new_booking'
+                ? ' — applying will convert in place and keep price history'
+                : ''}
             </span>
           </div>
         )}
@@ -245,7 +270,7 @@ export default function EmailQueueItemCard({
           className="min-h-[38px] px-4 py-1.5 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-40 cursor-pointer"
         >
           <Check className="w-3.5 h-3.5" />
-          <span>{meta.applyLabel}</span>
+          <span>{applyButtonLabel}</span>
         </button>
       </div>
     </div>

@@ -66,7 +66,16 @@ export function formatEmailQueueAlert(
     body += `• **Flight:** ${flightIdent}\n`;
     if (item.pnr) body += `• **PNR:** ${item.pnr}\n`;
     if (item.price && item.price > 0) {
-      body += `• **Paid Fare:** ${formatCurrency(item.price, item.currency || defaultCurrency)}\n`;
+      if (item.isPoints === 1) {
+        const programLabel = item.currency && item.currency !== 'PTS' ? ` (${item.currency})` : '';
+        const taxesSuffix =
+          item.taxesAmount && item.taxesAmount > 0
+            ? ` + ${formatCurrency(item.taxesAmount, item.taxesCurrency || defaultCurrency)} taxes`
+            : '';
+        body += `• **Points Redeemed:** ${formatCurrency(item.price, item.currency || 'PTS')}${programLabel}${taxesSuffix}\n`;
+      } else {
+        body += `• **Paid Fare:** ${formatCurrency(item.price, item.currency || defaultCurrency)}\n`;
+      }
     }
     if (item.emailSubject) {
       body += `• **Subject:** ${item.emailSubject}\n`;
@@ -106,9 +115,20 @@ export function formatEmailQueueAlert(
       htmlBody += `<p style="margin: 4px 0; font-size: 13px;"><strong>PNR:</strong> ${escapeHtml(item.pnr)}</p>`;
     }
     if (item.price && item.price > 0) {
-      htmlBody += `<p style="margin: 4px 0; font-size: 13px;"><strong>Paid Fare:</strong> ${escapeHtml(
-        formatCurrency(item.price, item.currency || defaultCurrency)
-      )}</p>`;
+      if (item.isPoints === 1) {
+        const programLabel = item.currency && item.currency !== 'PTS' ? ` (${escapeHtml(item.currency)})` : '';
+        const taxesSuffix =
+          item.taxesAmount && item.taxesAmount > 0
+            ? ` + ${escapeHtml(formatCurrency(item.taxesAmount, item.taxesCurrency || defaultCurrency))} taxes`
+            : '';
+        htmlBody += `<p style="margin: 4px 0; font-size: 13px;"><strong>Points Redeemed:</strong> ${escapeHtml(
+          formatCurrency(item.price, item.currency || 'PTS')
+        )}${programLabel}${taxesSuffix}</p>`;
+      } else {
+        htmlBody += `<p style="margin: 4px 0; font-size: 13px;"><strong>Paid Fare:</strong> ${escapeHtml(
+          formatCurrency(item.price, item.currency || defaultCurrency)
+        )}</p>`;
+      }
     }
     if (item.emailSubject) {
       htmlBody += `<p style="margin: 4px 0; font-size: 12px; color: #64748b;">Subject: ${escapeHtml(

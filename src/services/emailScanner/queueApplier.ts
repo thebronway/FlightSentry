@@ -5,6 +5,9 @@ import { historyDb } from '../../db/history';
 import { settingsDb } from '../../db/settings';
 import { isValidAirlineCode } from '../../utils/airline';
 import { getTodayDateString } from '../../utils/date';
+import { formatCurrency, isPointsCurrency } from '../../utils/format';
+import { calculateNextCheck } from '../../utils/queue';
+import { parseConfiguredPointsCurrencies, resolvePointsCurrencyLabel } from './pointsMatcher';
 
 export interface ApplyQueueItemResult {
   queueItemId: number;
@@ -35,6 +38,9 @@ export function applyEmailQueueItem(
       | 'fareTier'
       | 'price'
       | 'currency'
+      | 'isPoints'
+      | 'taxesAmount'
+      | 'taxesCurrency'
       | 'matchedFlightId'
     >
   >
@@ -74,9 +80,22 @@ export function applyEmailQueueItem(
     const rawFlightNum = (item.flightNumber || '').trim().replace(/\D+/g, '');
     const hasSpecificFlight = Boolean(validCarrier && rawFlightNum);
 
+    const configuredPoints = parseConfiguredPointsCurrencies(settings.pointsCurrencies);
+    const isPointsBooking = Boolean(
+      item.isPoints === 1 ||
+        isPointsCurrency(item.currency) ||
+        (item.currency && configuredPoints.includes(item.currency))
+    );
+
+    if (isPointsBooking && !hasSpecificFlight) {
+      throw new Error(
+        'Points bookings require a valid 2-letter carrier code and flight number. Click "Edit Before Adding" to complete them.'
+      );
+    }
+
     const searchMode: Flight['searchMode'] = hasSpecificFlight ? 'FlightNumber' : 'Route';
     const airlineCode = validCarrier || 'MANUAL';
-    const isManual = validCarrier ? 0 : 1;
+    const isManual = isPointsBooking || !validCarrier ? 1 : 0;
 
     const paidPrice =
       typeof item.price === 'number' && !Number.isNaN(item.price) && item.price > 0
@@ -86,7 +105,15 @@ export function applyEmailQueueItem(
 
     const cabinClass = item.cabinClass || settings.defaultCabinClass || 'economy';
     const fareTier = item.fareTier || settings.defaultFareTier || 'Standard';
-    const currency = (item.currency || settings.currency || 'USD').trim().toUpperCase();
+
+    const currency = isPointsBooking
+      ? resolvePointsCurrencyLabel({
+          detectedProgramLabel: item.currency,
+          airlineCode: validCarrier,
+          configuredCurrencies: configuredPoints,
+        })
+      : (item.currency || settings.currency || 'USD').trim().toUpperCase();
+
     const bookingDate =
       item.emailDate && /^\d{4}-\d{2}-\d{2}/.test(item.emailDate)
         ? item.emailDate.slice(0, 10)
@@ -97,6 +124,88 @@ export function applyEmailQueueItem(
       scheduleNotes.push(
         `Scheduled ${item.departureTime || '?'} - ${item.arrivalTime || '?'}`
       );
+    }
+    if (isPointsBooking && item.taxesAmount && item.taxesAmount > 0) {
+      scheduleNotes.push(
+        `Taxes & fees: ${formatCurrency(item.taxesAmount, item.taxesCurrency || settings.currency || 'USD')}`
+      );
+    }
+
+    // If matched to an existing Watching flight/route, convert it in place to preserve price history
+    if (item.matchedFlightId) {
+      const watchedTarget = flightDb.getById(item.matchedFlightId);
+      if (watchedTarget && watchedTarget.status !== 'Past') {
+        const mergedNotes = watchedTarget.notes
+          ? `${watchedTarget.notes} | ${scheduleNotes.join(' · ')}`
+          : scheduleNotes.join(' · ');
+        const effectiveAirline = validCarrier || watchedTarget.airline || 'MANUAL';
+        const effectiveFlightNumber = hasSpecificFlight
+          ? rawFlightNum
+          : watchedTarget.flightNumber || null;
+        const effectiveSearchMode: Flight['searchMode'] = effectiveFlightNumber
+          ? 'FlightNumber'
+          : watchedTarget.searchMode;
+        const effectiveIsManual = isPointsBooking || watchedTarget.isManual === 1 ? 1 : 0;
+
+        flightDb.update(watchedTarget.id, {
+          searchMode: effectiveSearchMode,
+          origin,
+          destination,
+          departureDate,
+          airline: effectiveAirline,
+          bookingAirline: validCarrier || watchedTarget.bookingAirline || effectiveAirline,
+          flightNumber: effectiveFlightNumber,
+          pnr: item.pnr ? item.pnr.trim().toUpperCase() : watchedTarget.pnr,
+          fareTier,
+          cabinClass,
+          baselinePrice:
+            watchedTarget.baselinePrice > 0 ? watchedTarget.baselinePrice : initialBaseline,
+          purchasePrice: paidPrice,
+          originalPurchasePrice: paidPrice,
+          currentPrice: paidPrice ?? watchedTarget.currentPrice,
+          currency,
+          bookingDate,
+          notes: mergedNotes,
+          priceTrackingDirection: 'drop',
+          isManual: effectiveIsManual,
+          disableNotifications: effectiveIsManual === 1 ? 1 : watchedTarget.disableNotifications,
+          status: effectiveIsManual === 1 || watchedTarget.status === 'Paused' ? 'Paused' : 'Booked',
+          monitorRouteAlternatives:
+            effectiveIsManual === 1
+              ? 0
+              : watchedTarget.searchMode === 'Route'
+              ? 1
+              : watchedTarget.monitorRouteAlternatives ?? 0,
+        });
+
+        historyDb.insert(watchedTarget.id, initialBaseline, 'Booked', {
+          airline: validCarrier,
+          flightNumber: effectiveFlightNumber,
+          metadata: JSON.stringify({
+            milestone: isPointsBooking ? 'Purchased Flight (Points)' : 'Purchased Flight',
+            accountLabel: item.accountLabel,
+            pnr: item.pnr || null,
+            pointsCurrency: isPointsBooking ? currency : null,
+          }),
+          sourceUsed: isPointsBooking ? 'Price Paid' : 'Email Scanner',
+        });
+
+        const updatedWatched = flightDb.getById(watchedTarget.id);
+        if (updatedWatched) {
+          const nextCheck =
+            effectiveIsManual === 1
+              ? new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString()
+              : calculateNextCheck(updatedWatched, settings);
+          flightDb.updateNextCheckAt(watchedTarget.id, nextCheck);
+        }
+
+        emailQueueDb.markApplied(queueItemId);
+        return {
+          queueItemId,
+          flightId: watchedTarget.id,
+          eventType: 'new_booking',
+        };
+      }
     }
 
     const newFlightId = flightDb.create({
@@ -121,7 +230,7 @@ export function applyEmailQueueItem(
       minDropPercent: null,
       notes: scheduleNotes.join(' · '),
       scheduleOverride: null,
-      disableNotifications: 0,
+      disableNotifications: isPointsBooking ? 1 : 0,
       nextCheckAt: isManual
         ? new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString()
         : new Date().toISOString(),
@@ -148,11 +257,12 @@ export function applyEmailQueueItem(
       airline: validCarrier,
       flightNumber: hasSpecificFlight ? rawFlightNum : null,
       metadata: JSON.stringify({
-        milestone: 'Imported from Email',
+        milestone: isPointsBooking ? 'Purchased Flight (Points)' : 'Imported from Email',
         accountLabel: item.accountLabel,
         pnr: item.pnr || null,
+        pointsCurrency: isPointsBooking ? currency : null,
       }),
-      sourceUsed: 'Email Scanner',
+      sourceUsed: isPointsBooking ? 'Price Paid' : 'Email Scanner',
     });
 
     emailQueueDb.markApplied(queueItemId);

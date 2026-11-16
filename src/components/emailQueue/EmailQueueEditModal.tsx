@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, FormEvent } from 'react';
-import { X, Pencil, Check, AlertCircle } from 'lucide-react';
+import { X, Pencil, Check, AlertCircle, DollarSign, Coins, Compass } from 'lucide-react';
 import { CabinClass, EmailQueueEventType, EmailQueueItem, FareTier } from '@/types';
+import { getCurrencySymbol, isPointsCurrency } from '@/utils/format';
+import { isValidAirlineCode } from '@/utils/airline';
 import SettingsModalPortal from '../settings/shared/SettingsModalPortal';
 import SettingsSelect from '../settings/shared/SettingsSelect';
 import { ActiveFlightSummary } from './EmailQueueItemCard';
@@ -11,6 +13,8 @@ interface Props {
   isOpen: boolean;
   item: EmailQueueItem | null;
   flights: ActiveFlightSummary[];
+  pointsCurrencies: string[];
+  defaultFiatCurrency: string;
   onClose: () => void;
   onApplied: (queueItemId: number) => void;
 }
@@ -19,6 +23,8 @@ export default function EmailQueueEditModal({
   isOpen,
   item,
   flights,
+  pointsCurrencies,
+  defaultFiatCurrency,
   onClose,
   onApplied,
 }: Props) {
@@ -32,11 +38,14 @@ export default function EmailQueueEditModal({
   const [departureTime, setDepartureTime] = useState('');
   const [arrivalTime, setArrivalTime] = useState('');
   const [pnr, setPnr] = useState('');
+  const [isPoints, setIsPoints] = useState(false);
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('USD');
+  const [taxesAmount, setTaxesAmount] = useState('');
   const [cabinClass, setCabinClass] = useState<CabinClass>('economy');
   const [fareTier, setFareTier] = useState<FareTier>('Standard');
 
+  const [detectingRoute, setDetectingRoute] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,13 +62,76 @@ export default function EmailQueueEditModal({
     setDepartureTime(item.departureTime || '');
     setArrivalTime(item.arrivalTime || '');
     setPnr(item.pnr || '');
+
+    const itemIsPoints = Boolean(
+      item.isPoints === 1 ||
+        isPointsCurrency(item.currency) ||
+        (item.currency && pointsCurrencies.includes(item.currency))
+    );
+    setIsPoints(itemIsPoints);
     setPrice(item.price !== null && item.price !== undefined ? String(item.price) : '');
-    setCurrency(item.currency || 'USD');
+    setCurrency(
+      itemIsPoints
+        ? item.currency || (pointsCurrencies.length > 0 ? pointsCurrencies[0] : 'PTS')
+        : item.currency || defaultFiatCurrency || 'USD'
+    );
+    setTaxesAmount(
+      item.taxesAmount !== null && item.taxesAmount !== undefined ? String(item.taxesAmount) : ''
+    );
     setCabinClass(item.cabinClass || 'economy');
     setFareTier(item.fareTier || 'Standard');
-  }, [isOpen, item]);
+  }, [isOpen, item, pointsCurrencies, defaultFiatCurrency]);
 
   if (!isOpen || !item) return null;
+
+  const handlePaymentModeSwitch = (nextIsPoints: boolean) => {
+    setIsPoints(nextIsPoints);
+    if (nextIsPoints) {
+      const nextCurr =
+        isPointsCurrency(currency) || pointsCurrencies.includes(currency)
+          ? currency
+          : pointsCurrencies.length > 0
+          ? pointsCurrencies[0]
+          : 'PTS';
+      setCurrency(nextCurr);
+    } else {
+      setCurrency(defaultFiatCurrency || 'USD');
+    }
+  };
+
+  const handleAutoDetectRoute = async () => {
+    const cleanCarrier = airline.trim().toUpperCase();
+    const cleanNum = flightNumber.trim().replace(/\D+/g, '');
+    if (!isValidAirlineCode(cleanCarrier) || !cleanNum) {
+      setError('Enter a valid 2-letter carrier code and flight number first to auto-detect the route.');
+      return;
+    }
+
+    setDetectingRoute(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/flights/lookup-route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          airline: cleanCarrier,
+          flightNumber: cleanNum,
+          departureDate: departureDate || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.origin && data.destination) {
+        setOrigin(data.origin);
+        setDestination(data.destination);
+      } else {
+        setError(data.error || `Could not auto-detect route for ${cleanCarrier} ${cleanNum}.`);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Route lookup failed');
+    } finally {
+      setDetectingRoute(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -68,7 +140,11 @@ export default function EmailQueueEditModal({
 
     try {
       const parsedPrice = price.trim() !== '' ? Number(price) : null;
+      const parsedTaxes = taxesAmount.trim() !== '' ? Number(taxesAmount) : null;
       const parsedFlightId = matchedFlightId.trim() !== '' ? Number(matchedFlightId) : null;
+      const normalizedCurrency = isPoints
+        ? currency.trim() || (pointsCurrencies[0] ?? 'PTS')
+        : currency.trim().toUpperCase() || defaultFiatCurrency || 'USD';
 
       const res = await fetch(`/api/email-queue/${item.id}/apply`, {
         method: 'POST',
@@ -84,8 +160,11 @@ export default function EmailQueueEditModal({
           departureTime: departureTime.trim(),
           arrivalTime: arrivalTime.trim(),
           pnr: pnr.trim().toUpperCase(),
+          isPoints: isPoints ? 1 : 0,
           price: parsedPrice,
-          currency: currency.trim().toUpperCase(),
+          currency: normalizedCurrency,
+          taxesAmount: isPoints ? parsedTaxes : null,
+          taxesCurrency: isPoints && parsedTaxes ? defaultFiatCurrency || 'USD' : null,
           cabinClass,
           fareTier,
         }),
@@ -149,7 +228,7 @@ export default function EmailQueueEditModal({
                   onChange={(e) => setEventType(e.target.value as EmailQueueEventType)}
                 >
                   <option value="new_booking" className="bg-gunmetal-card text-slate-200">
-                    New Booking (Add Booked Flight)
+                    New Booking (Add / Convert to Booked)
                   </option>
                   <option value="schedule_change" className="bg-gunmetal-card text-slate-200">
                     Schedule Change (Update Tracked Flight)
@@ -160,7 +239,28 @@ export default function EmailQueueEditModal({
                 </SettingsSelect>
               </div>
 
-              {(eventType === 'schedule_change' || eventType === 'cancellation') && (
+              {eventType === 'new_booking' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Booking Destination
+                  </label>
+                  <SettingsSelect
+                    value={matchedFlightId}
+                    onChange={(e) => setMatchedFlightId(e.target.value)}
+                  >
+                    <option value="" className="bg-gunmetal-card text-slate-200">
+                      Create as New Booked Flight
+                    </option>
+                    {flights
+                      .filter((f) => f.status !== 'Booked' && !f.pnr)
+                      .map((f) => (
+                        <option key={f.id} value={f.id} className="bg-gunmetal-card text-slate-200">
+                          Convert Watched: {f.airline && f.flightNumber ? `${f.airline} ${f.flightNumber}` : 'Route'} · {f.origin || '?'}→{f.destination || '?'} ({f.departureDate})
+                        </option>
+                      ))}
+                  </SettingsSelect>
+                </div>
+              ) : (
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
                     Target Tracked Flight *
@@ -241,6 +341,20 @@ export default function EmailQueueEditModal({
               </div>
             </div>
 
+            {isValidAirlineCode(airline) && flightNumber.trim().length > 0 && (!origin || !destination) && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  disabled={detectingRoute}
+                  onClick={() => void handleAutoDetectRoute()}
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-sky-300 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <Compass className={`w-3.5 h-3.5 ${detectingRoute ? 'animate-spin' : ''}`} />
+                  <span>{detectingRoute ? 'Detecting Route...' : `Auto-Detect Route for ${airline} ${flightNumber}`}</span>
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -279,49 +393,137 @@ export default function EmailQueueEditModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  PNR / Confirmation
-                </label>
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={pnr}
-                  onChange={(e) => setPnr(e.target.value.toUpperCase())}
-                  placeholder="K8M4QP"
-                  className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono uppercase text-sm focus:outline-none focus:border-slate-500"
-                />
+            {/* Booking Payment Type Toggle: Cash Fare vs Points / Miles */}
+            <div className="p-3.5 rounded-xl bg-gunmetal-canvas/70 border border-gunmetal-border space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Booking Payment Type
+                </span>
+                <div className="inline-flex rounded-lg bg-gunmetal-canvas border border-gunmetal-border p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentModeSwitch(false)}
+                    className={`min-h-[34px] px-3 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      !isPoints
+                        ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    <DollarSign className="w-3.5 h-3.5" />
+                    <span>Cash Fare</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentModeSwitch(true)}
+                    className={`min-h-[34px] px-3 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      isPoints
+                        ? 'bg-amber-950/60 text-amber-300 border border-amber-700/60 shadow-sm'
+                        : 'text-gunmetal-muted hover:text-slate-200'
+                    }`}
+                  >
+                    <Coins className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Points / Miles</span>
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Price Paid
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="348.20"
-                  className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono text-sm focus:outline-none focus:border-slate-500"
-                />
+              <div className={`grid grid-cols-1 ${isPoints ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    PNR / Confirmation
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={pnr}
+                    onChange={(e) => setPnr(e.target.value.toUpperCase())}
+                    placeholder="JIFIPH"
+                    className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono uppercase text-sm focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    {isPoints ? 'Points Redeemed' : 'Price Paid'}
+                  </label>
+                  <input
+                    type="number"
+                    step={isPoints ? '1' : '0.01'}
+                    min="0"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder={isPoints ? '15400' : '348.20'}
+                    className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono text-sm focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    {isPoints ? 'Points Program' : 'Currency'}
+                  </label>
+                  {isPoints ? (
+                    <SettingsSelect
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                    >
+                      {pointsCurrencies.length === 0 && (
+                        <option value="PTS" className="bg-gunmetal-card text-slate-200">
+                          PTS (Points)
+                        </option>
+                      )}
+                      {currency &&
+                        currency !== 'PTS' &&
+                        !pointsCurrencies.includes(currency) && (
+                          <option value={currency} className="bg-gunmetal-card text-slate-200">
+                            {currency} (Detected)
+                          </option>
+                        )}
+                      {pointsCurrencies.map((p) => (
+                        <option key={p} value={p} className="bg-gunmetal-card text-slate-200">
+                          {p}
+                        </option>
+                      ))}
+                      {pointsCurrencies.length > 0 && (
+                        <option value="PTS" className="bg-gunmetal-card text-slate-200">
+                          PTS (Generic Points)
+                        </option>
+                      )}
+                    </SettingsSelect>
+                  ) : (
+                    <input
+                      type="text"
+                      maxLength={5}
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                      placeholder={defaultFiatCurrency || 'USD'}
+                      className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono uppercase text-sm focus:outline-none focus:border-slate-500"
+                    />
+                  )}
+                </div>
+
+                {isPoints && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Taxes &amp; Fees ({getCurrencySymbol(defaultFiatCurrency)})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={taxesAmount}
+                      onChange={(e) => setTaxesAmount(e.target.value)}
+                      placeholder="5.60"
+                      className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono text-sm focus:outline-none focus:border-slate-500"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Currency
-                </label>
-                <input
-                  type="text"
-                  maxLength={5}
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                  placeholder="USD"
-                  className="w-full min-h-[42px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 font-mono uppercase text-sm focus:outline-none focus:border-slate-500"
-                />
-              </div>
+              {isPoints && (
+                <p className="text-[11px] text-amber-200/85">
+                  Points bookings are added in <strong>Points-Only Manual Tracking</strong> mode (automated API checks disabled).
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

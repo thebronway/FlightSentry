@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.8.8-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.8.9-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -30,6 +30,7 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Quota Modes & Resets:** Configure monthly recurring quota resets by day of the month (1st–31st) or one-time credit pools per API provider.
 - **Smart Scheduling:** Preserves API tokens by dynamically scaling check frequency based on departure date—flights closer to departure are checked more frequently, while distant flights are polled on longer intervals.
 - **Multi-Strategy Query Routing:** Pool quotas across active providers using Round-Robin rotation, Balanced Usage (% quota consumed), or Exhaust Quota priority, with optional scraper-first prioritization.
+- **Email Scanner & Review Queue:** Monitors configured IMAP inboxes for airline booking confirmations, schedule changes, and cancellations (supporting both cash fares and configured Points & Miles currencies), and auto-links matching watched flights or routes to convert them in place while preserving price history.
 
 ## Data Sources
 FlightSentry connects to multiple flight search APIs and a self-hosted scraper service to pull live flight fares. Several API providers offer free tiers (typically around 100 searches per month). FlightSentry rotates requests, balances quota usage, or fails over across configured sources to maintain price tracking coverage.
