@@ -519,3 +519,248 @@ export const devProviderTestSchema = z.object({
 });
 
 export type DevProviderTestInput = z.infer<typeof devProviderTestSchema>;
+
+export const createApiKeySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'API key name is required')
+    .max(80, 'API key name must be 80 characters or fewer'),
+  scope: z.enum(['read', 'write', 'admin']).default('read'),
+  expiresInDays: z
+    .number()
+    .int('Expiration must be a whole number of days')
+    .min(1, 'Expiration must be at least 1 day')
+    .max(3650, 'Expiration cannot exceed 3650 days')
+    .optional()
+    .nullable(),
+});
+
+export const publicFlightCreateSchema = flightSchema.and(
+  z.object({
+    status: z.enum(['Watching', 'Booked', 'Paused']).optional(),
+    runInitialCheck: z.boolean().optional().default(true),
+  })
+);
+
+export const publicFlightPatchSchema = z
+  .object({
+    searchMode: z.enum(['Route', 'FlightNumber']).optional(),
+    origin: z
+      .string()
+      .regex(
+        /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+        'Must be a 3-letter IATA code or comma-separated IATA codes'
+      )
+      .toUpperCase()
+      .optional()
+      .nullable(),
+    destination: z
+      .string()
+      .regex(
+        /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+        'Must be a 3-letter IATA code or comma-separated IATA codes'
+      )
+      .toUpperCase()
+      .optional()
+      .nullable(),
+    departureDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD')
+      .optional(),
+    airline: z.string().trim().toUpperCase().optional().nullable(),
+    bookingAirline: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .refine((val) => !val || isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE)
+      .optional()
+      .nullable(),
+    flightNumber: z
+      .string()
+      .regex(/^\d+$/, 'Flight number must be numbers only')
+      .optional()
+      .nullable(),
+    includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+    excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+    pnr: z.string().max(10).optional().nullable(),
+    fareTier: z.enum(['Basic Economy', 'Standard']).optional(),
+    cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).optional(),
+    baselinePrice: z.number().positive().optional().nullable(),
+    purchasePrice: z.number().positive().optional().nullable(),
+    originalPurchasePrice: z.number().positive().optional().nullable(),
+    targetPrice: z.number().positive().optional().nullable(),
+    minDropDollar: z.number().nonnegative().optional().nullable(),
+    minDropPercent: z.number().nonnegative().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    scheduleOverride: z.string().optional().nullable(),
+    disableNotifications: z.number().int().min(0).max(1).optional(),
+    status: z.enum(['Watching', 'Booked', 'Paused', 'Past']).optional(),
+    earliestDeparture: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    latestDeparture: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    noRedeye: z.number().int().min(0).max(1).optional(),
+    priceTrackingDirection: z.enum(['drop', 'increase', 'both']).optional(),
+    minIncreaseDollar: z.number().nonnegative().optional().nullable(),
+    minIncreasePercent: z.number().nonnegative().optional().nullable(),
+    maxStops: z.number().int().min(0).max(2).optional().nullable(),
+    currency: z.string().max(50).optional().nullable(),
+    monitorRouteAlternatives: z.number().int().min(0).max(1).optional(),
+    bookingDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD')
+      .optional()
+      .nullable(),
+    isManual: z.number().int().min(0).max(1).optional(),
+    maxLayoverMinutes: z.number().int().nonnegative().optional().nullable(),
+    excludedConnectingAirports: z.string().optional().nullable(),
+    maxTotalDurationMinutes: z.number().int().positive().optional().nullable(),
+    includedAlliances: z.string().optional().nullable(),
+    excludedAlliances: z.string().optional().nullable(),
+  })
+  .strict();
+
+export const publicFlightHistoryEntrySchema = z.object({
+  price: z.number().positive('Price or points must be greater than zero'),
+  date: z
+    .string()
+    .refine((val) => {
+      const time = new Date(val).getTime();
+      return !Number.isNaN(time) && time <= Date.now() + 60000;
+    }, 'Date and time cannot be in the future')
+    .optional(),
+  airline: airlineCodeSchema,
+  flightNumber: z
+    .string()
+    .regex(/^\d+$/, 'Flight number must be numeric')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  origin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+      'Origin must be a 3-letter IATA code or comma-separated IATA codes'
+    )
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  destination: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(
+      /^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/,
+      'Destination must be a 3-letter IATA code or comma-separated IATA codes'
+    )
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+});
+
+export const publicFlightConvertSchema = z.object({
+  purchasePrice: z.number().positive('Purchase price must be greater than zero'),
+  airline: airlineCodeSchema,
+  flightNumber: z
+    .string()
+    .trim()
+    .regex(/^\d+$/, 'Flight number must be numbers only')
+    .min(1, 'Flight number is required'),
+  pnr: z.string().trim().max(10).optional().nullable().or(z.literal('')),
+  currency: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  monitorRouteAlternatives: z.number().int().min(0).max(1).optional().default(1),
+  origin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Origin must be a 3-letter IATA code')
+    .optional()
+    .nullable(),
+  destination: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Destination must be a 3-letter IATA code')
+    .optional()
+    .nullable(),
+  includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+  excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+  maxStops: z.number().int().min(0).max(2).optional().nullable(),
+  earliestDeparture: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  latestDeparture: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  noRedeye: z.number().int().min(0).max(1).optional().default(0),
+});
+
+export const publicFlightRebookSchema = z.object({
+  newPrice: z.number().positive('New rebooked price must be greater than zero'),
+  airline: airlineCodeSchema.optional().nullable(),
+  flightNumber: z
+    .string()
+    .trim()
+    .regex(/^\d+$/, 'Flight number must be numeric')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  origin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, 'Origin must be a 3-letter IATA airport code')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  destination: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, 'Destination must be a 3-letter IATA airport code')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  pnr: z.string().trim().max(10).optional().nullable().or(z.literal('')),
+  notes: z.string().optional().nullable(),
+  checkedAt: z
+    .string()
+    .refine((val) => {
+      const time = new Date(val).getTime();
+      return !Number.isNaN(time) && time <= Date.now() + 60000;
+    }, 'Timestamp cannot be in the future')
+    .optional(),
+});
+
+export const publicRouteLookupSchema = z.object({
+  airline: airlineCodeSchema,
+  flightNumber: z
+    .string()
+    .trim()
+    .min(1, 'Flight number is required')
+    .max(10, 'Flight number is too long'),
+  departureDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Departure date must be YYYY-MM-DD')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+});

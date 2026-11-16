@@ -373,6 +373,47 @@ export function initDb() {
         // Ignored
     }
 
+    // Ensure Public API keys and request audit log tables exist
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS api_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                keyPrefix TEXT NOT NULL,
+                keyHash TEXT NOT NULL UNIQUE,
+                scopes TEXT NOT NULL DEFAULT '["read"]',
+                expiresAt TEXT,
+                lastUsedAt TEXT,
+                revokedAt TEXT,
+                createdAt TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_api_keys_hash
+                ON api_keys(keyHash);
+
+            CREATE INDEX IF NOT EXISTS idx_api_keys_revoked_expires
+                ON api_keys(revokedAt, expiresAt);
+
+            CREATE TABLE IF NOT EXISTS api_request_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                apiKeyId INTEGER,
+                keyPrefix TEXT,
+                method TEXT NOT NULL,
+                path TEXT NOT NULL,
+                statusCode INTEGER NOT NULL,
+                ipAddress TEXT,
+                durationMs INTEGER,
+                createdAt TEXT NOT NULL,
+                FOREIGN KEY (apiKeyId) REFERENCES api_keys(id) ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_api_request_logs_created
+                ON api_request_logs(createdAt DESC);
+        `);
+    } catch {
+        // Ignored
+    }
+
     // Seed the single settings row if it doesn't exist (APIs disabled by default)
     const getSettings = db.prepare('SELECT id FROM settings WHERE id = 1');
     if (!getSettings.get()) {

@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-15*  
-*Current Version: v0.9.0*
+*Last updated: 2026-11-16*  
+*Current Version: v0.9.1*
 
 ## Changelog
+
+### Release v0.9.1
+- Named API key generation, optional expiration, revocation, and permanent deletion under **Settings → Security** (`api_keys` SQLite table storing SHA-256 hashes, `fss_live_...` prefixes, `lastUsedAt`, and one-time raw token display).
+- Scoped bearer authentication (`read`, `write`, `admin`) for `/api/v1/*` via `Authorization: Bearer <key>` or `X-API-Key` ahead of the web-login-disabled check, with per-key sliding-window rate limiting, standardized JSON error envelopes, and `api_request_logs` audit logging.
+- Versioned `/api/v1/flights` and `/api/v1/flights/:id` endpoints supporting filtered flight listing with price summary metrics and nonstop/connecting floor breakdowns, detailed flight inspection with paginated price history and competitor breakdowns, flight creation (with optional `runInitialCheck`), partial updates, and deletion.
+- Flight lifecycle, lookup, email queue, and telemetry endpoints (`/api/v1/flights/:id/check`, `/history`, `/convert`, `/rebook`, `/cleanup-past`, `/lookup-route`, `/api/v1/email-queue` approve/deny, and `/api/v1/system/status`).
+- Machine-readable OpenAPI 3.1 specification at `GET /api/v1/openapi.json` and interactive **Public API Reference** viewer at `/api-docs` (linked in **Settings → Security**).
 
 ### Release v0.9.0
 - Optional single-user username and password authentication (disabled by default) configured under **Settings → Security** with Node `crypto.scrypt` password hashing and per-user salts.

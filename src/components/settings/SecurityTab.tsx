@@ -2,12 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { AuthPasskeyPublic, AuthSessionPublic, AuthStatusResponse } from '@/types';
+import {
+  ApiKeyPublic,
+  AuthPasskeyPublic,
+  AuthSessionPublic,
+  AuthStatusResponse,
+} from '@/types';
 import SettingsIntroBanner from './shared/SettingsIntroBanner';
 import AuthStatusCard from './security/AuthStatusCard';
 import CredentialsCard from './security/CredentialsCard';
 import PasskeysCard from './security/PasskeysCard';
 import ActiveSessionsCard from './security/ActiveSessionsCard';
+import ApiKeysCard from './security/ApiKeysCard';
 import DisableAuthModal from './security/DisableAuthModal';
 
 interface Props {
@@ -18,15 +24,17 @@ export default function SecurityTab({ onNotify }: Props) {
   const [status, setStatus] = useState<AuthStatusResponse | null>(null);
   const [passkeys, setPasskeys] = useState<AuthPasskeyPublic[]>([]);
   const [sessions, setSessions] = useState<AuthSessionPublic[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeyPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDisableModal, setShowDisableModal] = useState(false);
 
   const loadSecurityData = useCallback(async () => {
     try {
-      const [statusRes, passkeysRes, sessionsRes] = await Promise.all([
+      const [statusRes, passkeysRes, sessionsRes, apiKeysRes] = await Promise.all([
         fetch('/api/auth/session', { cache: 'no-store' }),
         fetch('/api/auth/passkey', { cache: 'no-store' }),
         fetch('/api/auth/sessions', { cache: 'no-store' }),
+        fetch('/api/auth/api-keys', { cache: 'no-store' }),
       ]);
 
       if (statusRes.ok) {
@@ -40,6 +48,10 @@ export default function SecurityTab({ onNotify }: Props) {
       if (sessionsRes.ok) {
         const sessData = await sessionsRes.json();
         setSessions(Array.isArray(sessData.sessions) ? sessData.sessions : []);
+      }
+      if (apiKeysRes.ok) {
+        const keysData = await apiKeysRes.json();
+        setApiKeys(Array.isArray(keysData.keys) ? keysData.keys : []);
       }
     } catch {
       onNotify('Failed to load security configuration', 'error');
@@ -93,6 +105,12 @@ export default function SecurityTab({ onNotify }: Props) {
         authEnabled={status.authEnabled}
         sessionDurationDays={status.sessionDurationDays ?? 30}
         sessions={sessions}
+        onRefresh={loadSecurityData}
+        onNotify={onNotify}
+      />
+
+      <ApiKeysCard
+        apiKeys={apiKeys}
         onRefresh={loadSecurityData}
         onNotify={onNotify}
       />

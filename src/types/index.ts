@@ -366,10 +366,59 @@ export interface AuthStatusResponse {
 
 export type AuthMethod = 'disabled' | 'session' | 'bearer';
 
+export type ApiKeyScope = 'read' | 'write' | 'admin';
+
+export interface ApiKeyRecord {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  keyHash: string;
+  scopes: string; // JSON array of ApiKeyScope
+  expiresAt?: string | null;
+  lastUsedAt?: string | null;
+  revokedAt?: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyPublic {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  scopes: ApiKeyScope[];
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  isExpired: boolean;
+  isRevoked: boolean;
+}
+
+export interface ApiRequestLog {
+  id: number;
+  apiKeyId?: number | null;
+  keyPrefix?: string | null;
+  method: string;
+  path: string;
+  statusCode: number;
+  ipAddress?: string | null;
+  durationMs?: number | null;
+  createdAt: string;
+}
+
+export interface PublicApiErrorEnvelope {
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+}
+
 export interface AuthContext {
   authenticated: boolean;
   method: AuthMethod;
   username?: string;
   sessionId?: string;
-  scopes?: string[];
+  apiKeyId?: number;
+  apiKeyPrefix?: string;
+  scopes?: ApiKeyScope[];
 }
