@@ -36,15 +36,29 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Enable passkey sign-in on `/login` when accessed over a secure context (`https://` or `localhost`), with clear UI guidance when running over plain HTTP LAN addresses.
 
 ### Release v0.9.1: Public API
-- **API Key Management & Authentication**
-  - Add named API key generation and revocation in Settings (stored hashed in SQLite and displayed once upon creation).
-  - Authenticate external requests via `Authorization: Bearer <key>` (or `X-API-Key`) header with clean JSON `401`/`403` error responses.
-- **Versioned Flight Endpoints (`/api/v1/flights`)**
-  - `GET /api/v1/flights` & `GET /api/v1/flights/:id`: Return tracked flights including route, dates, airline, flight number, cabin class, booked/baseline price, current lowest price, price delta, status, and price history.
-  - `POST /api/v1/flights`: Add a flight to track with full itinerary details, booked price, optional external reference/notes, and an option to trigger an immediate initial price check.
-  - `PATCH /api/v1/flights/:id` & `DELETE /api/v1/flights/:id`: Update flight details (such as resetting the booked price after rebooking or pausing tracking) and delete tracked flights.
-  - Anyother endpoints needed, like doing a flight check now and others
-- **Link to API Reference on website**
+- **API Key Management, Scopes & Authentication**
+  - Add named API key generation, expiration (optional), and revocation in **Settings → Security** (`api_keys` SQLite table storing SHA-256 key hashes, key prefix `fss_live_...`, `lastUsedAt`, and scope permissions, displaying the raw token once on creation).
+  - Support scoped access (`read`, `write`, `admin`) so read-only dashboard widgets (Home Assistant, Homepage, TRMNL) can use restricted keys while automation scripts use `write` keys.
+  - Authenticate `/api/v1/*` requests via `Authorization: Bearer <key>` or `X-API-Key` headers (integrated into the `v0.9.0` auth middleware) with standardized JSON error envelopes (`401 Unauthorized`, `403 Forbidden`, `429 Too Many Requests`, `400 Bad Request`).
+  - Add per-key sliding-window rate limiting and audit logging (`api_request_logs` or `datasource_logs`).
+- **Versioned Flight & Price History Endpoints (`/api/v1/flights`)**
+  - `GET /api/v1/flights`: List tracked flights with optional query filters (`status`, `searchMode`, `airline`, `origin`, `destination`, `isManual`, `currency`) and normalized price summary fields (`currentPrice`, `baselinePrice`, `purchasePrice`, `allTimeLow`, `allTimeHigh`, `priceDelta`, `priceDeltaPercent`, and `nonstop` vs. `withStops` floor breakdown when available).
+  - `GET /api/v1/flights/:id`: Return full flight details (including `bookingAirline`, alliances, co-location clusters, alert thresholds, and schedule cadence) alongside paginated `price_history` checks and competitor carrier breakdowns.
+  - `POST /api/v1/flights`: Create a watched route, watched flight, or booked flight (cash automated, cash manual, or points/miles), supporting all search preferences (`maxStops`, `fareTier`, `cabinClass`, `noRedeye`, `includedAirlines`, `excludedAirlines`, `includedAlliances`, `excludedAlliances`, `monitorRouteAlternatives`), `notes`, and an optional `runInitialCheck` flag.
+  - `PATCH /api/v1/flights/:id`: Update flight settings, pause/resume automated checks (enforcing manual/points guards), or update alert thresholds.
+  - `DELETE /api/v1/flights/:id`: Delete a tracked flight and its associated price history.
+- **Flight Lifecycle & Action Endpoints**
+  - `POST /api/v1/flights/:id/check`: Trigger an immediate live price check (respecting global pause, circuit breaker, provider quotas, and manual/points mode locks) and return the updated fare, provider used, and next scheduled check timestamp.
+  - `POST /api/v1/flights/:id/history`: Log a manual price/points check or competing route flight entry onto an existing flight's history timeline.
+  - `POST /api/v1/flights/:id/convert`: Convert a `Watching` flight to `Booked` in place with `purchasePrice`, `airline`, `flightNumber`, and `pnr`.
+  - `POST /api/v1/flights/:id/rebook`: Log a post-booking rebook or fare credit adjustment, recording the savings milestone in `price_history`.
+  - `POST /api/v1/flights/cleanup-past`: Purge archived `Past` flights by retention window or all past flights.
+- **Route Lookup, Email Queue & System Telemetry Endpoints**
+  - `POST /api/v1/flights/lookup-route`: Resolve origin/destination airport pair(s) for a carrier and flight number.
+  - `GET /api/v1/email-queue` & `POST /api/v1/email-queue/:id/approve` | `deny`: Inspect and act on pending parsed flight emails from external automations (n8n, Home Assistant, Shortcuts).
+  - `GET /api/v1/system/status`: Return instance version, active currency, configured points currencies, global pause/circuit-breaker state, and per-provider quota usage/remaining counts.
+- **OpenAPI Specification & API Reference**
+  - Serve a machine-readable OpenAPI 3.1 spec at `GET /api/v1/openapi.json` and an interactive **API Reference** viewer (linked in **Settings → Security**).
 
 ### Release v0.9.2a: Brand Optimization
 - go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.
@@ -105,7 +119,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - No hosted version yet (but coming in the future)
 
 ### Release v0.9.8
-- TBD
+- Playwright?
 
 ### Release v0.9.9
 - README finalize

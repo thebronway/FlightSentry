@@ -86,7 +86,11 @@ export const settingsDb = {
         defaultExcludedConnectingAirports = @defaultExcludedConnectingAirports,
         defaultMaxTotalDurationMinutes = @defaultMaxTotalDurationMinutes,
         githubSyncEnabled = @githubSyncEnabled,
-        pastFlightRetentionDays = @pastFlightRetentionDays
+        pastFlightRetentionDays = @pastFlightRetentionDays,
+        emailScannerEnabled = @emailScannerEnabled,
+        emailScannerPollIntervalMinutes = @emailScannerPollIntervalMinutes,
+        emailScannerNotifyEnabled = @emailScannerNotifyEnabled,
+        appBaseUrl = @appBaseUrl
       WHERE id = 1
     `);
     stmt.run(updated);

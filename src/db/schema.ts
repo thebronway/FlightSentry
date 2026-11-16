@@ -147,7 +147,77 @@ CREATE TABLE IF NOT EXISTS settings (
     defaultExcludedConnectingAirports TEXT,
     defaultMaxTotalDurationMinutes INTEGER,
     githubSyncEnabled INTEGER NOT NULL DEFAULT 1,
-    pastFlightRetentionDays INTEGER
+    pastFlightRetentionDays INTEGER,
+    emailScannerEnabled INTEGER NOT NULL DEFAULT 0,
+    emailScannerPollIntervalMinutes INTEGER NOT NULL DEFAULT 15,
+    emailScannerNotifyEnabled INTEGER NOT NULL DEFAULT 1,
+    appBaseUrl TEXT
+);
+
+CREATE TABLE IF NOT EXISTS imap_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    host TEXT NOT NULL,
+    port INTEGER NOT NULL DEFAULT 993,
+    tls INTEGER NOT NULL DEFAULT 1,
+    username TEXT NOT NULL,
+    encryptedPassword TEXT NOT NULL,
+    folder TEXT NOT NULL DEFAULT 'INBOX',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    lastUid INTEGER NOT NULL DEFAULT 0,
+    uidValidity INTEGER,
+    baselineTimestamp TEXT NOT NULL,
+    lastCheckedAt TEXT,
+    lastError TEXT,
+    createdAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    accountId INTEGER,
+    accountLabel TEXT NOT NULL,
+    messageId TEXT,
+    emailSubject TEXT,
+    emailFrom TEXT,
+    emailDate TEXT,
+    eventType TEXT NOT NULL,
+    dedupeKey TEXT NOT NULL,
+    pnr TEXT,
+    airline TEXT,
+    flightNumber TEXT,
+    origin TEXT,
+    destination TEXT,
+    departureDate TEXT,
+    departureTime TEXT,
+    arrivalTime TEXT,
+    cabinClass TEXT,
+    fareTier TEXT,
+    price REAL,
+    currency TEXT,
+    isPoints INTEGER NOT NULL DEFAULT 0,
+    taxesAmount REAL,
+    taxesCurrency TEXT,
+    matchedFlightId INTEGER,
+    confidence TEXT NOT NULL DEFAULT 'medium',
+    parserSource TEXT NOT NULL DEFAULT 'heuristic',
+    status TEXT NOT NULL DEFAULT 'pending',
+    createdAt TEXT NOT NULL,
+    resolvedAt TEXT,
+    FOREIGN KEY (accountId) REFERENCES imap_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (matchedFlightId) REFERENCES flights(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_queue_status_created
+    ON email_queue(status, createdAt DESC);
+
+CREATE INDEX IF NOT EXISTS idx_email_queue_dedupe
+    ON email_queue(dedupeKey, status);
+
+CREATE TABLE IF NOT EXISTS email_seen_messages (
+    messageId TEXT PRIMARY KEY,
+    accountId INTEGER,
+    processedAt TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS release_sync_state (

@@ -247,6 +247,127 @@ export const settingsSchema = z.object({
   globalPause: z.number().min(0).max(1),
   githubSyncEnabled: z.number().min(0).max(1).optional(),
   pastFlightRetentionDays: z.number().int().min(1).max(3650).optional().nullable(),
+  emailScannerEnabled: z.number().min(0).max(1).optional(),
+  emailScannerPollIntervalMinutes: z.number().int().min(5).max(1440).optional(),
+  emailScannerNotifyEnabled: z.number().min(0).max(1).optional(),
+  appBaseUrl: safeHttpUrlSchema.transform((val) => val.replace(/\/+$/, '')).optional().nullable().or(z.literal('')),
+});
+
+const imapHostSchema = z
+  .string()
+  .trim()
+  .min(1, 'IMAP host is required')
+  .max(255)
+  .regex(/^[a-zA-Z0-9.-]+$/, 'IMAP host must be a valid hostname or IP address');
+
+const imapFolderSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(128)
+  .default('INBOX');
+
+export const imapConnectionTestSchema = z.object({
+  accountId: z.number().int().positive().optional().nullable(),
+  host: imapHostSchema,
+  port: z.number().int().min(1).max(65535).default(993),
+  tls: z.number().min(0).max(1).default(1),
+  username: z.string().trim().min(1, 'IMAP username is required').max(255),
+  password: z.string().max(512).optional().nullable().or(z.literal('')),
+  folder: imapFolderSchema,
+});
+
+export const imapAccountCreateSchema = z.object({
+  label: z.string().trim().min(1, 'Account label is required').max(80),
+  host: imapHostSchema,
+  port: z.number().int().min(1).max(65535).default(993),
+  tls: z.number().min(0).max(1).default(1),
+  username: z.string().trim().min(1, 'IMAP username is required').max(255),
+  password: z.string().min(1, 'IMAP password is required').max(512),
+  folder: imapFolderSchema,
+  enabled: z.number().min(0).max(1).default(1),
+});
+
+export const imapAccountUpdateSchema = z.object({
+  label: z.string().trim().min(1, 'Account label is required').max(80).optional(),
+  host: imapHostSchema.optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  tls: z.number().min(0).max(1).optional(),
+  username: z.string().trim().min(1, 'IMAP username is required').max(255).optional(),
+  password: z.string().max(512).optional().nullable().or(z.literal('')),
+  folder: z.string().trim().min(1).max(128).optional(),
+  enabled: z.number().min(0).max(1).optional(),
+});
+
+export const emailQueueItemEditSchema = z.object({
+  eventType: z.enum(['new_booking', 'schedule_change', 'cancellation']).optional(),
+  pnr: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
+  airline: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine((val) => !val || isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  flightNumber: z
+    .string()
+    .trim()
+    .regex(/^\d*$/, 'Flight number must be digits only')
+    .max(6)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  origin: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^([A-Z]{3})?$/, 'Origin must be a 3-letter IATA airport code')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  destination: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^([A-Z]{3})?$/, 'Destination must be a 3-letter IATA airport code')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  departureDate: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Departure date must be YYYY-MM-DD')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  departureTime: z
+    .string()
+    .trim()
+    .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, 'Departure time must be HH:MM')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  arrivalTime: z
+    .string()
+    .trim()
+    .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, 'Arrival time must be HH:MM')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).optional().nullable(),
+  fareTier: z.enum(['Basic Economy', 'Standard']).optional().nullable(),
+  price: z.number().nonnegative().optional().nullable(),
+  currency: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  isPoints: z.number().int().min(0).max(1).optional(),
+  taxesAmount: z.number().nonnegative().optional().nullable(),
+  taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
+  matchedFlightId: z.number().int().positive().optional().nullable(),
+});
+
+export const emailQueueBulkSchema = z.object({
+  action: z.enum(['apply', 'deny']),
+  ids: z.array(z.number().int().positive()).min(1, 'Select at least one queue item').max(100),
 });
 
 export const cleanupPastFlightsSchema = z.discriminatedUnion('scope', [

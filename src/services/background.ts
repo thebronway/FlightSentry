@@ -4,6 +4,9 @@ import { initDb } from '../db/init';
 import { getCurrentLocalHour } from '../utils/date';
 import { processNextFlight, expireOldFlights } from './scheduler';
 import { syncGitHubMetadata } from './githubSync';
+import { scanAllEnabledAccounts } from './emailScanner';
+import { sendEmailQueueAlert } from './notifications';
+import { emailQueueDb } from '../db/emailQueue';
 
 // 1. Ensure DB exists before background worker starts querying it
 initDb();
@@ -48,4 +51,53 @@ cron.schedule('0 0 * * *', () => {
 // 4. GitHub Release & Announcement Sync Check (Evaluated hourly; fetches at most once every 24h)
 cron.schedule('15 * * * *', () => {
   void syncGitHubMetadata({ force: false });
+});
+
+// 5. Multi-Account IMAP Email Scanner Polling Loop
+let lastEmailScanAtMs = 0;
+let isEmailScanRunning = false;
+
+const runScheduledEmailScan = async () => {
+  if (isEmailScanRunning) return;
+  try {
+    const settings = settingsDb.get();
+    if (settings.emailScannerEnabled !== 1) return;
+
+    const intervalMinutes = Math.max(5, settings.emailScannerPollIntervalMinutes || 15);
+    const intervalMs = intervalMinutes * 60 * 1000;
+    const nowMs = Date.now();
+
+    if (lastEmailScanAtMs > 0 && nowMs - lastEmailScanAtMs < intervalMs) {
+      return;
+    }
+
+    isEmailScanRunning = true;
+    lastEmailScanAtMs = nowMs;
+
+    const result = await scanAllEnabledAccounts();
+    if (result.totalEventsQueued > 0) {
+      console.log(
+        `[EmailScanner] Queued ${result.totalEventsQueued} new flight event(s) from ${result.scannedAccounts} inbox(es).`
+      );
+      await sendEmailQueueAlert(settings, result.queuedItems);
+    }
+  } catch (error) {
+    console.error('[EmailScanner] Worker polling error:', error);
+  } finally {
+    isEmailScanRunning = false;
+  }
+};
+
+void runScheduledEmailScan();
+setInterval(() => {
+  void runScheduledEmailScan();
+}, 60 * 1000);
+
+// 6. Prune aged Message-ID deduplication entries daily
+cron.schedule('30 0 * * *', () => {
+  try {
+    emailQueueDb.pruneOldSeenMessages(90);
+  } catch (error) {
+    console.error('[EmailScanner] Error pruning old seen messages:', error);
+  }
 });

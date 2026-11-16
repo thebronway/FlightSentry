@@ -4,8 +4,10 @@ import { sendDiscordWebhook } from './channels/discord';
 import { sendSlackWebhook } from './channels/slack';
 import { sendGenericWebhook } from './channels/generic';
 import { sendSmtpEmail } from './channels/smtp';
+import { EmailQueueItem } from '@/types';
 import { formatPriceDropAlert } from './templates/priceDropAlert';
 import { formatPriceIncreaseAlert } from './templates/priceIncreaseAlert';
+import { formatEmailQueueAlert } from './templates/emailQueueAlert';
 
 export * from './types';
 export * from './channels/discord';
@@ -14,6 +16,7 @@ export * from './channels/generic';
 export * from './channels/smtp';
 export * from './templates/priceDropAlert';
 export * from './templates/priceIncreaseAlert';
+export * from './templates/emailQueueAlert';
 
 export const sendNotification = async (
   settings: Settings,
@@ -122,4 +125,25 @@ export const sendPriceIncreaseAlert = async (
   const activeCurrency = settings.currency || 'USD';
   const { title, body, htmlBody } = formatPriceIncreaseAlert(flight, newPrice, details, activeCurrency);
   await sendNotification(settings, title, body, htmlBody);
+};
+
+export const sendEmailQueueAlert = async (
+  settings: Settings,
+  items: EmailQueueItem[]
+): Promise<boolean> => {
+  if (
+    settings.notificationsEnabled === 0 ||
+    settings.emailScannerNotifyEnabled === 0 ||
+    items.length === 0
+  ) {
+    return false;
+  }
+
+  const activeCurrency = settings.currency || 'USD';
+  const { title, body, htmlBody } = formatEmailQueueAlert(
+    items,
+    settings.appBaseUrl,
+    activeCurrency
+  );
+  return sendNotification(settings, title, body, htmlBody);
 };

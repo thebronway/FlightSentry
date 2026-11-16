@@ -73,6 +73,13 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN pastFlightRetentionDays INTEGER",
         "ALTER TABLE flights ADD COLUMN bookingAirline TEXT",
+        "ALTER TABLE settings ADD COLUMN emailScannerEnabled INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN emailScannerPollIntervalMinutes INTEGER NOT NULL DEFAULT 15",
+        "ALTER TABLE settings ADD COLUMN emailScannerNotifyEnabled INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN appBaseUrl TEXT",
+        "ALTER TABLE email_queue ADD COLUMN isPoints INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE email_queue ADD COLUMN taxesAmount REAL",
+        "ALTER TABLE email_queue ADD COLUMN taxesCurrency TEXT",
     ];
     for (const migration of migrations) {
         try {
@@ -103,6 +110,79 @@ export function initDb() {
             UPDATE flights 
             SET status = 'Watching' 
             WHERE status IN ('Upcoming', 'Active');
+        `);
+    } catch {
+        // Ignored
+    }
+
+    // Ensure IMAP email scanner tables and indexes exist for existing databases
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS imap_accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label TEXT NOT NULL,
+                host TEXT NOT NULL,
+                port INTEGER NOT NULL DEFAULT 993,
+                tls INTEGER NOT NULL DEFAULT 1,
+                username TEXT NOT NULL,
+                encryptedPassword TEXT NOT NULL,
+                folder TEXT NOT NULL DEFAULT 'INBOX',
+                enabled INTEGER NOT NULL DEFAULT 1,
+                lastUid INTEGER NOT NULL DEFAULT 0,
+                uidValidity INTEGER,
+                baselineTimestamp TEXT NOT NULL,
+                lastCheckedAt TEXT,
+                lastError TEXT,
+                createdAt TEXT NOT NULL,
+                updatedAt TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS email_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                accountId INTEGER,
+                accountLabel TEXT NOT NULL,
+                messageId TEXT,
+                emailSubject TEXT,
+                emailFrom TEXT,
+                emailDate TEXT,
+                eventType TEXT NOT NULL,
+                dedupeKey TEXT NOT NULL,
+                pnr TEXT,
+                airline TEXT,
+                flightNumber TEXT,
+                origin TEXT,
+                destination TEXT,
+                departureDate TEXT,
+                departureTime TEXT,
+                arrivalTime TEXT,
+                cabinClass TEXT,
+                fareTier TEXT,
+                price REAL,
+                currency TEXT,
+                isPoints INTEGER NOT NULL DEFAULT 0,
+                taxesAmount REAL,
+                taxesCurrency TEXT,
+                matchedFlightId INTEGER,
+                confidence TEXT NOT NULL DEFAULT 'medium',
+                parserSource TEXT NOT NULL DEFAULT 'heuristic',
+                status TEXT NOT NULL DEFAULT 'pending',
+                createdAt TEXT NOT NULL,
+                resolvedAt TEXT,
+                FOREIGN KEY (accountId) REFERENCES imap_accounts(id) ON DELETE CASCADE,
+                FOREIGN KEY (matchedFlightId) REFERENCES flights(id) ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_email_queue_status_created
+                ON email_queue(status, createdAt DESC);
+
+            CREATE INDEX IF NOT EXISTS idx_email_queue_dedupe
+                ON email_queue(dedupeKey, status);
+
+            CREATE TABLE IF NOT EXISTS email_seen_messages (
+                messageId TEXT PRIMARY KEY,
+                accountId INTEGER,
+                processedAt TEXT NOT NULL
+            );
         `);
     } catch {
         // Ignored
@@ -242,13 +322,25 @@ export function initDb() {
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
                 defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
-                maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled
+                maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled,
+                emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,flightsentry-scraper',
                 'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
-                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1
+                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1,
+                0, 15, 1, NULL
+            )defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
+                maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled,
+                emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl
+            ) 
+            VALUES (
+                1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
+                48, 24, 12, 7, 23, 'serpapi,searchapi,flightsentry-scraper',
+                'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
+                'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1,
+                0, 15, 1, NULL
             )
         `);
         insertSettings.run();

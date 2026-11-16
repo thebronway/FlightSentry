@@ -12,7 +12,8 @@ import ConvertFlightModal from '@/components/ConvertFlightModal';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import ManualPriceEntryModal from '@/components/history/ManualPriceEntryModal';
 import RebookFlightModal from '@/components/history/RebookFlightModal';
-import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
+import EmailQueueModal from '@/components/emailQueue/EmailQueueModal';
+import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play, Mail } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 import { setActiveCurrency } from '@/utils/format';
 
@@ -35,6 +36,9 @@ export default function Dashboard() {
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [quotaRefreshTrigger, setQuotaRefreshTrigger] = useState(0);
   const [showPastFlights, setShowPastFlights] = useState(false);
+  const [emailQueueCount, setEmailQueueCount] = useState(0);
+  const [isEmailQueueOpen, setIsEmailQueueOpen] = useState(false);
+  const [highlightedQueueItemId, setHighlightedQueueItemId] = useState<number | null>(null);
 
   const fetchFlights = async () => {
     const res = await fetch('/api/flights', { cache: 'no-store' });
@@ -52,15 +56,45 @@ export default function Dashboard() {
     }
   };
 
+  const fetchEmailQueueCount = async () => {
+    try {
+      const res = await fetch('/api/email-queue', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setEmailQueueCount(typeof data.count === 'number' ? data.count : 0);
+      }
+    } catch {}
+  };
+
   const handleRefreshAll = () => {
     fetchFlights();
     fetchSettings();
+    fetchEmailQueueCount();
     setQuotaRefreshTrigger(prev => prev + 1);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('flightsentry:email-queue-updated'));
+    }
   };
 
   useEffect(() => { 
     fetchFlights();
     fetchSettings();
+    fetchEmailQueueCount();
+
+    // Support deep-link query params from Email Queue notifications (?emailQueue=1&queueItemId=123)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('emailQueue') === '1') {
+        const rawItemId = params.get('queueItemId');
+        const parsedItemId = rawItemId ? parseInt(rawItemId, 10) : NaN;
+        setHighlightedQueueItemId(!Number.isNaN(parsedItemId) && parsedItemId > 0 ? parsedItemId : null);
+        setIsEmailQueueOpen(true);
+
+        // Clean query params from URL without reloading
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+      }
+    } catch {}
 
     // Hydrate persisted session view preferences
     try {
@@ -89,10 +123,17 @@ export default function Dashboard() {
     window.addEventListener('focus', handleSync);
     document.addEventListener('visibilitychange', handleSync);
 
+    const handleOpenQueueEvent = () => {
+      setHighlightedQueueItemId(null);
+      setIsEmailQueueOpen(true);
+    };
+    window.addEventListener('flightsentry:open-email-queue', handleOpenQueueEvent);
+
     // Visibility-aware background polling (every 45s) to reflect automated scheduled checks
     const pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         fetchFlights();
+        fetchEmailQueueCount();
         setQuotaRefreshTrigger(prev => prev + 1);
       }
     }, 45000);
@@ -291,6 +332,24 @@ export default function Dashboard() {
               <List className="w-4 h-4" />
             </button>
           </div>
+
+          {emailQueueCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setHighlightedQueueItemId(null);
+                setIsEmailQueueOpen(true);
+              }}
+              title="Review Detected Airline Emails"
+              className="h-[38px] border shadow-sm px-3.5 rounded-md flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors bg-sky-950/60 border-sky-700/80 text-sky-200 hover:bg-sky-900/70 cursor-pointer"
+            >
+              <Mail className="w-4 h-4 text-sky-400" />
+              <span>Email Queue</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[11px] font-mono font-bold bg-sky-500 text-slate-950">
+                {emailQueueCount}
+              </span>
+            </button>
+          )}
 
           <button 
             onClick={handleAddNew}
@@ -493,6 +552,16 @@ export default function Dashboard() {
         flight={deletingFlight}
         onClose={() => setDeletingFlight(null)}
         onSuccess={handleRefreshAll}
+      />
+
+      <EmailQueueModal
+        isOpen={isEmailQueueOpen}
+        highlightedItemId={highlightedQueueItemId}
+        onClose={() => {
+          setIsEmailQueueOpen(false);
+          setHighlightedQueueItemId(null);
+        }}
+        onQueueMutated={handleRefreshAll}
       />
     </div>
   );

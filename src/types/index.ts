@@ -172,6 +172,93 @@ export interface Settings {
   defaultMaxTotalDurationMinutes?: number | null;
   githubSyncEnabled?: number; // 0 (false) or 1 (true)
   pastFlightRetentionDays?: number | null;
+  emailScannerEnabled?: number; // 0 (false) or 1 (true)
+  emailScannerPollIntervalMinutes?: number;
+  emailScannerNotifyEnabled?: number; // 0 (false) or 1 (true)
+  appBaseUrl?: string | null;
+}
+
+export interface ImapAccount {
+  id: number;
+  label: string;
+  host: string;
+  port: number;
+  tls: number; // 0 (false) or 1 (true)
+  username: string;
+  encryptedPassword: string;
+  folder: string;
+  enabled: number; // 0 (false) or 1 (true)
+  lastUid: number;
+  uidValidity?: number | null;
+  baselineTimestamp: string;
+  lastCheckedAt?: string | null;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ImapAccountPublic = Omit<ImapAccount, 'encryptedPassword'> & {
+  hasPassword: boolean;
+  maskedPassword: string;
+};
+
+export type EmailQueueEventType = 'new_booking' | 'schedule_change' | 'cancellation';
+export type EmailQueueStatus = 'pending' | 'applied' | 'denied';
+export type EmailParseConfidence = 'high' | 'medium' | 'low';
+export type EmailParserSource = 'schema_org' | 'heuristic';
+
+export interface ParsedFlightEmailEvent {
+  eventType: EmailQueueEventType;
+  pnr?: string | null;
+  airline?: string | null;
+  flightNumber?: string | null;
+  origin?: string | null;
+  destination?: string | null;
+  departureDate?: string | null; // YYYY-MM-DD
+  departureTime?: string | null; // HH:MM
+  arrivalTime?: string | null; // HH:MM
+  cabinClass?: CabinClass | null;
+  fareTier?: FareTier | null;
+  price?: number | null;
+  currency?: string | null;
+  isPoints?: number; // 0 (false) or 1 (true)
+  taxesAmount?: number | null;
+  taxesCurrency?: string | null;
+  confidence: EmailParseConfidence;
+  parserSource: EmailParserSource;
+}
+
+export interface EmailQueueItem {
+  id: number;
+  accountId: number | null;
+  accountLabel: string;
+  messageId?: string | null;
+  emailSubject?: string | null;
+  emailFrom?: string | null;
+  emailDate?: string | null;
+  eventType: EmailQueueEventType;
+  dedupeKey: string;
+  pnr?: string | null;
+  airline?: string | null;
+  flightNumber?: string | null;
+  origin?: string | null;
+  destination?: string | null;
+  departureDate?: string | null;
+  departureTime?: string | null;
+  arrivalTime?: string | null;
+  cabinClass?: CabinClass | null;
+  fareTier?: FareTier | null;
+  price?: number | null;
+  currency?: string | null;
+  isPoints: number; // 0 (false) or 1 (true)
+  taxesAmount?: number | null;
+  taxesCurrency?: string | null;
+  matchedFlightId?: number | null;
+  confidence: EmailParseConfidence;
+  parserSource: EmailParserSource;
+  status: EmailQueueStatus;
+  createdAt: string;
+  resolvedAt?: string | null;
 }
 
 export type AnnouncementSeverity = 'info' | 'warning';

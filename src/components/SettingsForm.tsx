@@ -8,10 +8,11 @@ import DataSourcesTab from './settings/DataSourcesTab';
 import SearchPreferencesTab from './settings/SearchPreferencesTab';
 import SchedulingTab from './settings/SchedulingTab';
 import NotificationsTab from './settings/NotificationsTab';
+import EmailScannerTab from './settings/EmailScannerTab';
 
 export default function SettingsForm() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'searchprefs' | 'datasources' | 'scheduling' | 'notifications' | 'emailscanner'>('general');
 
   // Status & toast states
   const [providerStatus, setProviderStatus] = useState<Record<string, { type: 'success' | 'error'; message: string } | null>>({});
@@ -249,6 +250,19 @@ export default function SettingsForm() {
         >
           Notifications
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'emailscanner'}
+          onClick={() => setActiveTab('emailscanner')}
+          className={`min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 font-medium text-xs sm:text-sm rounded-md sm:rounded-none transition-colors cursor-pointer ${
+            activeTab === 'emailscanner'
+              ? 'bg-gunmetal-border sm:bg-transparent sm:border-b-2 sm:border-slate-300 text-slate-100 font-semibold shadow-sm sm:shadow-none'
+              : 'text-gunmetal-muted hover:text-slate-300 hover:bg-gunmetal-card/60 sm:hover:bg-transparent'
+          }`}
+        >
+          Email Scanner
+        </button>
       </div>
 
       {activeTab === 'general' && (
@@ -293,6 +307,15 @@ export default function SettingsForm() {
           channelStatus={channelStatus}
           onTestChannel={handleTestChannel}
           onAutoSave={handleAutoSave}
+        />
+      )}
+
+      {activeTab === 'emailscanner' && (
+        <EmailScannerTab
+          settings={settings}
+          onChange={setSettings}
+          onAutoSave={handleAutoSave}
+          onNotify={showToast}
         />
       )}
 
