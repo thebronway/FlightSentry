@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import { Compass } from 'lucide-react';
 import { Settings, Flight } from '@/types';
 import { setActiveCurrency } from '@/utils/format';
 import SettingsIntroBanner from './shared/SettingsIntroBanner';
+import SettingsCard from './shared/SettingsCard';
 import DisplayCurrencyCard, { SUPPORTED_CURRENCIES } from './general/DisplayCurrencyCard';
 import PointsCurrenciesCard, { POPULAR_POINTS_PRESETS } from './general/PointsCurrenciesCard';
 import SystemTimezoneCard from './general/SystemTimezoneCard';
-import PastFlightsRetentionCard from './general/PastFlightsRetentionCard';
 import AppVersionSupportCard from './general/AppVersionSupportCard';
 import CurrencyWarningModal from './general/CurrencyWarningModal';
 
@@ -138,27 +140,19 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
     }
   };
 
-  const handleRetentionDaysChange = async (retentionDays: number | null) => {
-    const updated = { ...settings, pastFlightRetentionDays: retentionDays };
-    onChange(updated);
-    if (onAutoSave) {
-      await onAutoSave(
-        updated,
-        'general',
-        undefined,
-        retentionDays === null
-          ? 'Past flights retention set to Keep Forever'
-          : `Past flights retention set to ${retentionDays} days`
-      );
-    }
-  };
-
   return (
     <div className="space-y-6 pt-2">
       <SettingsIntroBanner
         title="Instance Preferences & System Environment"
-        description="Manage instance-wide defaults including application currency, application timezone, version information, and project links."
+        description="Manage application version details, update checks, configured timezone, display and points currencies, and the guided setup wizard."
       />
+
+      <AppVersionSupportCard
+        githubSyncEnabled={(settings.githubSyncEnabled ?? 1) === 1}
+        onToggleGithubSync={handleToggleGithubSync}
+      />
+
+      <SystemTimezoneCard timezone={timezone} />
 
       <DisplayCurrencyCard
         currency={settings.currency || 'USD'}
@@ -172,17 +166,24 @@ export default function GeneralTab({ settings, onChange, onAutoSave }: Props) {
         onRemove={handleRemovePointsCurrency}
       />
 
-      <SystemTimezoneCard timezone={timezone} />
-
-      <PastFlightsRetentionCard
-        retentionDays={settings.pastFlightRetentionDays ?? null}
-        onSelectRetentionDays={handleRetentionDaysChange}
-      />
-
-      <AppVersionSupportCard
-        githubSyncEnabled={(settings.githubSyncEnabled ?? 1) === 1}
-        onToggleGithubSync={handleToggleGithubSync}
-      />
+      <SettingsCard className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <Compass className="w-4 h-4 text-sky-400" />
+            <span>Instance Setup Wizard</span>
+          </h3>
+          <p className="text-xs text-gunmetal-muted leading-relaxed">
+            Walk through guided configuration for general preferences, data sources, scheduling cadences, search defaults, alerts, email scanning, and security.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/onboarding"
+          className="self-start sm:self-center flex-shrink-0 min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-300 hover:text-white font-semibold transition-colors"
+        >
+          <Compass className="w-4 h-4 text-sky-400" />
+          <span>Launch Setup Wizard</span>
+        </Link>
+      </SettingsCard>
 
       <CurrencyWarningModal
         isOpen={showWarningModal}

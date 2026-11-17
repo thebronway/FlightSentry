@@ -1,8 +1,9 @@
 'use client';
 
-import { Clock, CalendarClock } from 'lucide-react';
+import { Clock, CalendarClock, Archive } from 'lucide-react';
 import SettingsCard from '@/components/settings/shared/SettingsCard';
 import SettingsSelect from '@/components/settings/shared/SettingsSelect';
+import { RETENTION_OPTIONS } from '@/components/settings/general/PastFlightsRetentionCard';
 import {
   CADENCE_OPTIONS,
   formatCustomCadenceLabel,
@@ -181,6 +182,43 @@ export default function SchedulingStep({
         </div>
       </div>
 
-      </div>
+      {/* 3. Past Flights Archive & Retention */}
+      <SettingsCard className="space-y-2.5">
+        <label
+          htmlFor="onboarding-retention-days"
+          className="block text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5"
+        >
+          <Archive className="w-4 h-4 text-sky-400" />
+          <span>3. Past Flights Archive &amp; Retention</span>
+        </label>
+        <p className="text-xs text-gunmetal-muted leading-relaxed">
+          Departed flights automatically move to <strong>Past</strong> status and stop consuming API checks. Choose whether to keep archived flights forever or auto-purge old records after a set number of days. You can also inspect upcoming jobs anytime in <strong>Settings → Scheduling</strong>.
+        </p>
+        <SettingsSelect
+          id="onboarding-retention-days"
+          value={
+            settings.pastFlightRetentionDays !== null &&
+            settings.pastFlightRetentionDays !== undefined
+              ? String(settings.pastFlightRetentionDays)
+              : ''
+          }
+          onChange={(e) => {
+            const val = e.target.value;
+            onChange({
+              ...settings,
+              pastFlightRetentionDays: val === '' ? null : parseInt(val, 10),
+            });
+          }}
+          wrapperClassName="max-w-full sm:max-w-sm"
+          className="font-medium"
+        >
+          {RETENTION_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} className="bg-gunmetal-card text-slate-200">
+              {opt.label}
+            </option>
+          ))}
+        </SettingsSelect>
+      </SettingsCard>
+    </div>
   );
 }

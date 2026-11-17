@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS flights (
     airline TEXT NOT NULL,
     bookingAirline TEXT,
     flightNumber TEXT,
+    legs TEXT,
     includedAirlines TEXT,
     excludedAirlines TEXT,
     pnr TEXT,

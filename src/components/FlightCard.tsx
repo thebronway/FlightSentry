@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
 import { formatCurrency, isPointsCurrency } from '@/utils/format';
 import { getCurrentPriceAirline, getOperatingAirlines } from '@/utils/airline';
+import { parseFlightLegs } from '@/utils/flightLegs';
 import AirlineBadge from './common/AirlineBadge';
 import FlightStatusBadges from './flightCardShared/FlightStatusBadges';
 import FlightRouteDisplay from './flightCardShared/FlightRouteDisplay';
@@ -44,6 +45,7 @@ export default function FlightCard({
   const delta = benchmarkPrice - flight.currentPrice;
 
   const isFlightNumMode = flight.searchMode === 'FlightNumber' && Boolean(flight.flightNumber);
+  const trackedLegs = useMemo(() => parseFlightLegs(flight.legs), [flight.legs]);
   const isManualMode = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const operatingAirlines = useMemo(() => getOperatingAirlines(flight), [flight]);
   const currentPriceAirline = useMemo(() => getCurrentPriceAirline(flight), [flight]);
@@ -77,12 +79,24 @@ export default function FlightCard({
           {!isPurchased && (
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
               {isFlightNumMode ? (
-                <AirlineBadge
-                  code={flight.airline}
-                  flightNumber={flight.flightNumber}
-                  size="sm"
-                  align="left"
-                />
+                trackedLegs.length >= 2 ? (
+                  trackedLegs.map((leg, idx) => (
+                    <AirlineBadge
+                      key={`${leg.airline}-${leg.flightNumber}-${idx}`}
+                      code={leg.airline}
+                      flightNumber={leg.flightNumber}
+                      size="sm"
+                      align={idx === 0 ? 'left' : 'center'}
+                    />
+                  ))
+                ) : (
+                  <AirlineBadge
+                    code={flight.airline}
+                    flightNumber={flight.flightNumber}
+                    size="sm"
+                    align="left"
+                  />
+                )
               ) : operatingAirlines.length > 0 ? (
                 operatingAirlines.map((code, idx) => (
                   <AirlineBadge

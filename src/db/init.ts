@@ -75,6 +75,7 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN pastFlightRetentionDays INTEGER",
         "ALTER TABLE flights ADD COLUMN bookingAirline TEXT",
+        "ALTER TABLE flights ADD COLUMN legs TEXT",
         "ALTER TABLE settings ADD COLUMN emailScannerEnabled INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN emailScannerPollIntervalMinutes INTEGER NOT NULL DEFAULT 15",
         "ALTER TABLE settings ADD COLUMN emailScannerNotifyEnabled INTEGER NOT NULL DEFAULT 1",

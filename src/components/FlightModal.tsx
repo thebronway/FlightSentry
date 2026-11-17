@@ -49,6 +49,11 @@ export default function FlightModal({
     triggerBlurLookup,
     triggerManualLookup,
     handleFieldChange,
+    handleEnableLayover,
+    handleAddLayoverLeg,
+    handleUpdateLayoverLeg,
+    handleRemoveLayoverLeg,
+    handleClearLayovers,
     handleTrackingTypeChange,
     handlePaymentTypeChange,
     handleCurrencyChange,
@@ -164,6 +169,7 @@ export default function FlightModal({
               airline={formData.airline}
               bookingAirline={formData.bookingAirline}
               flightNumber={formData.flightNumber}
+              legs={formData.legs}
               departureDate={formData.departureDate}
               minDepartureDate={todayStr}
               showRouteDetails={formData.showRouteDetails}
@@ -185,6 +191,11 @@ export default function FlightModal({
               onAdoptRoute={adoptDetectedRoute}
               onFieldBlurLookup={triggerBlurLookup}
               onManualLookup={triggerManualLookup}
+              onEnableLayover={handleEnableLayover}
+              onAddLayoverLeg={handleAddLayoverLeg}
+              onUpdateLayoverLeg={handleUpdateLayoverLeg}
+              onRemoveLayoverLeg={handleRemoveLayoverLeg}
+              onClearLayovers={handleClearLayovers}
             />
           )}
 
@@ -211,6 +222,7 @@ export default function FlightModal({
           <RouteSection
             trackingType={formData.trackingType}
             showRouteDetails={formData.showRouteDetails}
+            hasConnectingLegs={formData.legs.length >= 2}
             origin={formData.origin}
             destination={formData.destination}
             departureDate={formData.departureDate}

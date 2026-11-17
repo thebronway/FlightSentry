@@ -11,6 +11,7 @@ import { calculateNextCheck } from '@/utils/queue';
 import { Flight, FlightStatus } from '@/types';
 import { expireOldFlights } from '@/services/scheduler';
 import { getTodayDateString } from '@/utils/date';
+import { serializeFlightLegs } from '@/utils/flightLegs';
 import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const parsed = flightSchema.parse(body);
+    const normalizedLegs = Array.isArray(parsed.legs) && parsed.legs.length >= 2 ? parsed.legs : null;
+    const serializedLegs = serializeFlightLegs(normalizedLegs);
+    const effectiveOrigin = normalizedLegs ? normalizedLegs[0].origin : parsed.origin;
+    const effectiveDestination = normalizedLegs ? normalizedLegs[normalizedLegs.length - 1].destination : parsed.destination;
+    const effectiveAirline = normalizedLegs ? normalizedLegs[0].airline : parsed.airline;
+    const effectiveFlightNumber = normalizedLegs ? normalizedLegs[0].flightNumber : parsed.flightNumber;
+    const effectiveBookingAirline = normalizedLegs
+      ? (parsed.bookingAirline || normalizedLegs[0].bookingAirline || effectiveAirline || null)
+      : (parsed.bookingAirline || effectiveAirline || null);
     
     let baselinePrice = parsed.baselinePrice;
 
@@ -62,8 +72,8 @@ export async function POST(req: NextRequest) {
       ? 'Booked'
       : 'Watching';
 
-    let initialAirline = parsed.airline || null;
-    let initialFlightNumber = parsed.flightNumber || null;
+    let initialAirline = effectiveAirline || null;
+    let initialFlightNumber = effectiveFlightNumber || null;
     let initialMetadata: string | null = null;
     let initialSourceUsed: string | null = null;
     let liveSearchResultPrice: number | null = null;
@@ -84,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     // For points flights or manual tracking mode, require a specific flight (Watching or Booked) and bypass automated searches
     if (isPointsFlight || parsed.isManual === 1) {
-      if (parsed.searchMode === 'Route' || !parsed.airline || !parsed.flightNumber) {
+      if (parsed.searchMode === 'Route' || !effectiveAirline || !effectiveFlightNumber) {
         return NextResponse.json(
           { error: 'Manual and Points tracking require a specific flight (Carrier and Flight Number). Add additional route flights in Price History.' },
           { status: 400 }
@@ -103,9 +113,12 @@ export async function POST(req: NextRequest) {
 
       const newFlightId = flightDb.create({
         ...parsed,
-        airline: parsed.airline,
-        bookingAirline: parsed.bookingAirline || parsed.airline || null,
-        flightNumber: parsed.flightNumber,
+        origin: effectiveOrigin,
+        destination: effectiveDestination,
+        airline: effectiveAirline,
+        bookingAirline: effectiveBookingAirline,
+        flightNumber: effectiveFlightNumber,
+        legs: serializedLegs,
         cabinClass: parsed.cabinClass,
         fareTier: parsed.fareTier,
         baselinePrice: initialAmount,
@@ -161,11 +174,12 @@ export async function POST(req: NextRequest) {
     const probeFlight = {
       id: 0,
       searchMode: parsed.searchMode,
-      origin: parsed.origin,
-      destination: parsed.destination,
+      origin: effectiveOrigin,
+      destination: effectiveDestination,
       departureDate: parsed.departureDate,
-      airline: parsed.airline || '',
-      flightNumber: parsed.flightNumber || null,
+      airline: effectiveAirline || '',
+      flightNumber: effectiveFlightNumber || null,
+      legs: serializedLegs,
       includedAirlines: parsed.includedAirlines || null,
       excludedAirlines: parsed.excludedAirlines || null,
       fareTier: parsed.fareTier,
@@ -231,13 +245,15 @@ export async function POST(req: NextRequest) {
 
     const currentPrice = liveSearchResultPrice ?? baselinePrice;
     const isRouteMode = parsed.searchMode === 'Route';
-    const finalAirline = isRouteMode ? (parsed.airline || '') : (parsed.airline || initialAirline || '');
-    const finalBookingAirline = parsed.bookingAirline || finalAirline || null;
-    const finalFlightNumber = isRouteMode ? null : (parsed.flightNumber || initialFlightNumber);
+    const finalAirline = isRouteMode ? (effectiveAirline || '') : (effectiveAirline || initialAirline || '');
+    const finalBookingAirline = effectiveBookingAirline || finalAirline || null;
+    const finalFlightNumber = isRouteMode ? null : (effectiveFlightNumber || initialFlightNumber);
 
     settings = settingsDb.get();
     const nextCheckAt = calculateNextCheck({
       ...parsed,
+      origin: effectiveOrigin,
+      destination: effectiveDestination,
       id: 0,
       baselinePrice,
       purchasePrice: parsed.purchasePrice ?? null,
@@ -245,6 +261,7 @@ export async function POST(req: NextRequest) {
       currentPrice,
       airline: finalAirline,
       flightNumber: finalFlightNumber,
+      legs: serializedLegs,
       status: initialStatus,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -254,9 +271,12 @@ export async function POST(req: NextRequest) {
 
     const newFlightId = flightDb.create({ 
       ...parsed, 
+      origin: effectiveOrigin,
+      destination: effectiveDestination,
       airline: finalAirline,
       bookingAirline: finalBookingAirline,
       flightNumber: finalFlightNumber,
+      legs: serializedLegs,
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       baselinePrice,

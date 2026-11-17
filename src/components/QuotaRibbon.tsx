@@ -9,13 +9,18 @@ import QuotaSourceCard from './quotaRibbon/QuotaSourceCard';
 
 interface Props {
   refreshTrigger?: number;
+  initialSettings?: SettingsType | null;
   onSettingsChange?: (settings: SettingsType) => void;
 }
 
 const STORAGE_KEY = 'flightsentry_quota_ribbon_collapsed';
 
-export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Props) {
-  const [settings, setSettings] = useState<SettingsType | null>(null);
+export default function QuotaRibbon({
+  refreshTrigger = 0,
+  initialSettings = null,
+  onSettingsChange,
+}: Props) {
+  const [settings, setSettings] = useState<SettingsType | null>(initialSettings);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [scraperHealth, setScraperHealth] = useState<ScraperHealthResponse | null>(null);
 
@@ -85,6 +90,14 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       void fetchRemoteScraperHealth(data);
     }
   };
+
+  useEffect(() => {
+    if (initialSettings) {
+      setSettings(prev =>
+        JSON.stringify(prev) === JSON.stringify(initialSettings) ? prev : initialSettings
+      );
+    }
+  }, [initialSettings]);
 
   useEffect(() => {
     fetchSettings();

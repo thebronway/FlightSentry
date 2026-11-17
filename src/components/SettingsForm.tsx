@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Settings as SettingsType } from '@/types';
+import type { ScraperHealthResponse } from '@/services/openFareScraper';
 import {
   DEFAULT_SETTINGS_TAB,
+  normalizeSettingsTab,
   SETTINGS_TABS,
   SettingsTabId,
 } from './settings/settingsTabs';
@@ -25,14 +27,19 @@ export default function SettingsForm({
   initialTab = DEFAULT_SETTINGS_TAB,
 }: SettingsFormProps) {
   const router = useRouter();
+  const params = useParams<{ tab?: string }>();
+  const resolvedTab = normalizeSettingsTab(params?.tab) ?? initialTab;
+
   const [settings, setSettings] = useState<SettingsType | null>(null);
-  const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab);
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(resolvedTab);
+  const [cachedScraperHealth, setCachedScraperHealth] = useState<ScraperHealthResponse | null>(null);
 
   useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
+    setActiveTab(resolvedTab);
+  }, [resolvedTab]);
 
   const handleTabChange = (nextTab: SettingsTabId) => {
+    if (nextTab === activeTab) return;
     setActiveTab(nextTab);
     router.push(`/settings/${nextTab}`);
   };
@@ -246,6 +253,8 @@ export default function SettingsForm({
           settings={settings}
           onChange={setSettings}
           providerStatus={providerStatus}
+          cachedScraperHealth={cachedScraperHealth}
+          onScraperHealthUpdated={setCachedScraperHealth}
           onAutoSave={handleAutoSave}
           onAdjustUsage={handleAdjustUsage}
         />

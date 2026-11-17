@@ -42,7 +42,7 @@ export const ONBOARDING_STEPS: OnboardingStepDefinition[] = [
     title: 'General Preferences & Environment',
     shortTitle: 'General',
     subtitle:
-      'Set your primary display currency, custom points & miles programs, timezone behavior, past flight retention, and update checks.',
+      'Configure automatic GitHub update checks, verify your configured container timezone, and set your primary display currency and points & miles programs.',
     settingsTab: 'general',
     settingsTabLabel: 'Settings → General',
   },
@@ -59,10 +59,10 @@ export const ONBOARDING_STEPS: OnboardingStepDefinition[] = [
   {
     id: 'scheduling',
     stepNumber: 4,
-    title: 'Smart Check Scheduling',
+    title: 'Smart Check Scheduling & Retention',
     shortTitle: 'Scheduling',
     subtitle:
-      'Balance API quota conservation with price freshness using proximity-based check cadences anchored to your daily start time.',
+      'Balance API quota conservation with price freshness using proximity-based check cadences anchored to your daily start time, and set past flight archive retention.',
     settingsTab: 'scheduling',
     settingsTabLabel: 'Settings → Scheduling',
   },
@@ -201,9 +201,11 @@ export function evaluateOnboardingSummary(
     },
     {
       id: 'scheduling',
-      label: 'Check Cadences & Start Time',
+      label: 'Check Cadences & Retention',
       configured: true,
-      statusText: `Starts ${settings.checkStartTime || '06:00'} · ${settings.scheduleFarOut}h / ${settings.scheduleStandard}h / ${settings.scheduleFinalStretch}h`,
+      statusText: `Starts ${settings.checkStartTime || '06:00'} · ${settings.scheduleFarOut}h / ${settings.scheduleStandard}h / ${settings.scheduleFinalStretch}h · Retention: ${
+        settings.pastFlightRetentionDays ? `${settings.pastFlightRetentionDays}d` : 'Keep Forever'
+      }`,
       settingsTab: 'scheduling',
       settingsTabLabel: 'Scheduling',
     },

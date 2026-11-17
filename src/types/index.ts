@@ -5,6 +5,14 @@ export type SearchMode = 'Route' | 'FlightNumber';
 export type PriceTrackingDirection = 'drop' | 'increase' | 'both';
 export type QuotaResetMode = 'monthly' | 'one-time';
 
+export interface TrackedFlightLeg {
+  airline: string;
+  bookingAirline?: string | null;
+  flightNumber: string;
+  origin: string;
+  destination: string;
+}
+
 export interface Flight {
   id: number;
   searchMode: SearchMode;
@@ -14,6 +22,7 @@ export interface Flight {
   airline: string;
   bookingAirline?: string | null;
   flightNumber?: string | null;
+  legs?: string | null; // JSON-encoded TrackedFlightLeg[] for multi-leg connecting itineraries
   includedAirlines?: string | null; // JSON array of strings
   excludedAirlines?: string | null; // JSON array of strings
   pnr?: string | null;

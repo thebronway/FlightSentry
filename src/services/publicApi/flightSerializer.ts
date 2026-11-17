@@ -8,7 +8,9 @@ import {
   RouteItinerary,
   SearchMode,
   Settings,
+  TrackedFlightLeg,
 } from '@/types';
+import { getLayoverAirports, parseFlightLegs } from '@/utils/flightLegs';
 import {
   CoLocationInfo,
   getActiveCoLocationBadge,
@@ -39,6 +41,8 @@ export interface PublicFlightSummary {
   airline: string;
   bookingAirline: string | null;
   flightNumber: string | null;
+  legs: TrackedFlightLeg[];
+  layoverAirports: string[];
   pnr: string | null;
   fareTier: FareTier;
   cabinClass: CabinClass;
@@ -209,6 +213,8 @@ export function serializePublicFlightSummary(
     airline: flight.airline,
     bookingAirline: flight.bookingAirline ?? null,
     flightNumber: flight.flightNumber ?? null,
+    legs: parseFlightLegs(flight.legs),
+    layoverAirports: getLayoverAirports(parseFlightLegs(flight.legs)),
     pnr: flight.pnr ?? null,
     fareTier: flight.fareTier,
     cabinClass: flight.cabinClass,

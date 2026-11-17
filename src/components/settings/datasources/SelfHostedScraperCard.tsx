@@ -13,6 +13,8 @@ interface Props {
   prioritizeFirst: boolean;
   scraperUrl: string;
   scraperApiKey: string;
+  initialHealth?: ScraperHealthResponse | null;
+  onHealthUpdated?: (health: ScraperHealthResponse | null) => void;
   status?: { type: 'success' | 'error'; message: string } | null;
   onToggleEnabled: (checked: boolean) => void;
   onTogglePrioritizeFirst: (checked: boolean) => void;
@@ -54,6 +56,8 @@ export default function SelfHostedScraperCard({
   prioritizeFirst,
   scraperUrl,
   scraperApiKey,
+  initialHealth = null,
+  onHealthUpdated,
   status,
   onToggleEnabled,
   onTogglePrioritizeFirst,
@@ -65,7 +69,7 @@ export default function SelfHostedScraperCard({
   onOpenLogs,
 }: Props) {
   const [testing, setTesting] = useState(false);
-  const [healthResult, setHealthResult] = useState<ScraperHealthResponse | null>(null);
+  const [healthResult, setHealthResult] = useState<ScraperHealthResponse | null>(initialHealth);
   const [testError, setTestError] = useState<string | null>(null);
 
   const fetchHealthStatus = useCallback(
@@ -90,16 +94,20 @@ export default function SelfHostedScraperCard({
         });
         const data = await res.json();
         if (res.ok && data.health) {
-          setHealthResult(data.health as ScraperHealthResponse);
+          const nextHealth = data.health as ScraperHealthResponse;
+          setHealthResult(nextHealth);
+          onHealthUpdated?.(nextHealth);
           setTestError(null);
         } else {
           setHealthResult(null);
+          onHealthUpdated?.(null);
           if (showErrors) {
             setTestError(data.error || `Health check failed (HTTP ${res.status})`);
           }
         }
       } catch (err: any) {
         setHealthResult(null);
+        onHealthUpdated?.(null);
         if (showErrors) {
           setTestError(err?.message || 'Network error connecting to OpenFareScraper');
         }
@@ -107,7 +115,7 @@ export default function SelfHostedScraperCard({
         setTesting(false);
       }
     },
-    []
+    [onHealthUpdated]
   );
 
   // Automatically load live health & rolling quota telemetry when opening Data Sources

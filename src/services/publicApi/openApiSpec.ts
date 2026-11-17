@@ -763,6 +763,16 @@ export function buildOpenApiSpec(serverUrl = 'http://localhost:4000'): OpenApiDo
             airline: { type: 'string' },
             bookingAirline: { type: ['string', 'null'] },
             flightNumber: { type: ['string', 'null'] },
+            legs: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/TrackedFlightLeg' },
+              description: 'Ordered flight segments when tracking a connecting itinerary with layovers on a single card.',
+            },
+            layoverAirports: {
+              type: 'array',
+              items: { type: 'string', example: 'ATL' },
+              description: 'Intermediate connecting airport IATA codes.',
+            },
             pnr: { type: ['string', 'null'] },
             fareTier: { type: 'string', enum: ['Basic Economy', 'Standard'] },
             cabinClass: {
@@ -830,6 +840,17 @@ export function buildOpenApiSpec(serverUrl = 'http://localhost:4000'): OpenApiDo
             checkedAt: { type: 'string', format: 'date-time' },
           },
         },
+        TrackedFlightLeg: {
+          type: 'object',
+          required: ['airline', 'flightNumber', 'origin', 'destination'],
+          properties: {
+            airline: { type: 'string', example: 'DL' },
+            bookingAirline: { type: ['string', 'null'], example: 'DL' },
+            flightNumber: { type: 'string', example: '523' },
+            origin: { type: 'string', example: 'DCA' },
+            destination: { type: 'string', example: 'ATL' },
+          },
+        },
         CreateFlightRequest: {
           type: 'object',
           required: ['searchMode', 'departureDate'],
@@ -841,6 +862,13 @@ export function buildOpenApiSpec(serverUrl = 'http://localhost:4000'): OpenApiDo
             airline: { type: 'string', example: 'DL' },
             bookingAirline: { type: 'string' },
             flightNumber: { type: 'string', example: '452' },
+            legs: {
+              type: 'array',
+              minItems: 2,
+              maxItems: 4,
+              items: { $ref: '#/components/schemas/TrackedFlightLeg' },
+              description: 'Optional ordered connecting flight segments (2–4 legs) to track a layover itinerary on one flight card.',
+            },
             fareTier: { type: 'string', enum: ['Basic Economy', 'Standard'], default: 'Standard' },
             cabinClass: {
               type: 'string',
@@ -870,6 +898,12 @@ export function buildOpenApiSpec(serverUrl = 'http://localhost:4000'): OpenApiDo
           type: 'object',
           properties: {
             status: { type: 'string', enum: ['Watching', 'Booked', 'Paused', 'Past'] },
+            legs: {
+              type: ['array', 'null'],
+              minItems: 2,
+              maxItems: 4,
+              items: { $ref: '#/components/schemas/TrackedFlightLeg' },
+            },
             targetPrice: { type: ['number', 'null'] },
             minDropDollar: { type: ['number', 'null'] },
             minDropPercent: { type: ['number', 'null'] },

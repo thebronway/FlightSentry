@@ -57,7 +57,7 @@ export default function SystemTimezoneCard({ timezone }: Props) {
 
         <div className="p-3 rounded-md bg-gunmetal-canvas border border-gunmetal-border">
           <span className="text-[11px] font-semibold text-gunmetal-muted block uppercase tracking-wider">
-            Current Local Time
+            Current Configured Time
           </span>
           <span className="text-sm font-bold text-sky-400 font-mono mt-0.5 block">
             {currentTime || 'Resolving clock...'}

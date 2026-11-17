@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, CheckCircle2, AlertTriangle, Search, GitBranch, ArrowRight, HelpCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertTriangle, Search, GitBranch, ArrowRight, HelpCircle, Plus } from 'lucide-react';
+import type { TrackedFlightLeg } from '@/types';
+import ConnectingLegsSection from './ConnectingLegsSection';
 import AirlineTagInput from '../common/AirlineTagInput';
 import Tooltip from '../common/Tooltip';
 import { checkLoyaltyCarrierCompatibility } from '@/utils/airlineThemes';
@@ -13,6 +15,7 @@ interface Props {
   airline: string;
   bookingAirline: string;
   flightNumber: string;
+  legs: TrackedFlightLeg[];
   departureDate: string;
   minDepartureDate: string;
   showRouteDetails: boolean;
@@ -34,12 +37,18 @@ interface Props {
   onAdoptRoute: (index?: number) => void;
   onFieldBlurLookup: () => void;
   onManualLookup: () => void;
+  onEnableLayover: () => void;
+  onAddLayoverLeg: () => void;
+  onUpdateLayoverLeg: (index: number, patch: Partial<TrackedFlightLeg>) => void;
+  onRemoveLayoverLeg: (index: number) => void;
+  onClearLayovers: () => void;
 }
 
 export default function FlightIdentitySection({
   airline,
   bookingAirline,
   flightNumber,
+  legs,
   departureDate,
   minDepartureDate,
   showRouteDetails,
@@ -61,7 +70,13 @@ export default function FlightIdentitySection({
   onAdoptRoute,
   onFieldBlurLookup,
   onManualLookup,
+  onEnableLayover,
+  onAddLayoverLeg,
+  onUpdateLayoverLeg,
+  onRemoveLayoverLeg,
+  onClearLayovers,
 }: Props) {
+  const isMultiLeg = legs.length >= 2;
   const [draftAirline, setDraftAirline] = useState('');
   const [draftBookingAirline, setDraftBookingAirline] = useState('');
 
@@ -98,6 +113,63 @@ export default function FlightIdentitySection({
         )}
       </div>
 
+      {isMultiLeg ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Departure Date */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Departure Date *
+              </label>
+              <input
+                required
+                type="date"
+                min={minDepartureDate}
+                value={departureDate}
+                onChange={e => onDepartureDateChange(e.target.value)}
+                className="w-full min-h-[44px] sm:min-h-[38px] px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none [color-scheme:dark]"
+              />
+            </div>
+
+            {/* Booking Carrier (Optional) */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Booking Carrier (Optional)
+                </label>
+                <Tooltip
+                  align="left"
+                  content={
+                    <div className="max-w-[275px] whitespace-normal text-left leading-relaxed font-normal">
+                      <strong className="text-white font-semibold block mb-0.5">Ticketing / Codeshare Carrier</strong>
+                      Optional carrier you booked the connecting ticket through if different from the operating airlines.
+                    </div>
+                  }
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-gunmetal-muted hover:text-slate-200 cursor-help" />
+                </Tooltip>
+              </div>
+              <AirlineTagInput
+                value={bookingAirline}
+                onChange={onBookingAirlineChange}
+                onDraftChange={setDraftBookingAirline}
+                maxTags={1}
+                placeholder={legs[0]?.airline ? `Defaults to ${legs[0].airline}` : 'Defaults to Leg 1 Carrier'}
+              />
+            </div>
+          </div>
+
+          <ConnectingLegsSection
+            legs={legs}
+            departureDate={departureDate}
+            onUpdateLeg={onUpdateLayoverLeg}
+            onAddLeg={onAddLayoverLeg}
+            onRemoveLeg={onRemoveLayoverLeg}
+            onClearLayovers={onClearLayovers}
+          />
+        </div>
+      ) : (
+      <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {/* Operating Carrier */}
         <div>
@@ -341,9 +413,9 @@ export default function FlightIdentitySection({
         </div>
       )}
 
-      {/* Checkbox to specify route details manually */}
-      <div className="pt-2 border-t border-gunmetal-border/70 flex items-center justify-between">
-        <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
+      {/* Checkbox to specify route details manually & Layover builder trigger */}
+      <div className="pt-2 border-t border-gunmetal-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <label className="min-h-[44px] sm:min-h-0 flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={showRouteDetails}
@@ -354,7 +426,18 @@ export default function FlightIdentitySection({
             Specify route details manually (origin &amp; destination airport)
           </span>
         </label>
+
+        <button
+          type="button"
+          onClick={onEnableLayover}
+          className="self-start sm:self-auto min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-300 hover:text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5 text-sky-400" />
+          <span>Add Layover</span>
+        </button>
       </div>
+      </>
+      )}
     </div>
   );
 }

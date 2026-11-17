@@ -26,16 +26,22 @@ type FilterOption = 'all' | 'watching' | 'booked';
 
 interface DashboardClientProps {
   children?: React.ReactNode;
+  initialSettings?: Settings | null;
+  initialFlights?: Flight[];
 }
 
-export default function DashboardClient({ children }: DashboardClientProps) {
+export default function DashboardClient({
+  children,
+  initialSettings = null,
+  initialFlights,
+}: DashboardClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [flightsLoaded, setFlightsLoaded] = useState(false);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [flights, setFlights] = useState<Flight[]>(initialFlights ?? []);
+  const [flightsLoaded, setFlightsLoaded] = useState<boolean>(initialFlights !== undefined);
+  const [settings, setSettings] = useState<Settings | null>(initialSettings);
   const [convertingFlight, setConvertingFlight] = useState<Flight | null>(null);
   const [deletingFlight, setDeletingFlight] = useState<Flight | null>(null);
   const [manualEntryFlight, setManualEntryFlight] = useState<Flight | null>(null);
@@ -502,6 +508,7 @@ export default function DashboardClient({ children }: DashboardClientProps) {
 
       <QuotaRibbon 
         refreshTrigger={quotaRefreshTrigger} 
+        initialSettings={settings}
         onSettingsChange={setSettings} 
       />
 

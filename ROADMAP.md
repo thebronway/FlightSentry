@@ -1,20 +1,37 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-16*  
-*Current Version: v0.9.4*
+*Last updated: 2026-11-17*  
+*Current Version: v0.9.5*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.9.5: Brand Optimization Application
+### Release v0.9.6: Layover
+- Layover tracking needs a rework. It doesnt amke sense how to do it, there needs to be a nonstop/layover toggle
+- Flight Number lookup doesnt work.
+- Component is brittle, needs a redesign.
+- Need to be done in multiple phases
+
+### Release v0.9.7: Live Search Progress & Failover Popup
+- **Search Router Progress Telemetry (`src/services/datasource.ts`)**
+  - Add an optional `onProgress` callback to `executeSearchStrategy()` emitting structured `searching`, `failover`, and `completed` events with the active provider label, flight/route context, and failover reason.
+- **SSE Streaming Price Check Endpoints (`src/app/api/flights/[id]/check/route.ts` & `src/app/api/flights/route.ts`)**
+  - Stream real-time `SearchProgressEvent` frames over Server-Sent Events (`text/event-stream`) when requested by interactive dashboard actions during manual price checks and initial flight creation, while preserving standard JSON responses for direct API callers.
+- **Compact Floating Search Popup (`src/components/SearchProgressPopup.tsx`)**
+  - Render a non-blocking bottom-right floating card (`fixed bottom-4 right-4 z-50 max-w-sm w-full`, styled per `DESIGN_GUIDE.md`) displaying an active spinner, the data source currently being queried (`OpenFareScraper`, `SerpAPI`, `SearchApi.io`), and a live `amber` failover notice whenever a provider fails or hits a limit and switches to another.
+  - Auto-dismiss ~2.5 seconds after the search completes, with a manual close (`X`) button.
+- **Dashboard & Flight Modal Integration (`src/hooks/useFlightActions.ts`, `src/components/flightModal/useFlightModalState.ts`, `src/components/dashboard/DashboardClient.tsx`)**
+  - Connect card/table **Check live price now** actions and live fare discovery on new flights to read the SSE progress stream and drive `SearchProgressPopup`.
+
+### Release v0.9.8: Brand Optimization Application
 - Apply `DESIGN_GUIDE.md` across the entire app:
   - Standardize primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and align secondary, toolbar, destructive, and semantic action buttons.
   - Consolidate status colors to canonical `sky`, `emerald`, `amber`, and `rose` tokens (removing stray `gray-*`, `blue-*`, `green-*`, `red-*`, and `yellow-*` classes).
   - Standardize all modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 & 3 modals, `44px` minimum mobile touch targets, and single-line `lucide-react` imports.
 
-### Release v0.9.6: Email Scanner Overhaul & Dev Email Import Tester
+### Release v0.9.9: Email Scanner Overhaul & Dev Email Import Tester
 - **IMAP Cursor Integrity & Scan Audit Trail**
   - Remove the `internalDate < baselineTimestamp` filter in `imapClient.ts` (`UIDNEXT - 1` baseline on account creation already prevents historical inbox backfill without silently dropping existing emails moved or re-filed into a monitored folder).
   - Only mark a `Message-ID` as seen in `email_seen_messages` when an event is queued, and persist per-message scan outcomes (`queued`, `duplicate`, `skipped` with subject, sender, and exact reason) in a capped `email_scan_logs` table surfaced in **Settings → Email Scanner**.
@@ -33,11 +50,25 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - **Sanitized Fixture Regression Suite**
   - Add an automated test suite with sanitized email fixtures covering direct and forwarded confirmations, round-trip and multi-leg itineraries, `.ics` attachments, `message/rfc822` forwards, points/miles redemptions, schedule changes, and cancellations.
 
-### Release v0.9.7: Mobile Optimization
+### Release v1.0.0
+- Site Launch
+    - User Guide
+    - Quickstart Guide
+    - API Documentation
+  - Sections and layout for both the main app FlightSentry and OpenFareScraper (incl api documentation)
+  - Follow Design Guide, but its okay to use addtional elements
+  - What screenshots do you need?
+  - No public demo yet
+  - No hosted version yet (but coming in the future maybe)
+
+### Release v1.0.1
+- TBD
+
+### Release v1.0.2: Mobile Optimization
 - Audit every page and modal against `DESIGN_GUIDE.md` mobile standards (full-screen mobile modals, `44px` touch targets, and zero horizontal overflow).
 - Polish mobile-specific interactions beyond CSS layout tokens (numeric/decimal mobile keyboards via `inputMode`, touch chart scrubbing ergonomics, and condensed table scrolling on narrow viewports).
 
-### Release v0.9.8a: Research Only, Security and Best Practices Audit
+### Release v1.0.3a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
 - Look for monolthic files / lack of folder organization
@@ -48,13 +79,13 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Look for inconsistent theming or elements
 - Look to clean up database alters, no one has old database, clean up to make it better
 - Every above item should be its own phase, and then when developing a plan, reference previous findings
-- Make a plan for another ai for v0.9.8 for fixes, no fixes today. Be clear and concise.
+- Make a plan for another ai for v1.0.3-v1.0.6 for fixes, no fixes today. Be clear and concise.
 - Double check results. It will be compared against another ai. 
 
-### Release v0.9.8: Security and Best Practices Application
+### Release v1.0.3-v1.0.6: Security and Best Practices Application
 - Security and Best Practices Application
 
-### Release v0.9.9: Production Prep
+### Release v1.0.7: Production Prep
 - **Single-Container Consolidation & Entrypoint**
   - Combine `web` and `worker` into one container via a startup entrypoint script (`ENTRYPOINT` / `CMD` baked into `Dockerfile` so `docker run`, Unraid, and Portainer work out of the box) with automatic worker restart on unexpected exit.
   - Respect dynamic `PORT` environment variables.
@@ -70,23 +101,15 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Update `docker-compose.yml` to a standard single-service example (`thebronway/flightsentry:latest`, `./data:/app/data`, port `4000:4000`) with `ENABLE_API_TESTER` removed so the dev tester remains opt-in.
   - Update `.env.example` to document optional self-hosted overrides (`PORT`, `TZ`, `DATABASE_PATH`, `ENCRYPTION_SECRET`, `AUTH_USERNAME`, `AUTH_PASSWORD`) while keeping `.env` optional.
 
-### Release v0.9.9a: Multi-Architecture Docker Builds
+### Release v1.0.8: Multi-Architecture Docker Builds
 - **Automated Multi-Arch CI/CD (`linux/amd64` & `linux/arm64`)**
   - Add a GitHub Actions workflow using `docker/setup-qemu-action`, `docker/setup-buildx-action`, and `docker/build-push-action` to build and push multi-architecture images (`linux/amd64`, `linux/arm64`) to Docker Hub (`thebronway/flightsentry`) on version tags.
   - Validate native `better-sqlite3` compilation and startup health checks on ARM64 (Raspberry Pi / ARM servers) prior to `v1.0.0`.
 
-### Release v0.9.9b
-- Site Launch
-    - User Guide
-    - Quickstart Guide
-    - API Documentation
-  - Sections and layout for both the main app FlightSentry and OpenFareScraper (incl api documentation)
-  - Follow Design Guide, but its okay to use addtional elements
-  - What screenshots do you need?
-  - No public demo yet
-  - No hosted version yet (but coming in the future maybe)
+### Release v1.0.9
+- Final Fixes
 
-### Release v1.0.0
+### Release v1.1.0
 - README finalize
 - Another Security Audit
 - GitHub, Docker Release

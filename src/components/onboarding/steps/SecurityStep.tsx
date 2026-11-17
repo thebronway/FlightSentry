@@ -240,7 +240,7 @@ export default function SecurityStep({ onSkipToSettingsLater }: OnboardingStepPr
               <button
                 type="submit"
                 disabled={!canEnable}
-                className="min-h-[38px] px-4 py-1.5 rounded-md bg-slate-200 hover:bg-white text-slate-900 font-bold text-xs inline-flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white font-semibold shadow-sm transition-colors text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
               >
                 {savingAuth ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

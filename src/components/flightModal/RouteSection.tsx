@@ -12,6 +12,7 @@ import { TrackingOption } from './useFlightModalState';
 interface Props {
   trackingType: TrackingOption;
   showRouteDetails: boolean;
+  hasConnectingLegs?: boolean;
   origin: string;
   destination: string;
   departureDate: string;
@@ -30,6 +31,7 @@ interface Props {
 export default function RouteSection({
   trackingType,
   showRouteDetails,
+  hasConnectingLegs = false,
   origin,
   destination,
   departureDate,
@@ -46,7 +48,7 @@ export default function RouteSection({
 }: Props) {
   const isRouteWatch = trackingType === 'route_watch';
 
-  if (!isRouteWatch && !showRouteDetails) {
+  if ((!isRouteWatch && !showRouteDetails) || hasConnectingLegs) {
     return null;
   }
 

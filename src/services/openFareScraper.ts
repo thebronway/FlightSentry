@@ -9,6 +9,7 @@ import {
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToAirportList } from '../utils/coLocations';
 import { evaluateOpenFareScraperVersion } from '../utils/openFareScraperVersion';
+import { parseFlightLegs, getLegUniqueCarriers, matchesTrackedFlightLegs } from '../utils/flightLegs';
 
 export interface ScraperHealthResponse {
   status: 'ok' | 'rate_limited' | 'cooldown' | 'paused';
@@ -331,16 +332,24 @@ export const checkOpenFareScraperPrice = async (
       payload.excludedAirlines = Array.from(excludeSet);
     }
   } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1) {
-    const targetCode = flight.airline
-      ? normalizeAirlineCode(flight.airline, flight.flightNumber || undefined)
-      : '';
-    if (targetCode && targetCode !== 'UN') {
-      payload.airline = targetCode;
-    }
-    if (flight.flightNumber) {
-      const cleanedNum = cleanFlightNumber(flight.flightNumber, targetCode || undefined);
-      if (cleanedNum) {
-        payload.flightNumber = cleanedNum;
+    const trackedLegs = parseFlightLegs(flight.legs);
+    if (trackedLegs.length >= 2) {
+      const legCarriers = getLegUniqueCarriers(trackedLegs);
+      if (legCarriers.length > 0) {
+        payload.includedAirlines = legCarriers;
+      }
+    } else {
+      const targetCode = flight.airline
+        ? normalizeAirlineCode(flight.airline, flight.flightNumber || undefined)
+        : '';
+      if (targetCode && targetCode !== 'UN') {
+        payload.airline = targetCode;
+      }
+      if (flight.flightNumber) {
+        const cleanedNum = cleanFlightNumber(flight.flightNumber, targetCode || undefined);
+        if (cleanedNum) {
+          payload.flightNumber = cleanedNum;
+        }
       }
     }
   }
@@ -494,13 +503,21 @@ export const checkOpenFareScraperPrice = async (
       };
     });
 
-  // 5. Specific Flight Number matching across top-level flightNumber and legs[]
-  if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
-    const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
-    const targetNum = cleanFlightNumber(flight.flightNumber, targetCode);
+  // 5. Specific Flight Number (or Multi-Leg Layover Itinerary) matching across top-level flightNumber and legs[]
+  const trackedLegs = parseFlightLegs(flight.legs);
+  if (flight.searchMode === 'FlightNumber' && (flight.flightNumber || trackedLegs.length >= 2)) {
+    const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber || undefined);
+    const targetNum = cleanFlightNumber(flight.flightNumber || '', targetCode);
 
     const sortedByPrice = [...parsedItineraries].sort((a, b) => a.price - b.price);
     const targetItinerary = sortedByPrice.find((it) => {
+      if (trackedLegs.length >= 2) {
+        if (!Array.isArray(it.legs) || it.legs.length !== trackedLegs.length) {
+          return false;
+        }
+        return matchesTrackedFlightLegs(it.legs, trackedLegs);
+      }
+
       const topMatchesAirline = targetCode && targetCode !== 'UN' ? it.airline === targetCode : true;
       const topMatchesNum = Boolean(it.flightNumber) && it.flightNumber === targetNum;
       if (topMatchesAirline && topMatchesNum) {
@@ -543,10 +560,13 @@ export const checkOpenFareScraperPrice = async (
       };
     }
 
+    const legSummary = trackedLegs.length >= 2
+      ? trackedLegs.map((l) => `${l.airline} ${l.flightNumber} (${l.origin}->${l.destination})`).join(' + ')
+      : `${targetCode} ${targetNum}`;
     return {
       price: null,
       status: 'SoldOut',
-      errorMessage: `OpenFareScraper returned ${parsedItineraries.length} itineraries, but flight ${targetCode} ${targetNum} was not found`,
+      errorMessage: `OpenFareScraper returned ${parsedItineraries.length} itineraries, but flight ${legSummary} was not found`,
     };
   }
 

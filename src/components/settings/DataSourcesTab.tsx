@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Settings } from '@/types';
+import type { ScraperHealthResponse } from '@/services/openFareScraper';
 import SettingsIntroBanner from './shared/SettingsIntroBanner';
 import DataSourceLogsModal from './DataSourceLogsModal';
 import QueryRoutingStrategyCard from './datasources/QueryRoutingStrategyCard';
@@ -13,6 +14,8 @@ interface Props {
   settings: Settings;
   onChange: (settings: Settings) => void;
   providerStatus: Record<string, { type: 'success' | 'error'; message: string } | null>;
+  cachedScraperHealth?: ScraperHealthResponse | null;
+  onScraperHealthUpdated?: (health: ScraperHealthResponse | null) => void;
   onAutoSave?: (
     updatedSettings: Settings,
     statusKey: string,
@@ -43,6 +46,8 @@ export default function DataSourcesTab({
   settings,
   onChange,
   providerStatus,
+  cachedScraperHealth = null,
+  onScraperHealthUpdated,
   onAutoSave,
   onAdjustUsage,
 }: Props) {
@@ -170,6 +175,8 @@ export default function DataSourcesTab({
                 prioritizeFirst={settings.openfareScraperPrioritizeFirst !== 0}
                 scraperUrl={settings.openfareScraperUrl || ''}
                 scraperApiKey={settings.openfareScraperApiKey || ''}
+                initialHealth={cachedScraperHealth}
+                onHealthUpdated={onScraperHealthUpdated}
                 status={providerStatus['openfarescraper']}
                 onToggleEnabled={checked => toggleEnabled('openfarescraper', checked)}
                 onTogglePrioritizeFirst={toggleScraperPrioritizeFirst}

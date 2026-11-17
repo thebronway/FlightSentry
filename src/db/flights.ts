@@ -42,7 +42,7 @@ export const flightDb = {
   create: (flight: Omit<Flight, 'id' | 'createdAt' | 'updatedAt' | 'currentPrice'> & { currentPrice?: number }): number => {
     const stmt = db.prepare(`
       INSERT INTO flights (
-        searchMode, origin, destination, departureDate, airline, bookingAirline, flightNumber, 
+        searchMode, origin, destination, departureDate, airline, bookingAirline, flightNumber, legs,
         includedAirlines, excludedAirlines, pnr, fareTier, cabinClass, baselinePrice, 
         purchasePrice, originalPurchasePrice, targetPrice, currentPrice, minDropDollar, minDropPercent,
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
@@ -53,7 +53,7 @@ export const flightDb = {
         maxLayoverMinutes, excludedConnectingAirports, maxTotalDurationMinutes,
         includedAlliances, excludedAlliances, createdAt, updatedAt
       ) VALUES (
-        @searchMode, @origin, @destination, @departureDate, @airline, @bookingAirline, @flightNumber, 
+        @searchMode, @origin, @destination, @departureDate, @airline, @bookingAirline, @flightNumber, @legs,
         @includedAirlines, @excludedAirlines, @pnr, @fareTier, @cabinClass, @baselinePrice, 
         @purchasePrice, @originalPurchasePrice, @targetPrice, @currentPrice, @minDropDollar, @minDropPercent,
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
@@ -103,6 +103,7 @@ export const flightDb = {
       airline: flight.airline ?? '',
       bookingAirline,
       flightNumber: flight.flightNumber ?? null,
+      legs: flight.legs ?? null,
       includedAirlines: flight.includedAirlines ?? null,
       excludedAirlines: flight.excludedAirlines ?? null,
       pnr: flight.pnr ?? null,
@@ -147,6 +148,7 @@ export const flightDb = {
     const merged = {
       ...current,
       ...data,
+      legs: data.legs !== undefined ? data.legs : (current.legs ?? null),
       taxesAmount: data.taxesAmount !== undefined ? data.taxesAmount : (current.taxesAmount ?? null),
       taxesCurrency: data.taxesCurrency !== undefined ? data.taxesCurrency : (current.taxesCurrency ?? null),
       bookingAirline:
@@ -164,6 +166,7 @@ export const flightDb = {
         airline = @airline,
         bookingAirline = @bookingAirline,
         flightNumber = @flightNumber,
+        legs = @legs,
         includedAirlines = @includedAirlines,
         excludedAirlines = @excludedAirlines,
         pnr = @pnr,

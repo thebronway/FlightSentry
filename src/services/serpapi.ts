@@ -1,8 +1,9 @@
-import { Flight, RouteItinerary, AdapterExecutionOptions } from '../types';
+import { Flight, RouteItinerary, RouteSegment, AdapterExecutionOptions } from '../types';
 import { DataSourceResult } from './datasource';
 import { normalizeAirlineCode, getAirlineName, cleanFlightNumber, expandAlliancesToAirlines } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToApiAirportCodes } from '../utils/coLocations';
+import { parseFlightLegs, getLegUniqueCarriers, matchesTrackedFlightLegs } from '../utils/flightLegs';
 
 export const checkFlightPrice = async (
   flight: Flight,
@@ -86,10 +87,18 @@ export const checkFlightPrice = async (
       if (flight.maxTotalDurationMinutes) {
         url.searchParams.append('max_duration', String(flight.maxTotalDurationMinutes));
       }
-    } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1 && flight.airline) {
-      const normalizedTarget = normalizeAirlineCode(flight.airline, flight.flightNumber || undefined);
-      if (normalizedTarget && normalizedTarget !== 'UN') {
-        url.searchParams.append('include_airlines', normalizedTarget);
+    } else if (flight.searchMode === 'FlightNumber' && flight.monitorRouteAlternatives !== 1) {
+      const trackedLegs = parseFlightLegs(flight.legs);
+      if (trackedLegs.length >= 2) {
+        const legCarriers = getLegUniqueCarriers(trackedLegs);
+        if (legCarriers.length > 0) {
+          url.searchParams.append('include_airlines', legCarriers.join(','));
+        }
+      } else if (flight.airline) {
+        const normalizedTarget = normalizeAirlineCode(flight.airline, flight.flightNumber || undefined);
+        if (normalizedTarget && normalizedTarget !== 'UN') {
+          url.searchParams.append('include_airlines', normalizedTarget);
+        }
       }
     }
 
@@ -168,6 +177,22 @@ export const checkFlightPrice = async (
           if (durations.length > 0) maxLayoverMinutes = Math.max(...durations);
         }
 
+        const mappedLegs: RouteSegment[] | undefined = Array.isArray(f.flights)
+          ? f.flights.map((leg: any) => {
+              const segRawNum = (leg.flight_number || '').toString();
+              const segCode = normalizeAirlineCode(leg.airline || '', segRawNum);
+              return {
+                airline: segCode,
+                flightNumber: cleanFlightNumber(segRawNum, segCode),
+                origin: (leg.departure_airport?.id || leg.departure_airport?.code || '').trim().toUpperCase(),
+                destination: (leg.arrival_airport?.id || leg.arrival_airport?.code || '').trim().toUpperCase(),
+                departureTime: leg.departure_airport?.time || '',
+                arrivalTime: leg.arrival_airport?.time || '',
+                durationMinutes: typeof leg.duration === 'number' ? leg.duration : 0,
+              };
+            })
+          : undefined;
+
         return {
           airline: code,
           airlineName: firstLeg.airline || getAirlineName(code),
@@ -183,16 +208,32 @@ export const checkFlightPrice = async (
           isNonstop: stops === 0,
           layoverAirports,
           maxLayoverMinutes,
+          legs: mappedLegs,
         };
       });
 
-    // Specific Flight Number matching
-    if (flight.searchMode === 'FlightNumber' && flight.flightNumber) {
-      const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber);
-      const targetNum = cleanFlightNumber(flight.flightNumber, targetCode);
+    // Specific Flight Number (or Multi-Leg Layover Itinerary) matching
+    const trackedLegs = parseFlightLegs(flight.legs);
+    if (flight.searchMode === 'FlightNumber' && (flight.flightNumber || trackedLegs.length >= 2)) {
+      const targetCode = normalizeAirlineCode(flight.airline || '', flight.flightNumber || undefined);
+      const targetNum = cleanFlightNumber(flight.flightNumber || '', targetCode);
 
       const targetFlight = allFlights.find((f: any) => {
         const legs = f.flights || [];
+        if (trackedLegs.length >= 2) {
+          const normalizedSegments = legs.map((leg: any) => {
+            const rawFlightNum = (leg.flight_number || '').toString();
+            const legCode = normalizeAirlineCode(leg.airline || '', rawFlightNum);
+            return {
+              airline: legCode,
+              flightNumber: cleanFlightNumber(rawFlightNum, legCode),
+              origin: (leg.departure_airport?.id || leg.departure_airport?.code || '').trim().toUpperCase(),
+              destination: (leg.arrival_airport?.id || leg.arrival_airport?.code || '').trim().toUpperCase(),
+            };
+          });
+          return matchesTrackedFlightLegs(normalizedSegments, trackedLegs);
+        }
+
         return legs.some((leg: any) => {
           const rawFlightNum = (leg.flight_number || '').toString();
           const legCode = normalizeAirlineCode(leg.airline || '', rawFlightNum);
@@ -228,7 +269,10 @@ export const checkFlightPrice = async (
         };
       }
 
-      const fnMsg = `SerpAPI returned ${allFlights.length} itineraries, but flight ${targetCode} ${targetNum} was not found`;
+      const legSummary = trackedLegs.length >= 2
+        ? trackedLegs.map(l => `${l.airline} ${l.flightNumber} (${l.origin}->${l.destination})`).join(' + ')
+        : `${targetCode} ${targetNum}`;
+      const fnMsg = `SerpAPI returned ${allFlights.length} itineraries, but flight ${legSummary} was not found`;
       console.warn(`[SerpAPI] ${fnMsg}`);
       return { price: null, status: 'SoldOut', errorMessage: fnMsg };
     }

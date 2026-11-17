@@ -12,6 +12,79 @@ export const airlineCodeSchema = z
   .toUpperCase()
   .refine((val) => isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE);
 
+export const trackedFlightLegSchema = z
+  .object({
+    airline: airlineCodeSchema,
+    bookingAirline: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .refine((val) => !val || isValidAirlineCode(val), INVALID_AIRLINE_MESSAGE)
+      .optional()
+      .nullable(),
+    flightNumber: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, 'Leg flight number must be numbers only')
+      .min(1, 'Leg flight number is required'),
+    origin: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/, 'Leg origin must be a 3-letter IATA airport code')
+      .refine((val) => !isMetroCode(val), 'Leg origin must be a specific airport code, not a metro cluster'),
+    destination: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/, 'Leg destination must be a 3-letter IATA airport code')
+      .refine((val) => !isMetroCode(val), 'Leg destination must be a specific airport code, not a metro cluster'),
+  })
+  .refine((leg) => leg.origin !== leg.destination, {
+    message: 'Leg origin and destination airports must be different',
+    path: ['destination'],
+  });
+
+const normalizedLegsArraySchema = z
+  .array(trackedFlightLegSchema)
+  .min(2, 'Connecting itineraries must include at least 2 flight legs')
+  .max(4, 'Connecting itineraries can include at most 4 flight legs')
+  .superRefine((legs, ctx) => {
+    for (let i = 0; i < legs.length - 1; i++) {
+      if (legs[i].destination !== legs[i + 1].origin) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [i + 1, 'origin'],
+          message: `Leg ${i + 2} origin (${legs[i + 1].origin}) must match Leg ${i + 1} destination (${legs[i].destination})`,
+        });
+      }
+    }
+    if (legs[0].origin === legs[legs.length - 1].destination) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [legs.length - 1, 'destination'],
+        message: 'Initial origin and final destination airports must be different',
+      });
+    }
+  });
+
+const flightLegsInputSchema = z.preprocess((val) => {
+  if (val === undefined || val === null || val === '') return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length === 0) return null;
+      return parsed;
+    } catch {
+      return val;
+    }
+  }
+  if (Array.isArray(val) && val.length === 0) return null;
+  return val;
+}, normalizedLegsArraySchema.nullable()).optional();
+
 const commaSeparatedAirlinesOrAlliancesSchema = z
   .string()
   .optional()
@@ -49,6 +122,7 @@ export const flightSchema = z.object({
     .optional()
     .nullable(),
   flightNumber: z.string().regex(/^\d+$/, "Flight number must be numbers only").optional().nullable(),
+  legs: flightLegsInputSchema,
   includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
   excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
   pnr: z.string().max(10).optional().nullable(),
@@ -82,16 +156,25 @@ export const flightSchema = z.object({
   includedAlliances: z.string().optional().nullable(),
   excludedAlliances: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
+  const hasLegs = Array.isArray(data.legs) && data.legs.length >= 2;
+  if (hasLegs && data.searchMode !== 'FlightNumber') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['legs'],
+      message: 'Multi-leg layover tracking requires searchMode to be FlightNumber',
+    });
+  }
+
   const cleanAirline = (data.airline || '').trim().toUpperCase();
   if (data.searchMode === 'FlightNumber') {
-    if (!isValidAirlineCode(cleanAirline)) {
+    if (!hasLegs && !isValidAirlineCode(cleanAirline)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['airline'],
         message: INVALID_AIRLINE_MESSAGE,
       });
     }
-    if (!data.flightNumber || !data.flightNumber.trim()) {
+    if (!hasLegs && (!data.flightNumber || !data.flightNumber.trim())) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['flightNumber'],
@@ -584,6 +667,7 @@ export const publicFlightPatchSchema = z
       .regex(/^\d+$/, 'Flight number must be numbers only')
       .optional()
       .nullable(),
+    legs: flightLegsInputSchema,
     includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
     excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
     pnr: z.string().max(10).optional().nullable(),

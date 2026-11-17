@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-16*  
-*Current Version: v0.9.4*
+*Last updated: 2026-11-17*  
+*Current Version: v0.9.5*
 
 ## Changelog
+
+### Release v0.9.5
+- Relabeled **Current Local Time** to **Current Configured Time** in **Settings → General**, reordered General cards (**Application Version**, **Configured Time**, **Currency**, **Instance Setup Wizard**), and synced the onboarding wizard steps to match.
+- Moved **Past Flights Archive & Retention** to **Settings → Scheduling** and added an **Upcoming Scheduled Tasks** modal (`GET /api/settings/scheduled-tasks`) listing queued flight checks and background cron jobs in the configured timezone.
+- Moved `SettingsForm` into `src/app/settings/layout.tsx` with cached scraper telemetry and preloaded server state in `src/app/dashboard/layout.tsx` with single-direction onboarding step sync to eliminate tab-switch and wizard-launch flicker.
+- Added single-card layover and multi-leg flight tracking.
 
 ### Release v0.9.4
 - Added a 9-step routable onboarding wizard (`/dashboard/onboarding` and `/dashboard/onboarding/[step]`) covering all Settings tabs with auto-save, setup links, and a **Set up in Settings later** option.

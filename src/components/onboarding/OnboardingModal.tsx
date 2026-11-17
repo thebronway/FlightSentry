@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, ExternalLink, SlidersHorizontal } from 'lucide-react';
 import { Settings } from '@/types';
-import SettingsModalPortal from '@/components/settings/shared/SettingsModalPortal';
 import { ONBOARDING_STEPS, OnboardingStepId } from './types';
 import WelcomeStep from './steps/WelcomeStep';
 import GeneralStep from './steps/GeneralStep';
@@ -50,15 +49,18 @@ export default function OnboardingModal({
   const lastPersistedJsonRef = useRef<string>(settings ? JSON.stringify(settings) : '');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOpenRef = useRef(false);
+  const prevActiveStepIdRef = useRef<OnboardingStepId | undefined>(activeStepId);
   const bodyScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!activeStepId) return;
-    const found = ONBOARDING_STEPS.findIndex((s) => s.id === activeStepId);
-    if (found >= 0 && found !== stepIndex) {
-      setStepIndex(found);
+    if (activeStepId && activeStepId !== prevActiveStepIdRef.current) {
+      const found = ONBOARDING_STEPS.findIndex((s) => s.id === activeStepId);
+      if (found >= 0) {
+        setStepIndex(found);
+      }
     }
-  }, [activeStepId, stepIndex]);
+    prevActiveStepIdRef.current = activeStepId;
+  }, [activeStepId]);
 
   useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
@@ -66,6 +68,7 @@ export default function OnboardingModal({
         ? Math.max(0, ONBOARDING_STEPS.findIndex((s) => s.id === activeStepId))
         : 0;
       setStepIndex(initialIdx);
+      prevActiveStepIdRef.current = activeStepId;
       setBannerFeedback(null);
       setAutoSavedPulse(false);
       if (settings) {
@@ -279,7 +282,6 @@ export default function OnboardingModal({
   };
 
   return (
-    <SettingsModalPortal>
       <div
         role="dialog"
         aria-modal="true"
@@ -458,7 +460,7 @@ export default function OnboardingModal({
               type="button"
               disabled={saving}
               onClick={() => void goNext()}
-              className="min-h-[42px] sm:min-h-[38px] px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition-colors bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition-colors bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-45 disabled:pointer-events-none"
             >
               <span>
                 {saving
@@ -474,6 +476,5 @@ export default function OnboardingModal({
           </div>
         </div>
       </div>
-    </SettingsModalPortal>
   );
 }

@@ -6,6 +6,7 @@ import { flightSchema } from '@/utils/validation';
 import { settingsDb } from '@/db/settings';
 import { FlightStatus } from '@/types';
 import { isPointsCurrency } from '@/utils/format';
+import { serializeFlightLegs } from '@/utils/flightLegs';
 import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const body = await req.json();
     const parsed = flightSchema.parse(body);
+    const normalizedLegs = Array.isArray(parsed.legs) && parsed.legs.length >= 2 ? parsed.legs : null;
+    const serializedLegs = serializeFlightLegs(normalizedLegs);
 
     const todayStr = new Date().toISOString().split('T')[0];
     if (parsed.departureDate < todayStr) {
@@ -119,13 +122,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     flightDb.update(id, {
       ...parsed,
-      origin: parsed.origin ?? existing.origin,
-      destination: parsed.destination ?? existing.destination,
-      airline: parsed.airline ?? '',
+      origin: normalizedLegs ? normalizedLegs[0].origin : (parsed.origin ?? existing.origin),
+      destination: normalizedLegs ? normalizedLegs[normalizedLegs.length - 1].destination : (parsed.destination ?? existing.destination),
+      airline: normalizedLegs ? normalizedLegs[0].airline : (parsed.airline ?? ''),
       bookingAirline: parsed.bookingAirline !== undefined
-        ? (parsed.bookingAirline || parsed.airline || existing.airline || null)
-        : (existing.bookingAirline || parsed.airline || existing.airline || null),
-      flightNumber: parsed.flightNumber ?? null,
+        ? (parsed.bookingAirline || (normalizedLegs ? normalizedLegs[0].airline : parsed.airline) || existing.airline || null)
+        : (existing.bookingAirline || (normalizedLegs ? normalizedLegs[0].airline : parsed.airline) || existing.airline || null),
+      flightNumber: normalizedLegs ? normalizedLegs[0].flightNumber : (parsed.flightNumber ?? null),
+      legs: parsed.legs !== undefined ? serializedLegs : (existing.legs ?? null),
       includedAirlines: parsed.includedAirlines ?? null,
       excludedAirlines: parsed.excludedAirlines ?? null,
       pnr: parsed.pnr ?? null,

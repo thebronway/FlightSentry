@@ -8,12 +8,14 @@ import {
   PriceTrackingDirection,
   Flight,
   Settings,
+  TrackedFlightLeg,
 } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
 import { getDataSourceStatus, isValidAirlineCode } from '@/utils/airline';
 import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
 import { isPointsCurrency } from '@/utils/format';
+import { parseFlightLegs, serializeFlightLegs } from '@/utils/flightLegs';
 
 export type TrackingOption = 'route_watch' | 'flight_watch' | 'flight_booked';
 export type PaymentType = 'cash' | 'points';
@@ -30,6 +32,7 @@ export interface FlightFormState {
   airline: string;
   bookingAirline: string;
   flightNumber: string;
+  legs: TrackedFlightLeg[];
   includedAirlines: string;
   excludedAirlines: string;
   pnr: string;
@@ -74,6 +77,7 @@ const DEFAULT_FORM_STATE: FlightFormState = {
   airline: '',
   bookingAirline: '',
   flightNumber: '',
+  legs: [],
   includedAirlines: '',
   excludedAirlines: '',
   pnr: '',
@@ -229,22 +233,24 @@ export function useFlightModalState({
         );
         const paymentType: PaymentType = isPoints ? 'points' : 'cash';
         const isManual = initialFlight.isManual === 1;
+        const parsedInitialLegs = parseFlightLegs(initialFlight.legs);
 
         const nextState: FlightFormState = {
           trackingType,
           paymentType,
           isManual,
-          showRouteDetails: Boolean(initialFlight.origin && initialFlight.destination),
-          origin: initialFlight.origin || '',
-          destination: initialFlight.destination || '',
+          showRouteDetails: parsedInitialLegs.length >= 2 || Boolean(initialFlight.origin && initialFlight.destination),
+          origin: parsedInitialLegs[0]?.origin || initialFlight.origin || '',
+          destination: parsedInitialLegs[parsedInitialLegs.length - 1]?.destination || initialFlight.destination || '',
           departureDate: initialFlight.departureDate || '',
           bookingDate: initialFlight.bookingDate || todayStr,
-          airline: initialFlight.airline || '',
+          airline: parsedInitialLegs[0]?.airline || initialFlight.airline || '',
           bookingAirline:
-            initialFlight.bookingAirline && initialFlight.bookingAirline !== initialFlight.airline
+            initialFlight.bookingAirline && initialFlight.bookingAirline !== (parsedInitialLegs[0]?.airline || initialFlight.airline)
               ? initialFlight.bookingAirline
               : '',
-          flightNumber: initialFlight.flightNumber || '',
+          flightNumber: parsedInitialLegs[0]?.flightNumber || initialFlight.flightNumber || '',
+          legs: parsedInitialLegs,
           includedAirlines: initialFlight.includedAirlines || '',
           excludedAirlines: initialFlight.excludedAirlines || '',
           pnr: initialFlight.pnr || '',
@@ -369,6 +375,155 @@ export function useFlightModalState({
     return '';
   };
 
+  const syncTopLevelFromLegs = (legs: TrackedFlightLeg[], prev: FlightFormState): Partial<FlightFormState> => {
+    if (legs.length < 2) {
+      return { legs: [] };
+    }
+    const normalized: TrackedFlightLeg[] = legs.map((leg, idx) => ({
+      airline: (leg.airline || '').trim().toUpperCase(),
+      bookingAirline: leg.bookingAirline ? leg.bookingAirline.trim().toUpperCase() : null,
+      flightNumber: (leg.flightNumber || '').trim().replace(/\D/g, ''),
+      origin: idx === 0
+        ? (leg.origin || '').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase()
+        : (legs[idx - 1]?.destination || leg.origin || '').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase(),
+      destination: (leg.destination || '').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase(),
+    }));
+    const first = normalized[0];
+    const last = normalized[normalized.length - 1];
+    return {
+      legs: normalized,
+      airline: first.airline || prev.airline,
+      flightNumber: first.flightNumber || prev.flightNumber,
+      origin: first.origin,
+      destination: last.destination,
+      showRouteDetails: true,
+    };
+  };
+
+  const handleEnableLayover = useCallback(() => {
+    setFormData(prev => {
+      if (prev.legs.length >= 2) return prev;
+      const firstOrigin = sanitizeSingleAirport(prev.origin) || detectedRoute?.origin || '';
+      const finalDest = sanitizeSingleAirport(prev.destination) || detectedRoute?.destination || '';
+      const initialLegs: TrackedFlightLeg[] = [
+        {
+          airline: prev.airline.trim().toUpperCase(),
+          bookingAirline: prev.bookingAirline ? prev.bookingAirline.trim().toUpperCase() : null,
+          flightNumber: prev.flightNumber.trim().replace(/\D/g, ''),
+          origin: firstOrigin,
+          destination: '',
+        },
+        {
+          airline: prev.airline.trim().toUpperCase(),
+          bookingAirline: null,
+          flightNumber: '',
+          origin: '',
+          destination: finalDest,
+        },
+      ];
+      return {
+        ...prev,
+        ...syncTopLevelFromLegs(initialLegs, prev),
+      };
+    });
+    if (error) setError(null);
+  }, [detectedRoute, error]);
+
+  const handleAddLayoverLeg = useCallback(() => {
+    setFormData(prev => {
+      if (prev.legs.length < 2 || prev.legs.length >= 4) return prev;
+      const lastIdx = prev.legs.length - 1;
+      const priorLast = prev.legs[lastIdx];
+      const nextLegs: TrackedFlightLeg[] = [
+        ...prev.legs.slice(0, lastIdx),
+        {
+          ...priorLast,
+          destination: '',
+        },
+        {
+          airline: priorLast.airline || prev.airline.trim().toUpperCase(),
+          bookingAirline: null,
+          flightNumber: '',
+          origin: '',
+          destination: priorLast.destination || '',
+        },
+      ];
+      return {
+        ...prev,
+        ...syncTopLevelFromLegs(nextLegs, prev),
+      };
+    });
+    if (error) setError(null);
+  }, [error]);
+
+  const handleUpdateLayoverLeg = useCallback(
+    (index: number, patch: Partial<TrackedFlightLeg>) => {
+      setFormData(prev => {
+        if (index < 0 || index >= prev.legs.length) return prev;
+        const nextLegs = prev.legs.map((leg, i) => (i === index ? { ...leg, ...patch } : leg));
+        if (patch.destination !== undefined && index + 1 < nextLegs.length) {
+          nextLegs[index + 1] = {
+            ...nextLegs[index + 1],
+            origin: patch.destination,
+          };
+        }
+        return {
+          ...prev,
+          ...syncTopLevelFromLegs(nextLegs, prev),
+        };
+      });
+      if (lookupFailed) setLookupFailed(false);
+      if (error) setError(null);
+    },
+    [lookupFailed, error]
+  );
+
+  const handleRemoveLayoverLeg = useCallback(
+    (index: number) => {
+      setFormData(prev => {
+        if (prev.legs.length <= 2) {
+          const first = prev.legs[0];
+          const last = prev.legs[prev.legs.length - 1];
+          return {
+            ...prev,
+            legs: [],
+            airline: first?.airline || prev.airline,
+            flightNumber: first?.flightNumber || prev.flightNumber,
+            origin: first?.origin || prev.origin,
+            destination: last?.destination || prev.destination,
+          };
+        }
+        const filtered = prev.legs.filter((_, i) => i !== index);
+        for (let i = 0; i < filtered.length - 1; i++) {
+          filtered[i + 1] = { ...filtered[i + 1], origin: filtered[i].destination };
+        }
+        return {
+          ...prev,
+          ...syncTopLevelFromLegs(filtered, prev),
+        };
+      });
+      if (error) setError(null);
+    },
+    [error]
+  );
+
+  const handleClearLayovers = useCallback(() => {
+    setFormData(prev => {
+      if (prev.legs.length === 0) return prev;
+      const first = prev.legs[0];
+      const last = prev.legs[prev.legs.length - 1];
+      return {
+        ...prev,
+        legs: [],
+        airline: first?.airline || prev.airline,
+        flightNumber: first?.flightNumber || prev.flightNumber,
+        origin: first?.origin || prev.origin,
+        destination: last?.destination || prev.destination,
+      };
+    });
+    if (error) setError(null);
+  }, [error]);
+
   const handleTrackingTypeChange = useCallback((newType: TrackingOption) => {
     setFormData(prev => {
       if (newType === 'route_watch' && (prev.isManual || prev.paymentType === 'points')) {
@@ -378,6 +533,7 @@ export function useFlightModalState({
       return {
         ...prev,
         trackingType: newType,
+        legs: newType === 'route_watch' ? [] : prev.legs,
         showRouteDetails: newType === 'route_watch' ? true : prev.showRouteDetails,
         origin: restrictSingle ? sanitizeSingleAirport(prev.origin) : prev.origin,
         destination: restrictSingle ? sanitizeSingleAirport(prev.destination) : prev.destination,
@@ -482,6 +638,39 @@ export function useFlightModalState({
     if (formData.departureDate < todayStr) {
       setError('Departure date cannot be in the past. Please select today or a future date.');
       return;
+    }
+
+    // Multi-leg layover validation when 2+ legs are configured
+    const hasLayoverLegs = formData.trackingType !== 'route_watch' && formData.legs.length >= 2;
+    if (hasLayoverLegs) {
+      for (let i = 0; i < formData.legs.length; i++) {
+        const leg = formData.legs[i];
+        const legLabel = `Leg ${i + 1}`;
+        if (!isValidAirlineCode(leg.airline)) {
+          setError(`${legLabel}: Carrier must be a valid 2-character IATA airline code (e.g. DL, B6).`);
+          return;
+        }
+        if (!leg.flightNumber || !/^\d+$/.test(leg.flightNumber.trim())) {
+          setError(`${legLabel}: Numeric flight number is required.`);
+          return;
+        }
+        if (!/^[A-Z]{3}$/.test(leg.origin) || isMetroCode(leg.origin)) {
+          setError(`${legLabel}: Origin must be a single 3-letter IATA airport code.`);
+          return;
+        }
+        if (!/^[A-Z]{3}$/.test(leg.destination) || isMetroCode(leg.destination)) {
+          setError(`${legLabel}: Destination must be a single 3-letter IATA airport code.`);
+          return;
+        }
+        if (leg.origin === leg.destination) {
+          setError(`${legLabel}: Origin and destination airports must be different.`);
+          return;
+        }
+      }
+      if (formData.legs[0].origin === formData.legs[formData.legs.length - 1].destination) {
+        setError('Initial origin and final destination airports must be different.');
+        return;
+      }
     }
 
     // Validation by tracking type
@@ -596,12 +785,30 @@ export function useFlightModalState({
       parsedBaseline = parsedPurchase;
     }
 
-    const effectiveOrigin = (formData.origin.trim() || detectedRoute?.origin || '').toUpperCase();
-    const effectiveDest = (formData.destination.trim() || detectedRoute?.destination || '').toUpperCase();
     const effectiveSearchModeVal: SearchMode = formData.trackingType === 'route_watch' ? 'Route' : 'FlightNumber';
+    const serializedLegs =
+      effectiveSearchModeVal === 'FlightNumber' && formData.legs.length >= 2
+        ? serializeFlightLegs(formData.legs)
+        : null;
 
-    const cleanAirline = formData.airline ? formData.airline.trim().toUpperCase() : '';
+    const effectiveOrigin = serializedLegs
+      ? formData.legs[0].origin.toUpperCase()
+      : (formData.origin.trim() || detectedRoute?.origin || '').toUpperCase();
+    const effectiveDest = serializedLegs
+      ? formData.legs[formData.legs.length - 1].destination.toUpperCase()
+      : (formData.destination.trim() || detectedRoute?.destination || '').toUpperCase();
+
+    const cleanAirline = serializedLegs
+      ? formData.legs[0].airline.trim().toUpperCase()
+      : formData.airline
+      ? formData.airline.trim().toUpperCase()
+      : '';
     const cleanBookingAirline = formData.bookingAirline ? formData.bookingAirline.trim().toUpperCase() : '';
+    const cleanFlightNum = serializedLegs
+      ? formData.legs[0].flightNumber.trim()
+      : effectiveSearchModeVal === 'FlightNumber' && formData.flightNumber.trim()
+      ? formData.flightNumber.trim()
+      : null;
 
     const payload = {
       searchMode: effectiveSearchModeVal,
@@ -609,7 +816,8 @@ export function useFlightModalState({
       destination: effectiveDest,
       airline: cleanAirline,
       bookingAirline: cleanBookingAirline || cleanAirline || null,
-      flightNumber: effectiveSearchModeVal === 'FlightNumber' && formData.flightNumber.trim() ? formData.flightNumber.trim() : null,
+      flightNumber: cleanFlightNum,
+      legs: serializedLegs,
       includedAirlines: formData.includedAirlines ? formData.includedAirlines.trim().toUpperCase() : null,
       excludedAirlines: formData.excludedAirlines ? formData.excludedAirlines.trim().toUpperCase() : null,
       departureDate: formData.departureDate,
@@ -692,6 +900,11 @@ export function useFlightModalState({
     triggerBlurLookup,
     triggerManualLookup,
     handleFieldChange,
+    handleEnableLayover,
+    handleAddLayoverLeg,
+    handleUpdateLayoverLeg,
+    handleRemoveLayoverLeg,
+    handleClearLayovers,
     handleTrackingTypeChange,
     handlePaymentTypeChange,
     handleCurrencyChange,

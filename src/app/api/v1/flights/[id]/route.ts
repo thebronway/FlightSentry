@@ -18,6 +18,7 @@ import { isPointsCurrency } from '@/utils/format';
 import { isValidAirlineCode } from '@/utils/airline';
 import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
+import { serializeFlightLegs } from '@/utils/flightLegs';
 import { FlightStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -161,6 +162,14 @@ export async function PATCH(
     }
 
     const patch = parsedResult.data;
+    const normalizedPatchLegs =
+      patch.legs !== undefined
+        ? (Array.isArray(patch.legs) && patch.legs.length >= 2 ? patch.legs : null)
+        : undefined;
+    const serializedPatchLegs =
+      normalizedPatchLegs !== undefined
+        ? serializeFlightLegs(normalizedPatchLegs)
+        : undefined;
     const settings = settingsDb.get();
     const defaultCurrency = (settings.currency || 'USD').trim();
 
@@ -178,18 +187,26 @@ export async function PATCH(
     }
 
     const effectiveSearchMode = patch.searchMode ?? existing.searchMode;
-    const effectiveAirline =
-      patch.airline !== undefined ? patch.airline : existing.airline;
-    const effectiveFlightNumber =
-      patch.flightNumber !== undefined
-        ? patch.flightNumber
-        : existing.flightNumber;
-    const effectiveOrigin =
-      patch.origin !== undefined ? patch.origin : existing.origin;
-    const effectiveDestination =
-      patch.destination !== undefined
-        ? patch.destination
-        : existing.destination;
+    const effectiveAirline = normalizedPatchLegs
+      ? normalizedPatchLegs[0].airline
+      : patch.airline !== undefined
+      ? patch.airline
+      : existing.airline;
+    const effectiveFlightNumber = normalizedPatchLegs
+      ? normalizedPatchLegs[0].flightNumber
+      : patch.flightNumber !== undefined
+      ? patch.flightNumber
+      : existing.flightNumber;
+    const effectiveOrigin = normalizedPatchLegs
+      ? normalizedPatchLegs[0].origin
+      : patch.origin !== undefined
+      ? patch.origin
+      : existing.origin;
+    const effectiveDestination = normalizedPatchLegs
+      ? normalizedPatchLegs[normalizedPatchLegs.length - 1].destination
+      : patch.destination !== undefined
+      ? patch.destination
+      : existing.destination;
     const effectiveMonitorRouteAlt =
       patch.monitorRouteAlternatives !== undefined
         ? patch.monitorRouteAlternatives
@@ -333,6 +350,7 @@ export async function PATCH(
           ? patch.bookingAirline || effectiveAirline || null
           : existing.bookingAirline || effectiveAirline || null,
       flightNumber: effectiveFlightNumber ?? null,
+      legs: serializedPatchLegs !== undefined ? serializedPatchLegs : (existing.legs ?? null),
       currency: effectiveCurrency ?? null,
       taxesAmount: normalizedTaxesAmount,
       taxesCurrency: normalizedTaxesCurrency,
