@@ -253,6 +253,7 @@ export const settingsSchema = z.object({
   emailScannerPollIntervalMinutes: z.number().int().min(5).max(1440).optional(),
   emailScannerNotifyEnabled: z.number().min(0).max(1).optional(),
   appBaseUrl: safeHttpUrlSchema.transform((val) => val.replace(/\/+$/, '')).optional().nullable().or(z.literal('')),
+  onboardingCompleted: z.number().int().min(0).max(1).optional(),
 });
 
 const imapHostSchema = z

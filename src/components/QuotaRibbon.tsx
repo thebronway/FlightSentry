@@ -56,24 +56,32 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       if (res.ok) {
         const data = await res.json();
         if (data?.health) {
-          setScraperHealth(data.health as ScraperHealthResponse);
+          const nextHealth = data.health as ScraperHealthResponse;
+          setScraperHealth(prev =>
+            JSON.stringify(prev) === JSON.stringify(nextHealth) ? prev : nextHealth
+          );
         } else {
-          setScraperHealth(null);
+          setScraperHealth(prev => (prev === null ? prev : null));
         }
       } else {
-        setScraperHealth(null);
+        setScraperHealth(prev => (prev === null ? prev : null));
       }
     } catch {
-      setScraperHealth(null);
+      setScraperHealth(prev => (prev === null ? prev : null));
     }
   };
 
   const fetchSettings = async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     if (res.ok) {
-      const data = await res.json();
-      setSettings(data);
-      onSettingsChange?.(data);
+      const data: SettingsType = await res.json();
+      setSettings(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) {
+          return prev;
+        }
+        onSettingsChange?.(data);
+        return data;
+      });
       void fetchRemoteScraperHealth(data);
     }
   };

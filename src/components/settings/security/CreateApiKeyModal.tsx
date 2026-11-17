@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, FormEvent } from 'react';
-import {
-  KeyRound,
-  X,
-  Copy,
-  Check,
-  AlertTriangle,
-  Loader2,
-  ShieldCheck,
-} from 'lucide-react';
+import { KeyRound, X, Copy, Check, AlertTriangle, Loader2, ShieldCheck } from 'lucide-react';
 import { ApiKeyPublic, ApiKeyScope } from '@/types';
 import SettingsModalPortal from '../shared/SettingsModalPortal';
 

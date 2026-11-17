@@ -153,7 +153,8 @@ CREATE TABLE IF NOT EXISTS settings (
     emailScannerEnabled INTEGER NOT NULL DEFAULT 0,
     emailScannerPollIntervalMinutes INTEGER NOT NULL DEFAULT 15,
     emailScannerNotifyEnabled INTEGER NOT NULL DEFAULT 1,
-    appBaseUrl TEXT
+    appBaseUrl TEXT,
+    onboardingCompleted INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS imap_accounts (

@@ -2,17 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
-import {
-  Fingerprint,
-  Plus,
-  Trash2,
-  ShieldAlert,
-  Loader2,
-  CheckCircle2,
-  Pencil,
-  Check,
-  X,
-} from 'lucide-react';
+import { Fingerprint, Plus, Trash2, ShieldAlert, Loader2, CheckCircle2, Pencil, Check, X } from 'lucide-react';
 import { AuthPasskeyPublic } from '@/types';
 import SettingsCard from '../shared/SettingsCard';
 

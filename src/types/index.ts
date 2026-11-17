@@ -178,6 +178,7 @@ export interface Settings {
   emailScannerPollIntervalMinutes?: number;
   emailScannerNotifyEnabled?: number; // 0 (false) or 1 (true)
   appBaseUrl?: string | null;
+  onboardingCompleted?: number; // 0 (false) or 1 (true)
 }
 
 export interface ImapAccount {

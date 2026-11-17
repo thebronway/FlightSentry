@@ -82,10 +82,25 @@ export function initDb() {
         "ALTER TABLE email_queue ADD COLUMN isPoints INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE email_queue ADD COLUMN taxesAmount REAL",
         "ALTER TABLE email_queue ADD COLUMN taxesCurrency TEXT",
+        "ALTER TABLE settings ADD COLUMN onboardingCompleted INTEGER NOT NULL DEFAULT 0",
     ];
     for (const migration of migrations) {
         try {
             db.exec(migration);
+            if (migration.includes('onboardingCompleted')) {
+                // Existing installations with tracked flights or enabled data sources have already been set up
+                db.exec(`
+                    UPDATE settings
+                    SET onboardingCompleted = 1
+                    WHERE id = 1
+                      AND (
+                        serpApiEnabled = 1
+                        OR searchApiEnabled = 1
+                        OR openfareScraperEnabled = 1
+                        OR EXISTS (SELECT 1 FROM flights LIMIT 1)
+                      )
+                `);
+            }
         } catch {
             // Column already exists
         }
@@ -426,14 +441,15 @@ export function initDb() {
                 pointsCurrencies, defaultCabinClass, defaultFareTier, defaultNoRedeye,
                 defaultMaxStops, defaultIncludedAirlines, defaultExcludedAirlines,
                 maxStoredItineraries, carrierDiversityEnabled, githubSyncEnabled,
-                emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl
+                emailScannerEnabled, emailScannerPollIntervalMinutes, emailScannerNotifyEnabled, appBaseUrl,
+                onboardingCompleted
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
                 48, 24, 12, 7, 23, 'serpapi,searchapi,openfarescraper',
                 'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
                 'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1,
-                0, 15, 1, NULL
+                0, 15, 1, NULL, 0
             )
         `);
         insertSettings.run();

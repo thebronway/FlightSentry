@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, FileText, Plus } from 'lucide-react';
+import { ChevronUp, ChevronDown, FileText, Plus, ExternalLink } from 'lucide-react';
 import { calculateNextResetDate, formatOrdinalDay } from '@/utils/date';
 import { getQuotaThresholdLevel } from '@/components/quotaRibbon/types';
 import SettingsSelect from '../shared/SettingsSelect';
@@ -147,7 +147,21 @@ export default function MeteredProviderCard({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+        <div className="flex flex-wrap items-center gap-1.5 ml-auto sm:ml-0">
+          <a
+            href={
+              providerKey === 'serpapi'
+                ? 'https://serpapi.com/manage-api-key'
+                : 'https://www.searchapi.io/dashboard'
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Open ${providerName} to get or manage your API key`}
+            className="min-h-[44px] sm:min-h-[34px] flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1 text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-sky-300 hover:text-white hover:bg-gunmetal-border rounded-md shadow-sm transition-colors"
+          >
+            <span>Get API Key</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
           <button
             type="button"
             onClick={onOpenLogs}
@@ -200,6 +214,11 @@ export default function MeteredProviderCard({
               placeholder="Enter API Key"
               className="w-full min-h-[44px] sm:min-h-[38px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm"
             />
+            <span className="text-[11px] text-gunmetal-muted block mt-1">
+              {providerKey === 'serpapi'
+                ? 'Sign in at serpapi.com → Dashboard → Manage API Key.'
+                : 'Sign in at searchapi.io → Account Dashboard → API Key.'}
+            </span>
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">

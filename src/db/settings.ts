@@ -90,7 +90,8 @@ export const settingsDb = {
         emailScannerEnabled = @emailScannerEnabled,
         emailScannerPollIntervalMinutes = @emailScannerPollIntervalMinutes,
         emailScannerNotifyEnabled = @emailScannerNotifyEnabled,
-        appBaseUrl = @appBaseUrl
+        appBaseUrl = @appBaseUrl,
+        onboardingCompleted = @onboardingCompleted
       WHERE id = 1
     `);
     stmt.run(updated);

@@ -2,16 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import {
-  ArrowUpCircle,
-  BookOpen,
-  Container,
-  ExternalLink,
-  Info,
-  AlertTriangle,
-  X,
-  Clock,
-} from 'lucide-react';
+import { ArrowUpCircle, BookOpen, Container, ExternalLink, Info, AlertTriangle, X, Clock } from 'lucide-react';
 import { UpdateBannerStatus } from '@/types';
 import SafeRichText from './common/SafeRichText';
 
@@ -42,7 +33,9 @@ export default function SystemBanners() {
       const res = await fetch('/api/updates', { cache: 'no-store' });
       if (res.ok) {
         const data: UpdateBannerStatus = await res.json();
-        setStatus(data);
+        setStatus(prev =>
+          JSON.stringify(prev) === JSON.stringify(data) ? prev : data
+        );
       }
     } catch {
       // Silent fallback when offline or restarting

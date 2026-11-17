@@ -2,15 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import {
-  KeyRound,
-  Plus,
-  Ban,
-  Trash2,
-  BookOpen,
-  ShieldCheck,
-  Clock,
-} from 'lucide-react';
+import { KeyRound, Plus, Ban, Trash2, BookOpen, ShieldCheck, Clock } from 'lucide-react';
 import { ApiKeyPublic, ApiKeyScope } from '@/types';
 import SettingsCard from '../shared/SettingsCard';
 import CreateApiKeyModal from './CreateApiKeyModal';
@@ -121,9 +113,9 @@ export default function ApiKeysCard({ apiKeys, onRefresh, onNotify }: Props) {
           <button
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="min-h-[40px] sm:min-h-[36px] px-3.5 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="min-h-[40px] sm:min-h-[36px] px-3.5 py-1.5 rounded-md bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-xs font-semibold text-slate-100 hover:text-white shadow-sm inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-slate-300" />
             <span>Create API Key</span>
           </button>
         </div>

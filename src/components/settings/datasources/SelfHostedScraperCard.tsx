@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import {
-  ChevronUp,
-  ChevronDown,
-  FileText,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
-  AlertCircle,
-} from 'lucide-react';
+import { ChevronUp, ChevronDown, FileText, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, ExternalLink } from 'lucide-react';
 import type { ScraperHealthResponse } from '@/services/openFareScraper';
 import { evaluateOpenFareScraperVersion } from '@/utils/openFareScraperVersion';
 
@@ -176,7 +168,17 @@ export default function SelfHostedScraperCard({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+        <div className="flex flex-wrap items-center gap-1.5 ml-auto sm:ml-0">
+          <a
+            href="https://hub.docker.com/r/thebronway/openfarescraper"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View OpenFareScraper setup guide and Docker image on Docker Hub"
+            className="min-h-[44px] sm:min-h-[34px] flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1 text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-sky-300 hover:text-white hover:bg-gunmetal-border rounded-md shadow-sm transition-colors"
+          >
+            <span>Docker Hub</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
           <button
             type="button"
             onClick={() => fetchHealthStatus(scraperUrl, scraperApiKey, true)}
@@ -275,6 +277,9 @@ export default function SelfHostedScraperCard({
               placeholder="ofs_..."
               className="w-full min-h-[44px] sm:min-h-[38px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm font-mono"
             />
+            <span className="text-[11px] text-gunmetal-muted block mt-1">
+              Deploy <span className="font-mono text-slate-300">thebronway/openfarescraper</span> and generate an <span className="font-mono text-slate-300">ofs_</span> key in its web UI.
+            </span>
           </div>
         </div>
 

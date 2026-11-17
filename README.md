@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.9.3-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.9.4-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -33,6 +33,7 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 - **Email Scanner & Review Queue:** Monitors configured IMAP inboxes for airline booking confirmations, schedule changes, and cancellations (supporting both cash fares and configured Points & Miles currencies), and auto-links matching watched flights or routes to convert them in place while preserving price history.
 - **Optional Authentication & Passkeys:** Disabled by default for local homelab setups, or enabled via **Settings → Security** (or `AUTH_USERNAME` / `AUTH_PASSWORD` env vars) with `crypto.scrypt` password hashing, revocable SQLite sessions, and multi-device WebAuthn passkeys.
 - **Public REST API & OpenAPI 3.1 Docs:** Versioned `/api/v1/*` endpoints for flights, price history, lifecycle actions, email queue review, and system status with scoped `fss_live_...` API keys (`read`, `write`, `admin`), per-key rate limiting, `/api/v1/openapi.json`, and an interactive `/api-docs` reference viewer.
+- **Guided Onboarding Wizard:** First-run setup flow (`/dashboard/onboarding`) covering all Settings tabs with auto-save and the option to defer configuration to Settings later.
 
 ## Data Sources
 FlightSentry connects to multiple flight search APIs and a self-hosted scraper service to pull live flight fares. Several API providers offer free tiers (typically around 100 searches per month). FlightSentry rotates requests, balances quota usage, or fails over across configured sources to maintain price tracking coverage.

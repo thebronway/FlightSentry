@@ -1,30 +1,18 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-15*  
-*Current Version: v0.9.2*
+*Last updated: 2026-11-16*  
+*Current Version: v0.9.4*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.9.3
-- FlightSentry-Scraper Renamed to OpenFareScaper (NO FUCKING DASH)
-  - Update FlightSentry-Scraper file names and references across app
-  - OpenFareScaper Admin Session Cookie: Renamed from fss_admin_session to ofs_admin_session for its API access
-  - OpenFareScaper API Key Prefix: Changed from fss_ to ofs_
-- Final Fixes
-  - for points booking flight allow adding the configured currency to also be added for taxes and fees (something like that is already on email import)
-
-### Release v0.9.4
-- Onboarding Modal and Flow, go through all settings and explain each, always giving the option to set up in settings later.
-
-### Release v0.9.5a: Brand Optimization
-- go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.
-- Create DETAILED design guide
-
 ### Release v0.9.5: Brand Optimization Application
-- Brand Optimization Application
+- Apply `DESIGN_GUIDE.md` across the entire app:
+  - Standardize primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and align secondary, toolbar, destructive, and semantic action buttons.
+  - Consolidate status colors to canonical `sky`, `emerald`, `amber`, and `rose` tokens (removing stray `gray-*`, `blue-*`, `green-*`, `red-*`, and `yellow-*` classes).
+  - Standardize all modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 & 3 modals, `44px` minimum mobile touch targets, and single-line `lucide-react` imports.
 
 ### Release v0.9.6: Email Scanner Overhaul & Dev Email Import Tester
 - **IMAP Cursor Integrity & Scan Audit Trail**
@@ -46,12 +34,8 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Add an automated test suite with sanitized email fixtures covering direct and forwarded confirmations, round-trip and multi-leg itineraries, `.ics` attachments, `message/rfc822` forwards, points/miles redemptions, schedule changes, and cancellations.
 
 ### Release v0.9.7: Mobile Optimization
-- **Mobile Experience Optimization:**
-  - Convert or confirm all modals to responsive full-height bottom-sheets on mobile viewports (use whatever flightmodal uses as a standard).
-  - Standardize touch targets across all form inputs, toggles, tags, and action buttons.
-  - Add touch-friendly everything across that app
-- go through every modal and page and determine its mobile compatibility and make a plan for making things more mobile friendly/optimized
-- Multiple phases so testing and changes are not massive, a lot of modals already optimized
+- Audit every page and modal against `DESIGN_GUIDE.md` mobile standards (full-screen mobile modals, `44px` touch targets, and zero horizontal overflow).
+- Polish mobile-specific interactions beyond CSS layout tokens (numeric/decimal mobile keyboards via `inputMode`, touch chart scrubbing ergonomics, and condensed table scrolling on narrow viewports).
 
 ### Release v0.9.8a: Research Only, Security and Best Practices Audit
 - Look for hacks

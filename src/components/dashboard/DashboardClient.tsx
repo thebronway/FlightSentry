@@ -14,6 +14,8 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import ManualPriceEntryModal from '@/components/history/ManualPriceEntryModal';
 import RebookFlightModal from '@/components/history/RebookFlightModal';
 import EmailQueueModal from '@/components/emailQueue/EmailQueueModal';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import { isValidOnboardingStep, OnboardingStepId } from '@/components/onboarding/types';
 import { Plus, LayoutGrid, List, ArrowDownUp, ChevronRight, AlertTriangle, Play } from 'lucide-react';
 import { getDataSourceStatus } from '@/utils/airline';
 import { setActiveCurrency } from '@/utils/format';
@@ -45,33 +47,40 @@ export default function DashboardClient({ children }: DashboardClientProps) {
   const [showPastFlights, setShowPastFlights] = useState(false);
   const [queueRefreshKey, setQueueRefreshKey] = useState(0);
 
-  const fetchFlights = async () => {
+  const fetchFlights = useCallback(async () => {
     try {
       const res = await fetch('/api/flights', { cache: 'no-store' });
       if (res.status === 401) {
         window.location.assign('/login');
         return;
       }
-      if (res.ok) setFlights(await res.json());
+      if (res.ok) {
+        const nextFlights: Flight[] = await res.json();
+        setFlights(prev =>
+          JSON.stringify(prev) === JSON.stringify(nextFlights) ? prev : nextFlights
+        );
+      }
     } finally {
       setFlightsLoaded(true);
     }
-  };
+  }, []);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     const res = await fetch('/api/settings', { cache: 'no-store' });
     if (res.status === 401) {
       window.location.assign('/login');
       return;
     }
     if (res.ok) {
-      const data = await res.json();
-      setSettings(data);
+      const data: Settings = await res.json();
+      setSettings(prev =>
+        JSON.stringify(prev) === JSON.stringify(data) ? prev : data
+      );
       if (data.currency) {
         setActiveCurrency(data.currency);
       }
     }
-  };
+  }, []);
 
   const handleRefreshAll = () => {
     fetchFlights();
@@ -102,26 +111,36 @@ export default function DashboardClient({ children }: DashboardClientProps) {
       }
     } catch {}
 
-    // Re-check flights and settings when returning to the tab or window
+    const handleOpenQueueEvent = () => {
+      setQueueRefreshKey(prev => prev + 1);
+    };
+    window.addEventListener('flightsentry:open-email-queue', handleOpenQueueEvent);
+
+    return () => {
+      window.removeEventListener('flightsentry:open-email-queue', handleOpenQueueEvent);
+    };
+  }, [fetchFlights, fetchSettings]);
+
+  const isOnboardingRoute =
+    pathname === '/dashboard/onboarding' || pathname.startsWith('/dashboard/onboarding/');
+
+  // Background & focus sync paused while onboarding modal is open to avoid visual flicker
+  useEffect(() => {
+    if (isOnboardingRoute) return;
+
     const handleSync = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      fetchFlights();
-      fetchSettings();
+      void fetchFlights();
+      void fetchSettings();
       setQuotaRefreshTrigger(prev => prev + 1);
     };
 
     window.addEventListener('focus', handleSync);
     document.addEventListener('visibilitychange', handleSync);
 
-    const handleOpenQueueEvent = () => {
-      setQueueRefreshKey(prev => prev + 1);
-    };
-    window.addEventListener('flightsentry:open-email-queue', handleOpenQueueEvent);
-
-    // Visibility-aware background polling (every 45s) to reflect automated scheduled checks
     const pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchFlights();
+        void fetchFlights();
         setQuotaRefreshTrigger(prev => prev + 1);
       }
     }, 45000);
@@ -129,10 +148,9 @@ export default function DashboardClient({ children }: DashboardClientProps) {
     return () => {
       window.removeEventListener('focus', handleSync);
       document.removeEventListener('visibilitychange', handleSync);
-      window.removeEventListener('flightsentry:open-email-queue', handleOpenQueueEvent);
       clearInterval(pollInterval);
     };
-  }, []);
+  }, [isOnboardingRoute, fetchFlights, fetchSettings]);
 
   // Support legacy ?emailQueue=1 query param by redirecting cleanly to /dashboard/email-queue
   useEffect(() => {
@@ -147,8 +165,51 @@ export default function DashboardClient({ children }: DashboardClientProps) {
     }
   }, [pathname, searchParams, router]);
 
+  // Redirect first-run instances or ?onboarding=1 to the routable /dashboard/onboarding wizard
+  useEffect(() => {
+    if (!settings || pathname !== '/dashboard') return;
+    if (searchParams.get('onboarding') === '1' || settings.onboardingCompleted === 0) {
+      router.replace('/dashboard/onboarding');
+    }
+  }, [settings, pathname, searchParams, router]);
+
+  const handleOnboardingStepChange = useCallback(
+    (stepId: OnboardingStepId) => {
+      router.push(
+        stepId === 'welcome' ? '/dashboard/onboarding' : `/dashboard/onboarding/${stepId}`
+      );
+    },
+    [router]
+  );
+
+  const handleOnboardingComplete = useCallback(
+    async (updatedSettings?: Settings) => {
+      if (updatedSettings) {
+        setSettings(updatedSettings);
+      } else {
+        await fetchSettings();
+      }
+      router.push('/dashboard');
+    },
+    [fetchSettings, router]
+  );
+
   // Resolve active routable modal from URL pathname
   const routeModal = useMemo(() => {
+    if (pathname === '/dashboard/onboarding') {
+      return { type: 'onboarding' as const, stepId: 'welcome' as OnboardingStepId };
+    }
+    const onboardingMatch = pathname.match(/^\/dashboard\/onboarding\/([^/]+)$/);
+    if (onboardingMatch) {
+      const candidate = onboardingMatch[1];
+      if (!isValidOnboardingStep(candidate)) {
+        return { type: 'invalid-onboarding' as const };
+      }
+      return { type: 'onboarding' as const, stepId: candidate };
+    }
+    if (pathname.startsWith('/dashboard/onboarding/')) {
+      return { type: 'invalid-onboarding' as const };
+    }
     if (pathname === '/dashboard/flights/new') {
       return { type: 'new' as const };
     }
@@ -176,6 +237,10 @@ export default function DashboardClient({ children }: DashboardClientProps) {
 
   // Redirect to /dashboard if a flight route ID is invalid or no longer exists
   useEffect(() => {
+    if (routeModal.type === 'invalid-onboarding') {
+      router.replace('/dashboard/onboarding');
+      return;
+    }
     if (routeModal.type === 'invalid') {
       router.replace('/dashboard');
       return;
@@ -598,6 +663,15 @@ export default function DashboardClient({ children }: DashboardClientProps) {
         highlightedItemId={routeModal.type === 'email-queue' ? routeModal.highlightedItemId : null}
         onClose={handleCloseRouteModal}
         onQueueMutated={handleRefreshAll}
+      />
+
+      <OnboardingModal
+        isOpen={routeModal.type === 'onboarding'}
+        activeStepId={routeModal.type === 'onboarding' ? routeModal.stepId : 'welcome'}
+        settings={settings}
+        onSettingsUpdated={setSettings}
+        onStepChange={handleOnboardingStepChange}
+        onComplete={handleOnboardingComplete}
       />
     </div>
   );

@@ -1,17 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Mail,
-  ShieldCheck,
-  ShieldOff,
-  FolderOpen,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { Mail, ShieldCheck, ShieldOff, FolderOpen, Clock, AlertTriangle, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { ImapAccountPublic } from '@/types';
 import ImapConnectionTestBanner, { ImapTestFeedback } from './ImapConnectionTestBanner';
 

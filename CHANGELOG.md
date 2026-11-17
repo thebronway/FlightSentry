@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-16*  
-*Current Version: v0.9.3*
+*Current Version: v0.9.4*
 
 ## Changelog
+
+### Release v0.9.4
+- Added a 9-step routable onboarding wizard (`/dashboard/onboarding` and `/dashboard/onboarding/[step]`) covering all Settings tabs with auto-save, setup links, and a **Set up in Settings later** option.
+- Added `onboardingCompleted` persistence to SQLite `settings` and a **Launch Setup Wizard** button in **Settings → General**.
+- Added API key instructions and setup links for OpenFareScraper, SerpAPI, and SearchApi.io in onboarding and **Settings → Data Sources**.
+- Standardized `FlightModal` desktop width (`xl:max-w-6xl`) to match `HistoryModal`, `ConvertFlightModal`, and `OnboardingModal`, and prevented unchanged background polls from re-rendering dashboard state.
+- Created DESIGN_GUIDE.md to help standardize the app and sister apps.
 
 ### Release v0.9.3
 - Renamed `FlightSentry-Scraper` to `OpenFareScraper` (`src/services/openFareScraper.ts`), updated provider IDs (`openfarescraper`), SQLite `settings` columns, and UI/API references.

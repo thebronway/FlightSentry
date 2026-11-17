@@ -1,16 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import {
-  Globe,
-  Github,
-  Coffee,
-  BookOpen,
-  ExternalLink,
-  RefreshCw,
-  ArrowUpCircle,
-  Container,
-} from 'lucide-react';
+import Link from 'next/link';
+import { Globe, Github, Coffee, BookOpen, ExternalLink, RefreshCw, ArrowUpCircle, Container, Compass } from 'lucide-react';
 import packageInfo from '../../../../package.json';
 import { UpdateBannerStatus } from '@/types';
 import { UPDATES_CHANGED_EVENT } from '@/components/SystemBanners';
@@ -91,6 +83,13 @@ export default function AppVersionSupportCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/dashboard/onboarding"
+            className="min-h-[44px] sm:min-h-[36px] px-3 py-2 rounded-md bg-gunmetal-border hover:bg-slate-700 border border-slate-500 text-slate-100 hover:text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm transition-colors"
+          >
+            <Compass className="w-3.5 h-3.5 text-sky-400" />
+            <span>Launch Setup Wizard</span>
+          </Link>
           <a
             href="https://github.com/thebronway/FlightSentry/blob/main/CHANGELOG.md"
             target="_blank"

@@ -85,7 +85,7 @@ export default function FlightModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 md:p-6 transition-all"
     >
-      <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden sm:max-w-4xl lg:max-w-5xl">
+      <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden max-w-4xl lg:max-w-5xl xl:max-w-6xl">
         {/* Sticky Header */}
         <ModalHeader
           initialFlight={initialFlight}
