@@ -63,13 +63,11 @@ export default function SettingsForm({
       })
       .then(data => {
         if (!data) return;
-        const allKeys = ['serpapi', 'searchapi', 'flightsentry-scraper'];
+        const allKeys = ['serpapi', 'searchapi', 'openfarescraper'];
         const normalized = (data.dataSourceStrategy || '')
           .split(',')
           .map((s: string) => s.trim())
-          .filter(Boolean)
-          .map((s: string) => (s === 'fastflights' ? 'flightsentry-scraper' : s))
-          .filter((s: string) => s !== 'fli');
+          .filter((s: string) => allKeys.includes(s));
         const existing: string[] = [];
         normalized.forEach((k: string) => {
           if (!existing.includes(k)) existing.push(k);

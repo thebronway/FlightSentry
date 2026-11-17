@@ -4,13 +4,13 @@ import { logsDb } from '../db/logs';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
 import {
-  checkFlightSentryScraperPrice as queryFlightSentryScraper,
+  checkOpenFareScraperPrice as queryOpenFareScraper,
   checkScraperHealth,
   redactScraperSecrets,
-} from './flightsentryScraper';
+} from './openFareScraper';
 import { ensureStopCategoryRepresentation } from '../utils/routeIntelligence';
 
-export type DataSourceProvider = 'serpapi' | 'searchapi' | 'flightsentry-scraper';
+export type DataSourceProvider = 'serpapi' | 'searchapi' | 'openfarescraper';
 
 export interface DataSourceResult {
   price: number | null;
@@ -29,29 +29,29 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   console.log(`[Router] --- Check Flight #${flight.id} (${flight.origin} -> ${flight.destination}) ---`);
   console.log(`[Router] Configured Order: "${settings.dataSourceStrategy}" | Mode: "${settings.fallbackStrategyMode}"`);
 
-  const ALL_PROVIDERS: DataSourceProvider[] = ['serpapi', 'searchapi', 'flightsentry-scraper'];
+  const ALL_PROVIDERS: DataSourceProvider[] = ['serpapi', 'searchapi', 'openfarescraper'];
   const rawOrder = (settings.dataSourceStrategy || '').split(',').map(s => s.trim()).filter(Boolean) as DataSourceProvider[];
   const configuredOrder: DataSourceProvider[] = [
     ...rawOrder.filter(p => ALL_PROVIDERS.includes(p)),
     ...ALL_PROVIDERS.filter(p => !rawOrder.includes(p)),
   ];
 
-  const scraperUrl = (settings.flightsentryScraperUrl || '').trim();
-  const scraperKey = (settings.flightsentryScraperApiKey || '').trim();
+  const scraperUrl = (settings.openfareScraperUrl || '').trim();
+  const scraperKey = (settings.openfareScraperApiKey || '').trim();
 
   const scraperActive =
-    isEnabled(settings.flightsentryScraperEnabled) &&
-    !isPaused(settings.flightsentryScraperPaused) &&
+    isEnabled(settings.openfareScraperEnabled) &&
+    !isPaused(settings.openfareScraperPaused) &&
     Boolean(scraperUrl) &&
     Boolean(scraperKey);
 
-  const prioritizeScraperFirst = settings.flightsentryScraperPrioritizeFirst !== 0;
+  const prioritizeScraperFirst = settings.openfareScraperPrioritizeFirst !== 0;
 
   const serpKey = (settings.serpApiKey || '').trim();
   const searchKey = (settings.searchApiKey || '').trim();
 
   const isProviderActive = (api: DataSourceProvider): boolean => {
-    if (api === 'flightsentry-scraper') {
+    if (api === 'openfarescraper') {
       return scraperActive;
     }
     if (api === 'serpapi') {
@@ -66,7 +66,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   };
 
   const activeAll = configuredOrder.filter(isProviderActive);
-  const activeMetered = activeAll.filter((api): api is 'serpapi' | 'searchapi' => api !== 'flightsentry-scraper');
+  const activeMetered = activeAll.filter((api): api is 'serpapi' | 'searchapi' => api !== 'openfarescraper');
 
   console.log(`[Router] Active Providers: [${activeAll.join(', ')}] | ScraperFirst=${prioritizeScraperFirst}`);
   if (activeMetered.length === 0) {
@@ -85,9 +85,9 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
         result = { ...(await querySerpApi(flight, serpKey, activeCurrency)), sourceUsed: strategy };
       } else if (strategy === 'searchapi' && searchKey) {
         result = { ...(await querySearchApi(flight, searchKey, activeCurrency)), sourceUsed: strategy };
-      } else if (strategy === 'flightsentry-scraper' && scraperUrl && scraperKey) {
+      } else if (strategy === 'openfarescraper' && scraperUrl && scraperKey) {
         result = {
-          ...(await queryFlightSentryScraper(flight, scraperUrl, scraperKey, activeCurrency)),
+          ...(await queryOpenFareScraper(flight, scraperUrl, scraperKey, activeCurrency)),
           sourceUsed: strategy,
         };
       }
@@ -171,7 +171,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
     if (settings.fallbackStrategyMode === 'balanced-usage') {
       let scraperRatio = 0;
-      if (pool.includes('flightsentry-scraper')) {
+      if (pool.includes('openfarescraper')) {
         try {
           const health = await checkScraperHealth(scraperUrl, scraperKey);
           if (health.paused || health.circuitBreakerActive || health.rateLimited) {
@@ -187,7 +187,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
       }
 
       const getUsageRatio = (api: DataSourceProvider): number => {
-        if (api === 'flightsentry-scraper') return scraperRatio;
+        if (api === 'openfarescraper') return scraperRatio;
         const quota = api === 'serpapi' ? settings.serpApiQuota : settings.searchApiQuota;
         const used = api === 'serpapi' ? settings.serpApiUsed : settings.searchApiUsed;
         if (quota <= 0) return 0;
@@ -217,7 +217,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
   let executionQueue: DataSourceProvider[] = [];
   if (prioritizeScraperFirst && scraperActive) {
     const orderedMetered = await orderPool(activeMetered);
-    executionQueue = ['flightsentry-scraper', ...orderedMetered];
+    executionQueue = ['openfarescraper', ...orderedMetered];
     console.log(`[Router] Scraper-first priority active. Execution queue: [${executionQueue.join(', ')}]`);
   } else {
     executionQueue = await orderPool(activeAll);
@@ -228,7 +228,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
   for (let i = 0; i < executionQueue.length; i++) {
     const strategy = executionQueue[i];
-    const remainingMetered = executionQueue.slice(i + 1).some(p => p !== 'flightsentry-scraper');
+    const remainingMetered = executionQueue.slice(i + 1).some(p => p !== 'openfarescraper');
     const result = await executeProvider(strategy);
     lastResult = result;
 
@@ -237,7 +237,7 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     }
 
     if (result.status === 'SoldOut') {
-      if (strategy === 'flightsentry-scraper' && remainingMetered) {
+      if (strategy === 'openfarescraper' && remainingMetered) {
         console.warn(`[Router] Self-hosted scraper reported SoldOut. Verifying with metered provider failover.`);
         continue;
       }

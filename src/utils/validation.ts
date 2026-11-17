@@ -71,6 +71,8 @@ export const flightSchema = z.object({
   minIncreasePercent: z.number().nonnegative().optional().nullable(),
   maxStops: z.number().int().min(0).max(2).optional().nullable(),
   currency: z.string().max(50).optional().nullable(),
+  taxesAmount: z.number().nonnegative().optional().nullable(),
+  taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
   monitorRouteAlternatives: z.number().min(0).max(1).optional().default(0),
   bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional().nullable(),
   isManual: z.number().min(0).max(1).optional().default(0),
@@ -165,14 +167,14 @@ const scraperUrlSchema = safeHttpUrlSchema
 const scraperApiKeySchema = z
   .string()
   .trim()
-  .regex(/^fss_[a-f0-9]{64}$/, 'API key must match fss_<64 lowercase hex characters>')
+  .regex(/^ofs_[a-f0-9]{64}$/, 'API key must match ofs_<64 lowercase hex characters>')
   .optional()
   .nullable()
   .or(z.literal(''));
 
 export const testScraperSchema = z.object({
-  flightsentryScraperUrl: scraperUrlSchema,
-  flightsentryScraperApiKey: scraperApiKeySchema,
+  openfareScraperUrl: scraperUrlSchema,
+  openfareScraperApiKey: scraperApiKeySchema,
 });
 
 export const settingsSchema = z.object({
@@ -231,10 +233,10 @@ export const settingsSchema = z.object({
   roundRobinIndex: z.number().int().nonnegative().optional(),
   serpApiEnabled: z.number().min(0).max(1).optional(),
   searchApiEnabled: z.number().min(0).max(1).optional(),
-  flightsentryScraperEnabled: z.number().min(0).max(1).optional(),
-  flightsentryScraperPrioritizeFirst: z.number().min(0).max(1).optional(),
-  flightsentryScraperUrl: scraperUrlSchema,
-  flightsentryScraperApiKey: scraperApiKeySchema,
+  openfareScraperEnabled: z.number().min(0).max(1).optional(),
+  openfareScraperPrioritizeFirst: z.number().min(0).max(1).optional(),
+  openfareScraperUrl: scraperUrlSchema,
+  openfareScraperApiKey: scraperApiKeySchema,
   fliEnabled: z.number().min(0).max(1).optional(),
   serpApiQuota: z.number().min(0).optional(),
   searchApiQuota: z.number().min(0).optional(),
@@ -242,7 +244,7 @@ export const settingsSchema = z.object({
   searchApiQuotaMode: z.enum(['monthly', 'one-time']).optional(),
   serpApiPaused: z.number().min(0).max(1).optional(),
   searchApiPaused: z.number().min(0).max(1).optional(),
-  flightsentryScraperPaused: z.number().min(0).max(1).optional(),
+  openfareScraperPaused: z.number().min(0).max(1).optional(),
   fliPaused: z.number().min(0).max(1).optional(),
   globalPause: z.number().min(0).max(1),
   githubSyncEnabled: z.number().min(0).max(1).optional(),
@@ -438,7 +440,7 @@ export const bannerDismissSchema = z.discriminatedUnion('type', [
 export const devProviderIdSchema = z.enum([
   'serpapi',
   'searchapi',
-  'flightsentry-scraper',
+  'openfarescraper',
 ]);
 
 export const devProviderTestSchema = z.object({
@@ -507,7 +509,7 @@ export const devProviderTestSchema = z.object({
           apiKey: z.string().trim().max(512).optional().nullable().or(z.literal('')),
         })
         .optional(),
-      'flightsentry-scraper': z
+      openfarescraper: z
         .object({
           apiKey: scraperApiKeySchema,
           scraperUrl: scraperUrlSchema,
@@ -614,6 +616,8 @@ export const publicFlightPatchSchema = z
     minIncreasePercent: z.number().nonnegative().optional().nullable(),
     maxStops: z.number().int().min(0).max(2).optional().nullable(),
     currency: z.string().max(50).optional().nullable(),
+    taxesAmount: z.number().nonnegative().optional().nullable(),
+    taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
     monitorRouteAlternatives: z.number().int().min(0).max(1).optional(),
     bookingDate: z
       .string()
@@ -679,6 +683,8 @@ export const publicFlightConvertSchema = z.object({
     .min(1, 'Flight number is required'),
   pnr: z.string().trim().max(10).optional().nullable().or(z.literal('')),
   currency: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+  taxesAmount: z.number().nonnegative().optional().nullable(),
+  taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
   monitorRouteAlternatives: z.number().int().min(0).max(1).optional().default(1),
   origin: z
     .string()

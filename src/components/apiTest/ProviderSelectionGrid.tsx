@@ -175,7 +175,7 @@ export default function ProviderSelectionGrid({
                       placeholder={
                         readiness.configured
                           ? 'Leave blank to use saved Scraper URL'
-                          : 'http://flightsentry-scraper:4001'
+                          : 'http://openfarescraper:4001'
                       }
                       className="w-full min-h-[38px] border border-gunmetal-border px-2.5 py-1.5 rounded-md bg-gunmetal-card text-slate-200 font-mono text-xs focus:outline-none focus:border-slate-500 disabled:opacity-50"
                     />

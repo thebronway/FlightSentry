@@ -197,8 +197,11 @@ export default function FlightModal({
               pnr={formData.pnr}
               paymentType={formData.paymentType}
               currency={formData.currency || defaultSettings?.currency || 'USD'}
+              fiatCurrency={defaultSettings?.currency || 'USD'}
+              taxesAmount={formData.taxesAmount}
               isPurchasePriceLocked={isPurchasePriceLocked}
               onPurchasePriceChange={val => handleFieldChange({ purchasePrice: val })}
+              onTaxesAmountChange={val => handleFieldChange({ taxesAmount: val })}
               onBookingDateChange={val => handleFieldChange({ bookingDate: val })}
               onPnrChange={val => handleFieldChange({ pnr: val })}
             />

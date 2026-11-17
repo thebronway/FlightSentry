@@ -104,10 +104,15 @@ export default function CondensedFlightRow({
           )}
         </div>
         {flight.currency && isPointsCurrency(flight.currency) && (
-          <div className="mt-0.5">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-1.5 py-0.2 rounded text-[10px] font-semibold inline-flex items-center gap-1">
               <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
             </span>
+            {flight.taxesAmount !== null && flight.taxesAmount !== undefined && flight.taxesAmount > 0 && (
+              <span className="text-[11px] font-mono text-slate-300">
+                +{formatCurrency(flight.taxesAmount, flight.taxesCurrency || settings?.currency || 'USD')} taxes/fees
+              </span>
+            )}
           </div>
         )}
         {delta !== 0 && (

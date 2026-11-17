@@ -43,6 +43,8 @@ export interface PublicFlightSummary {
   fareTier: FareTier;
   cabinClass: CabinClass;
   currency: string;
+  taxesAmount: number | null;
+  taxesCurrency: string | null;
   isManual: boolean;
   monitorRouteAlternatives: boolean;
   maxStops: number | null;
@@ -211,6 +213,8 @@ export function serializePublicFlightSummary(
     fareTier: flight.fareTier,
     cabinClass: flight.cabinClass,
     currency: (flight.currency || defaultCurrency || 'USD').trim(),
+    taxesAmount: flight.taxesAmount ?? null,
+    taxesCurrency: flight.taxesCurrency ?? null,
     isManual: flight.isManual === 1,
     monitorRouteAlternatives: flight.monitorRouteAlternatives === 1,
     maxStops: flight.maxStops ?? null,

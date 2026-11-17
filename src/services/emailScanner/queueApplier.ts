@@ -119,15 +119,26 @@ export function applyEmailQueueItem(
         ? item.emailDate.slice(0, 10)
         : getTodayDateString(settings.timezone);
 
+    const normalizedTaxesAmount =
+      isPointsBooking &&
+      typeof item.taxesAmount === 'number' &&
+      !Number.isNaN(item.taxesAmount) &&
+      item.taxesAmount > 0
+        ? item.taxesAmount
+        : null;
+    const normalizedTaxesCurrency = normalizedTaxesAmount
+      ? (item.taxesCurrency || settings.currency || 'USD').trim().toUpperCase()
+      : null;
+
     const scheduleNotes: string[] = [`Imported from email (${item.accountLabel})`];
     if (item.departureTime || item.arrivalTime) {
       scheduleNotes.push(
         `Scheduled ${item.departureTime || '?'} - ${item.arrivalTime || '?'}`
       );
     }
-    if (isPointsBooking && item.taxesAmount && item.taxesAmount > 0) {
+    if (normalizedTaxesAmount && normalizedTaxesCurrency) {
       scheduleNotes.push(
-        `Taxes & fees: ${formatCurrency(item.taxesAmount, item.taxesCurrency || settings.currency || 'USD')}`
+        `Taxes & fees: ${formatCurrency(normalizedTaxesAmount, normalizedTaxesCurrency)}`
       );
     }
 
@@ -164,6 +175,8 @@ export function applyEmailQueueItem(
           originalPurchasePrice: paidPrice,
           currentPrice: paidPrice ?? watchedTarget.currentPrice,
           currency,
+          taxesAmount: normalizedTaxesAmount,
+          taxesCurrency: normalizedTaxesCurrency,
           bookingDate,
           notes: mergedNotes,
           priceTrackingDirection: 'drop',
@@ -243,6 +256,8 @@ export function applyEmailQueueItem(
       minIncreasePercent: null,
       maxStops: null,
       currency,
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       monitorRouteAlternatives: 0,
       bookingDate,
       isManual,

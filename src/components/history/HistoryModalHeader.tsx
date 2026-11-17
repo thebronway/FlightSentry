@@ -10,7 +10,7 @@ import FlightStatusBadges from '../flightCardShared/FlightStatusBadges';
 import FlightCabinBadges from '../flightCardShared/FlightCabinBadges';
 import FlightTargetAlertChip from '../flightCardShared/FlightTargetAlertChip';
 import { getGoogleFlightsUrl, getOperatingAirlines } from '@/utils/airline';
-import { isPointsCurrency } from '@/utils/format';
+import { formatCurrency, isPointsCurrency } from '@/utils/format';
 
 interface Props {
   flight: Flight;
@@ -73,9 +73,16 @@ export default function HistoryModalHeader({
         <div className="flex flex-wrap items-center gap-1.5">
           <FlightCabinBadges flight={flight} size="sm" showRebookSavings showPnr />
           {flight.currency && isPointsCurrency(flight.currency) && (
-            <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0">
-              <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
-            </span>
+            <>
+              <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0">
+                <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+              </span>
+              {flight.taxesAmount !== null && flight.taxesAmount !== undefined && flight.taxesAmount > 0 && (
+                <span className="bg-gunmetal-canvas text-slate-200 border border-gunmetal-border px-2 py-0.5 rounded text-xs font-mono font-semibold flex-shrink-0">
+                  +{formatCurrency(flight.taxesAmount, flight.taxesCurrency || settings?.currency || 'USD')} taxes/fees
+                </span>
+              )}
+            </>
           )}
           <FlightTargetAlertChip flight={flight} settings={settings} size="sm" />
         </div>

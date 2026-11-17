@@ -11,8 +11,11 @@ interface Props {
   pnr: string;
   paymentType: PaymentType;
   currency: string;
+  fiatCurrency: string;
+  taxesAmount: string;
   isPurchasePriceLocked: boolean;
   onPurchasePriceChange: (val: string) => void;
+  onTaxesAmountChange: (val: string) => void;
   onBookingDateChange: (val: string) => void;
   onPnrChange: (val: string) => void;
 }
@@ -24,8 +27,11 @@ export default function BookingDetailsSection({
   pnr,
   paymentType,
   currency,
+  fiatCurrency,
+  taxesAmount,
   isPurchasePriceLocked,
   onPurchasePriceChange,
+  onTaxesAmountChange,
   onBookingDateChange,
   onPnrChange,
 }: Props) {
@@ -44,7 +50,7 @@ export default function BookingDetailsSection({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 ${isPoints ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-3`}>
         {/* Purchase Price or Points Redeemed */}
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -77,6 +83,32 @@ export default function BookingDetailsSection({
               : 'Alerts trigger if fares drop below what you paid.'}
           </span>
         </div>
+
+        {/* Cash Taxes & Fees for Points Bookings */}
+        {isPoints && (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              Taxes &amp; Fees ({fiatCurrency})
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm text-gunmetal-muted">
+                {getCurrencySymbol(fiatCurrency)}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 5.60"
+                value={taxesAmount}
+                onChange={e => onTaxesAmountChange(e.target.value)}
+                className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+              />
+            </div>
+            <span className="text-[11px] text-gunmetal-muted block mt-1">
+              Optional cash taxes &amp; carrier fees ({fiatCurrency}).
+            </span>
+          </div>
+        )}
 
         {/* Booking Date (Defaults to today, allows past dates) */}
         <div>

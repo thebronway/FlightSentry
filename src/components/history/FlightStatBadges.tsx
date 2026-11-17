@@ -48,6 +48,11 @@ export default function FlightStatBadges({
               <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
             </span>
           )}
+          {flight.currency && isPointsCurrency(flight.currency) && flight.taxesAmount !== null && flight.taxesAmount !== undefined && flight.taxesAmount > 0 && (
+            <span className="text-xs font-mono font-semibold text-slate-300">
+              +{formatCurrency(flight.taxesAmount, flight.taxesCurrency || 'USD')} taxes/fees
+            </span>
+          )}
           {!isBooked && currentPriceAirline && (
             <AirlineBadge
               code={currentPriceAirline.code}

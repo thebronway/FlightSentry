@@ -62,7 +62,7 @@ export const processNextFlight = async (): Promise<boolean> => {
   
   const result = await executeSearchStrategy(flight, settings);
 
-  if (result.status === 'RateLimited' && result.sourceUsed !== 'flightsentry-scraper') {
+  if (result.status === 'RateLimited' && result.sourceUsed !== 'openfarescraper') {
     // Trigger Circuit Breaker: 4 to 8 hours random pause
     const pauseHours = Math.random() * (8 - 4) + 4;
     const pauseUntil = new Date(Date.now() + pauseHours * 3600000).toISOString();
@@ -74,7 +74,7 @@ export const processNextFlight = async (): Promise<boolean> => {
   const shouldIncrementUsage =
     result.status !== 'Error' &&
     result.status !== 'Paused' &&
-    !(result.sourceUsed === 'flightsentry-scraper' && result.status === 'RateLimited') &&
+    !(result.sourceUsed === 'openfarescraper' && result.status === 'RateLimited') &&
     Boolean(result.sourceUsed);
 
   if (shouldIncrementUsage && result.sourceUsed) {

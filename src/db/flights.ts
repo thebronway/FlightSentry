@@ -48,6 +48,7 @@ export const flightDb = {
         notes, scheduleOverride, disableNotifications, nextCheckAt, status,
         earliestDeparture, latestDeparture, noRedeye, priceTrackingDirection,
         minIncreaseDollar, minIncreasePercent, maxStops, currency,
+        taxesAmount, taxesCurrency,
         monitorRouteAlternatives, bookingDate, isManual,
         maxLayoverMinutes, excludedConnectingAirports, maxTotalDurationMinutes,
         includedAlliances, excludedAlliances, createdAt, updatedAt
@@ -58,6 +59,7 @@ export const flightDb = {
         @notes, @scheduleOverride, @disableNotifications, @nextCheckAt, @status,
         @earliestDeparture, @latestDeparture, @noRedeye, @priceTrackingDirection,
         @minIncreaseDollar, @minIncreasePercent, @maxStops, @currency,
+        @taxesAmount, @taxesCurrency,
         @monitorRouteAlternatives, @bookingDate, @isManual,
         @maxLayoverMinutes, @excludedConnectingAirports, @maxTotalDurationMinutes,
         @includedAlliances, @excludedAlliances, @now, @now
@@ -80,6 +82,8 @@ export const flightDb = {
     const minIncreasePercent = flight.minIncreasePercent ?? null;
     const maxStops = flight.maxStops ?? null;
     const currency = flight.currency || null;
+    const taxesAmount = flight.taxesAmount ?? null;
+    const taxesCurrency = flight.taxesCurrency || null;
     const monitorRouteAlternatives = flight.monitorRouteAlternatives ? 1 : 0;
     const bookingDate = flight.bookingDate ?? null;
     const isManual = flight.isManual ? 1 : 0;
@@ -122,6 +126,8 @@ export const flightDb = {
       minIncreasePercent,
       maxStops,
       currency,
+      taxesAmount,
+      taxesCurrency,
       monitorRouteAlternatives,
       bookingDate,
       isManual,
@@ -141,6 +147,8 @@ export const flightDb = {
     const merged = {
       ...current,
       ...data,
+      taxesAmount: data.taxesAmount !== undefined ? data.taxesAmount : (current.taxesAmount ?? null),
+      taxesCurrency: data.taxesCurrency !== undefined ? data.taxesCurrency : (current.taxesCurrency ?? null),
       bookingAirline:
         data.bookingAirline !== undefined
           ? (data.bookingAirline?.trim() ? data.bookingAirline.trim().toUpperCase() : (data.airline ?? current.airline ?? null))
@@ -179,6 +187,8 @@ export const flightDb = {
         minIncreasePercent = @minIncreasePercent,
         maxStops = @maxStops,
         currency = @currency,
+        taxesAmount = @taxesAmount,
+        taxesCurrency = @taxesCurrency,
         monitorRouteAlternatives = @monitorRouteAlternatives,
         bookingDate = @bookingDate,
         isManual = @isManual,

@@ -19,7 +19,7 @@ const ENDPOINTS: ApiEndpointDoc[] = [
     path: '/api/v1/flights',
     summary: 'List tracked flights',
     description:
-      'Returns all tracked flights matching optional query filters along with normalized price summary fields (`currentPrice`, `baselinePrice`, `purchasePrice`, `allTimeLow`, `allTimeHigh`, `priceDelta`, `priceDeltaPercent`) and `nonstop` vs `withStops` floor breakdown.',
+      'Returns all tracked flights matching optional query filters along with normalized price summary fields (`currentPrice`, `baselinePrice`, `purchasePrice`, `taxesAmount`, `taxesCurrency`, `allTimeLow`, `allTimeHigh`, `priceDelta`, `priceDeltaPercent`) and `nonstop` vs `withStops` floor breakdown.',
     requiredScope: 'read',
     parameters: [
       {
@@ -101,6 +101,9 @@ const ENDPOINTS: ApiEndpointDoc[] = [
       { name: 'flightNumber', type: 'string', required: false, description: 'Numeric flight number (required for FlightNumber).' },
       { name: 'baselinePrice', type: 'number', required: false, description: 'Initial benchmark fare or points cost.' },
       { name: 'purchasePrice', type: 'number', required: false, description: 'Paid fare (automatically creates as Booked).' },
+      { name: 'currency', type: 'string', required: false, description: 'Fiat currency code or configured points currency name.' },
+      { name: 'taxesAmount', type: 'number', required: false, description: 'Cash taxes and fees paid on a points booking.' },
+      { name: 'taxesCurrency', type: 'string', required: false, description: 'Fiat currency code for taxesAmount (defaults to instance currency).' },
       { name: 'targetPrice', type: 'number', required: false, description: 'Target alert threshold price.' },
       { name: 'cabinClass', type: 'string', required: false, description: 'economy | premium_economy | business | first' },
       { name: 'fareTier', type: 'string', required: false, description: 'Basic Economy | Standard' },
@@ -271,6 +274,9 @@ const ENDPOINTS: ApiEndpointDoc[] = [
       { name: 'airline', type: 'string', required: true, description: '2-character IATA carrier code.' },
       { name: 'flightNumber', type: 'string', required: true, description: 'Numeric flight number.' },
       { name: 'pnr', type: 'string', required: false, description: 'Booking confirmation / PNR code.' },
+      { name: 'currency', type: 'string', required: false, description: 'Fiat currency code or configured points currency name.' },
+      { name: 'taxesAmount', type: 'number', required: false, description: 'Cash taxes and fees paid on a points booking.' },
+      { name: 'taxesCurrency', type: 'string', required: false, description: 'Fiat currency code for taxesAmount (defaults to instance currency).' },
     ],
     exampleBody: JSON.stringify(
       {

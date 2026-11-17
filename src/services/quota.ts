@@ -45,9 +45,9 @@ export const canMakeApiCall = (settings: Settings): boolean => {
   const hasSerp = settings.serpApiEnabled === 1 && settings.serpApiPaused !== 1 && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
   const hasSearch = settings.searchApiEnabled === 1 && settings.searchApiPaused !== 1 && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
   const hasScraper =
-    settings.flightsentryScraperEnabled === 1 &&
-    settings.flightsentryScraperPaused !== 1 &&
-    Boolean((settings.flightsentryScraperUrl || '').trim()) &&
-    Boolean((settings.flightsentryScraperApiKey || '').trim());
+    settings.openfareScraperEnabled === 1 &&
+    settings.openfareScraperPaused !== 1 &&
+    Boolean((settings.openfareScraperUrl || '').trim()) &&
+    Boolean((settings.openfareScraperApiKey || '').trim());
   return hasSerp || hasSearch || hasScraper;
 };

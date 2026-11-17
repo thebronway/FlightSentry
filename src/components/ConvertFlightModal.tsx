@@ -28,6 +28,7 @@ export default function ConvertFlightModal({
   const [flightNumber, setFlightNumber] = useState('');
   const [pnr, setPnr] = useState('');
   const [currency, setCurrency] = useState('');
+  const [taxesAmount, setTaxesAmount] = useState('');
   const [pointsCurrencies, setPointsCurrencies] = useState<string[]>([]);
   const [fiatCurrency, setFiatCurrency] = useState('USD');
   const [loading, setLoading] = useState(false);
@@ -115,6 +116,11 @@ export default function ConvertFlightModal({
         setFlightNumber('');
         setPnr(flight.pnr || '');
         setCurrency(flight.currency || 'USD');
+        setTaxesAmount(
+          flight.taxesAmount !== null && flight.taxesAmount !== undefined && flight.taxesAmount > 0
+            ? String(flight.taxesAmount)
+            : ''
+        );
         setSelectedCandidateKey(null);
 
         // Copy existing route preferences and enable route monitoring by default
@@ -170,6 +176,15 @@ export default function ConvertFlightModal({
       return;
     }
 
+    const rawTaxes = isPoints && taxesAmount.trim() !== '' ? parseFloat(taxesAmount) : null;
+    if (rawTaxes !== null && (isNaN(rawTaxes) || rawTaxes < 0)) {
+      setError('Taxes & fees must be zero or a positive amount.');
+      setLoading(false);
+      return;
+    }
+    const normalizedTaxesAmount = rawTaxes !== null && rawTaxes > 0 ? rawTaxes : null;
+    const normalizedTaxesCurrency = normalizedTaxesAmount ? fiatCurrency : null;
+
     if (!airline.trim()) {
       setError('Please enter the airline carrier code.');
       setLoading(false);
@@ -198,6 +213,8 @@ export default function ConvertFlightModal({
           flightNumber: flightNumber.trim() || null,
           pnr: pnr.trim().toUpperCase() || null,
           currency: currency || fiatCurrency,
+          taxesAmount: normalizedTaxesAmount,
+          taxesCurrency: normalizedTaxesCurrency,
           monitorRouteAlternatives: isPoints ? 0 : (monitorRouteAlternatives ? 1 : 0),
           origin: origin.trim().toUpperCase(),
           destination: destination.trim().toUpperCase(),
@@ -397,6 +414,31 @@ export default function ConvertFlightModal({
                 ? 'Recorded points paid for this booking.'
                 : 'Fares dropping below this price will trigger drop alerts.'}
             </p>
+
+            {isPoints && (
+              <div className="pt-2 border-t border-gunmetal-border/60 space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Taxes &amp; Fees ({fiatCurrency})
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gunmetal-muted font-mono text-sm">
+                    {getCurrencySymbol(fiatCurrency)}
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="e.g. 5.60"
+                    value={taxesAmount}
+                    onChange={e => setTaxesAmount(e.target.value)}
+                    className="w-full h-10 px-3 py-2 text-sm rounded-md bg-gunmetal-canvas text-slate-200 border border-gunmetal-border focus:border-slate-500 focus:outline-none placeholder-zinc-500 font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-gunmetal-muted">
+                  Optional cash taxes &amp; carrier fees paid in {fiatCurrency}.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

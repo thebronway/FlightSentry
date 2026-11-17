@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Settings as SettingsType } from '@/types';
 import { QuotaPauseKey, QuotaSourceItem } from './quotaRibbon/types';
-import type { ScraperHealthResponse } from '@/services/flightsentryScraper';
+import type { ScraperHealthResponse } from '@/services/openFareScraper';
 import QuotaRibbonHeader from './quotaRibbon/QuotaRibbonHeader';
 import QuotaSourceCard from './quotaRibbon/QuotaSourceCard';
 
@@ -39,9 +39,9 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
   };
 
   const fetchRemoteScraperHealth = async (currentSettings: SettingsType) => {
-    const enabled = currentSettings.flightsentryScraperEnabled === 1;
-    const hasUrl = Boolean((currentSettings.flightsentryScraperUrl || '').trim());
-    const hasKey = Boolean((currentSettings.flightsentryScraperApiKey || '').trim());
+    const enabled = currentSettings.openfareScraperEnabled === 1;
+    const hasUrl = Boolean((currentSettings.openfareScraperUrl || '').trim());
+    const hasKey = Boolean((currentSettings.openfareScraperApiKey || '').trim());
     if (!enabled || !hasUrl || !hasKey) {
       setScraperHealth(null);
       return;
@@ -110,15 +110,16 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       isScraper: false,
     },
     {
-      key: 'flightsentry-scraper',
-      name: 'FlightSentry-Scraper',
-      enabled: settings.flightsentryScraperEnabled,
-      paused: settings.flightsentryScraperPaused,
+      key: 'openfarescraper',
+      name: 'OpenFareScraper',
+      enabled: settings.openfareScraperEnabled,
+      paused: settings.openfareScraperPaused,
       remotePaused: scraperHealth?.paused === true || scraperHealth?.state === 'paused',
       remoteState: scraperHealth?.state,
       remoteStatusReason: scraperHealth?.statusReason ?? null,
-      pauseKey: 'flightsentryScraperPaused',
-      used: settings.flightsentryScraperUsed,
+      remoteVersion: scraperHealth?.version ?? null,
+      pauseKey: 'openfareScraperPaused',
+      used: settings.openfareScraperUsed,
       quota: 0,
       hourlyUsed: scraperHealth?.usage?.hourlyUsed,
       hourlyLimit: scraperHealth?.usage?.hourlyLimit,
@@ -146,7 +147,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
       globalPause: nextPauseState,
       serpApiPaused: nextPauseState,
       searchApiPaused: nextPauseState,
-      flightsentryScraperPaused: nextPauseState,
+      openfareScraperPaused: nextPauseState,
     };
 
     const res = await fetch('/api/settings', {
@@ -173,7 +174,7 @@ export default function QuotaRibbon({ refreshTrigger = 0, onSettingsChange }: Pr
     const checkSources = [
       { enabled: updatedDraft.serpApiEnabled, paused: updatedDraft.serpApiPaused },
       { enabled: updatedDraft.searchApiEnabled, paused: updatedDraft.searchApiPaused },
-      { enabled: updatedDraft.flightsentryScraperEnabled, paused: updatedDraft.flightsentryScraperPaused },
+      { enabled: updatedDraft.openfareScraperEnabled, paused: updatedDraft.openfareScraperPaused },
     ].filter(s => s.enabled === 1);
 
     const willAllBePaused = checkSources.length > 0 && checkSources.every(s => s.paused === 1);

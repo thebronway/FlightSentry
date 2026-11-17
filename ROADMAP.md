@@ -9,14 +9,15 @@ This document tracks planned improvements, enhancements, and technical debt for 
 ## Release Roadmap
 
 ### Release v0.9.3
-- FlightSentry-Scraper Renamed to OpenFareScaper
-  - Update file names and references across app
-  - Admin Session Cookie: Renamed from fss_admin_session to ofs_admin_session
-  - API Key Prefix: Changed from fss_ to ofs_
-
-### Release v0.9.4
+- FlightSentry-Scraper Renamed to OpenFareScaper (NO FUCKING DASH)
+  - Update FlightSentry-Scraper file names and references across app
+  - OpenFareScaper Admin Session Cookie: Renamed from fss_admin_session to ofs_admin_session for its API access
+  - OpenFareScaper API Key Prefix: Changed from fss_ to ofs_
 - Final Fixes
   - for points booking flight allow adding the configured currency to also be added for taxes and fees (something like that is already on email import)
+
+### Release v0.9.4
+- Onboarding Modal and Flow, go through all settings and explain each, always giving the option to set up in settings later.
 
 ### Release v0.9.5a: Brand Optimization
 - go through and ensure that branding and theming is consistent across the entire app. Look at colors, look at modal size, look at everything. Deep dive and report back. What is different, what is not. And then we'll make a plan for the next release.
@@ -95,7 +96,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
     - User Guide
     - Quickstart Guide
     - API Documentation
-  - Sections and layout for both the main app FlightSentry and the FlightSentryScraper (mostly just api documention)
+  - Sections and layout for both the main app FlightSentry and OpenFareScraper (incl api documentation)
   - Follow Design Guide, but its okay to use addtional elements
   - What screenshots do you need?
   - No public demo yet

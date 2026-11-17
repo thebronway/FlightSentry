@@ -261,6 +261,13 @@ export async function POST(req: NextRequest) {
       const manualNextCheckAt = new Date(
         Date.now() + 365 * 24 * 3600 * 1000
       ).toISOString();
+      const normalizedTaxesAmount =
+        isPointsFlight && isBooked && parsed.taxesAmount && parsed.taxesAmount > 0
+          ? parsed.taxesAmount
+          : null;
+      const normalizedTaxesCurrency = normalizedTaxesAmount
+        ? (parsed.taxesCurrency || defaultCurrency || 'USD').trim().toUpperCase()
+        : null;
 
       const newFlightId = flightDb.create({
         ...parsed,
@@ -276,6 +283,8 @@ export async function POST(req: NextRequest) {
         maxStops: parsed.maxStops ?? null,
         currentPrice: initialAmount,
         currency: parsed.currency,
+        taxesAmount: normalizedTaxesAmount,
+        taxesCurrency: normalizedTaxesCurrency,
         status: 'Paused',
         isManual: 1,
         monitorRouteAlternatives: 0,
@@ -291,6 +300,8 @@ export async function POST(req: NextRequest) {
               ? 'Purchased Flight (Points)'
               : 'Purchased Flight (Manual)',
             pnr: parsed.pnr || null,
+            taxesAmount: normalizedTaxesAmount,
+            taxesCurrency: normalizedTaxesCurrency,
           }),
           sourceUsed: 'Price Paid',
         });
@@ -352,6 +363,8 @@ export async function POST(req: NextRequest) {
         minDropDollar: parsed.minDropDollar ?? null,
         minDropPercent: parsed.minDropPercent ?? null,
         maxStops: parsed.maxStops ?? null,
+        taxesAmount: null,
+        taxesCurrency: null,
         monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
         maxLayoverMinutes: parsed.maxLayoverMinutes ?? null,
         excludedConnectingAirports: parsed.excludedConnectingAirports ?? null,
@@ -525,6 +538,8 @@ export async function POST(req: NextRequest) {
       minDropDollar: parsed.minDropDollar ?? null,
       minDropPercent: parsed.minDropPercent ?? null,
       maxStops: parsed.maxStops ?? null,
+      taxesAmount: null,
+      taxesCurrency: null,
       monitorRouteAlternatives: parsed.monitorRouteAlternatives ?? 0,
       maxLayoverMinutes: parsed.maxLayoverMinutes ?? null,
       excludedConnectingAirports: parsed.excludedConnectingAirports ?? null,

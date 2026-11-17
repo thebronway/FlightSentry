@@ -103,7 +103,7 @@ export async function POST(
 
     if (
       result.status === 'RateLimited' &&
-      result.sourceUsed !== 'flightsentry-scraper'
+      result.sourceUsed !== 'openfarescraper'
     ) {
       const pauseHours = Math.random() * (8 - 4) + 4;
       const pauseUntil = new Date(
@@ -124,7 +124,7 @@ export async function POST(
       result.status !== 'Error' &&
       result.status !== 'Paused' &&
       !(
-        result.sourceUsed === 'flightsentry-scraper' &&
+        result.sourceUsed === 'openfarescraper' &&
         result.status === 'RateLimited'
       ) &&
       Boolean(result.sourceUsed);

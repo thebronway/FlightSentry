@@ -3,6 +3,7 @@ import { flightDb } from '@/db/flights';
 import { historyDb } from '@/db/history';
 import { flightStatusSchema } from '@/utils/validation';
 import { flightSchema } from '@/utils/validation';
+import { settingsDb } from '@/db/settings';
 import { FlightStatus } from '@/types';
 import { isPointsCurrency } from '@/utils/format';
 import { requireApiAuth } from '@/services/auth/apiGuard';
@@ -29,13 +30,54 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const newPurchasePrice = parsed.purchasePrice !== undefined ? parsed.purchasePrice : existing.purchasePrice;
     const isBooked = (newPurchasePrice !== null && newPurchasePrice !== undefined && newPurchasePrice > 0) || Boolean(parsed.pnr || existing.pnr);
 
+    const settings = settingsDb.get();
+    let pointsList: string[] = [];
+    if (settings.pointsCurrencies) {
+      try {
+        const p = typeof settings.pointsCurrencies === 'string'
+          ? JSON.parse(settings.pointsCurrencies)
+          : settings.pointsCurrencies;
+        if (Array.isArray(p)) pointsList = p;
+      } catch {}
+    }
+
     const effectiveCurrency = parsed.currency !== undefined ? parsed.currency : existing.currency;
-    const isPointsFlight = isPointsCurrency(effectiveCurrency);
+    const isPointsFlight = Boolean(
+      effectiveCurrency && (isPointsCurrency(effectiveCurrency) || pointsList.includes(effectiveCurrency))
+    );
     const effectiveIsManual = isPointsFlight
       ? 1
       : parsed.isManual !== undefined
       ? parsed.isManual
       : (existing.isManual ?? 0);
+
+    let normalizedTaxesAmount: number | null = null;
+    let normalizedTaxesCurrency: string | null = null;
+    if (isPointsFlight) {
+      if (parsed.taxesAmount !== undefined) {
+        if (parsed.taxesAmount !== null && parsed.taxesAmount > 0) {
+          normalizedTaxesAmount = parsed.taxesAmount;
+          normalizedTaxesCurrency = (
+            parsed.taxesCurrency ||
+            existing.taxesCurrency ||
+            settings.currency ||
+            'USD'
+          )
+            .trim()
+            .toUpperCase();
+        }
+      } else if (existing.taxesAmount !== null && existing.taxesAmount !== undefined && existing.taxesAmount > 0) {
+        normalizedTaxesAmount = existing.taxesAmount;
+        normalizedTaxesCurrency = (
+          parsed.taxesCurrency ||
+          existing.taxesCurrency ||
+          settings.currency ||
+          'USD'
+        )
+          .trim()
+          .toUpperCase();
+      }
+    }
 
     const updatedStatus: FlightStatus = (isPointsFlight || effectiveIsManual === 1 || body.status === 'Paused')
       ? 'Paused' 
@@ -94,6 +136,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       cabinClass: parsed.cabinClass,
       fareTier: parsed.fareTier,
       currency: parsed.currency !== undefined ? parsed.currency : existing.currency,
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       scheduleOverride: parsed.scheduleOverride ?? null,
       notes: parsed.notes ?? null,
       disableNotifications: parsed.disableNotifications ?? 0,

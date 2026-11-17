@@ -7,6 +7,7 @@ import {
   QuotaCategorySummary,
   QuotaThresholdLevel,
 } from './types';
+import { evaluateOpenFareScraperVersion } from '@/utils/openFareScraperVersion';
 
 interface QuotaCategorySummaryPillProps {
   label: 'Metered' | 'Self-Hosted';
@@ -52,12 +53,27 @@ export default function QuotaCategorySummaryPill({
     typeof scraperSrc.dailyLimit === 'number' &&
     scraperSrc.dailyLimit > 0;
 
+  const scraperVersionCheck =
+    scraperSrc?.remoteVersion ? evaluateOpenFareScraperVersion(scraperSrc.remoteVersion) : null;
+
   const getSelfHostedThreshold = (): QuotaThresholdLevel => {
-    if (!hasRollingQuotas || !scraperSrc || summary.allPaused) return 'normal';
+    if (scraperVersionCheck?.status === 'unsupported') return 'critical';
+    if (!scraperSrc || summary.allPaused) {
+      return scraperVersionCheck?.status === 'outdated' ? 'warning' : 'normal';
+    }
+    if (!hasRollingQuotas) {
+      return scraperVersionCheck?.status === 'outdated' ? 'warning' : 'normal';
+    }
     const hourlyLevel = getQuotaThresholdLevel(scraperSrc.hourlyUsed ?? 0, scraperSrc.hourlyLimit!);
     const dailyLevel = getQuotaThresholdLevel(scraperSrc.dailyUsed ?? 0, scraperSrc.dailyLimit!);
     if (hourlyLevel === 'critical' || dailyLevel === 'critical') return 'critical';
-    if (hourlyLevel === 'warning' || dailyLevel === 'warning') return 'warning';
+    if (
+      hourlyLevel === 'warning' ||
+      dailyLevel === 'warning' ||
+      scraperVersionCheck?.status === 'outdated'
+    ) {
+      return 'warning';
+    }
     return 'normal';
   };
 

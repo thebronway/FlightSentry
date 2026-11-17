@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-16*  
-*Current Version: v0.9.2*
+*Current Version: v0.9.3*
 
 ## Changelog
+
+### Release v0.9.3
+- Renamed `FlightSentry-Scraper` to `OpenFareScraper` (`src/services/openFareScraper.ts`), updated provider IDs (`openfarescraper`), SQLite `settings` columns, and UI/API references.
+- Updated scraper API key validation, placeholders, and log redaction to the `ofs_` prefix and redacted `ofs_admin_session` tokens.
+- Added minimum and recommended OpenFareScraper version checks (`src/utils/openFareScraperVersion.ts`) blocking unsupported versions and warning on outdated versions in Settings and QuotaRibbon.
+- Added `taxesAmount` and `taxesCurrency` support for points bookings across the database, Flight Modal, Convert to Booked modal, Email Queue applier, dashboard cards, History modal, and `/api/v1/flights`.
 
 ### Release v0.9.2
 - Moved the homepage to `/dashboard` (`/` redirects to `/dashboard`) and added modal routes for `/dashboard/flights/new`, `/dashboard/flights/[id]`, `/dashboard/flights/[id]/edit`, and `/dashboard/email-queue`, with direct history links in price drop and surge alerts.

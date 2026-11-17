@@ -1,7 +1,7 @@
 export type QuotaPauseKey =
   | 'serpApiPaused'
   | 'searchApiPaused'
-  | 'flightsentryScraperPaused';
+  | 'openfareScraperPaused';
 
 export type QuotaThresholdLevel = 'normal' | 'warning' | 'critical';
 
@@ -13,6 +13,7 @@ export interface QuotaSourceItem {
   remotePaused?: boolean;
   remoteState?: 'ready' | 'rate_limited' | 'cooldown' | 'paused';
   remoteStatusReason?: string | null;
+  remoteVersion?: string | null;
   pauseKey: QuotaPauseKey;
   used: number;
   quota: number;

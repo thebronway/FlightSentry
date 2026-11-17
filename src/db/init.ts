@@ -41,6 +41,8 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN minIncreaseDollar REAL NOT NULL DEFAULT 50.0",
         "ALTER TABLE settings ADD COLUMN minIncreasePercent REAL NOT NULL DEFAULT 10.0",
         "ALTER TABLE flights ADD COLUMN currency TEXT",
+        "ALTER TABLE flights ADD COLUMN taxesAmount REAL",
+        "ALTER TABLE flights ADD COLUMN taxesCurrency TEXT",
         "ALTER TABLE settings ADD COLUMN pointsCurrencies TEXT NOT NULL DEFAULT '[]'",
         "ALTER TABLE settings ADD COLUMN defaultCabinClass TEXT NOT NULL DEFAULT 'economy'",
         "ALTER TABLE settings ADD COLUMN defaultFareTier TEXT NOT NULL DEFAULT 'Standard'",
@@ -63,12 +65,12 @@ export function initDb() {
         "ALTER TABLE settings ADD COLUMN defaultExcludedConnectingAirports TEXT",
         "ALTER TABLE settings ADD COLUMN defaultMaxTotalDurationMinutes INTEGER",
         "ALTER TABLE settings ADD COLUMN githubSyncEnabled INTEGER NOT NULL DEFAULT 1",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperEnabled INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperPrioritizeFirst INTEGER NOT NULL DEFAULT 1",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperUrl TEXT",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperApiKey TEXT",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperPaused INTEGER NOT NULL DEFAULT 0",
-        "ALTER TABLE settings ADD COLUMN flightsentryScraperUsed INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN openfareScraperEnabled INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN openfareScraperPrioritizeFirst INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE settings ADD COLUMN openfareScraperUrl TEXT",
+        "ALTER TABLE settings ADD COLUMN openfareScraperApiKey TEXT",
+        "ALTER TABLE settings ADD COLUMN openfareScraperPaused INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE settings ADD COLUMN openfareScraperUsed INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE settings ADD COLUMN serpApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN searchApiQuotaMode TEXT NOT NULL DEFAULT 'monthly'",
         "ALTER TABLE settings ADD COLUMN pastFlightRetentionDays INTEGER",
@@ -276,23 +278,17 @@ export function initDb() {
         // Ignored
     }
 
-    // Migrate legacy fastflights / fli / hasdata entries and ensure all current providers exist in dataSourceStrategy
+    // Ensure all current providers exist in dataSourceStrategy
     try {
         const row = db.prepare('SELECT dataSourceStrategy FROM settings WHERE id = 1').get() as { dataSourceStrategy?: string } | undefined;
         if (row && row.dataSourceStrategy) {
-            const rawList = row.dataSourceStrategy
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean)
-                .map(s => (s === 'fastflights' ? 'flightsentry-scraper' : s))
-                .filter(s => s !== 'fli' && s !== 'hasdata');
+            const allProviders = ['serpapi', 'searchapi', 'openfarescraper'];
             const list: string[] = [];
-            for (const item of rawList) {
-                if (!list.includes(item)) {
+            for (const item of row.dataSourceStrategy.split(',').map(s => s.trim()).filter(Boolean)) {
+                if (allProviders.includes(item) && !list.includes(item)) {
                     list.push(item);
                 }
             }
-            const allProviders = ['serpapi', 'searchapi', 'flightsentry-scraper'];
             for (const p of allProviders) {
                 if (!list.includes(p)) {
                     list.push(p);
@@ -423,7 +419,7 @@ export function initDb() {
                 scheduleFarOut, scheduleStandard, 
                 scheduleFinalStretch, operatingHoursStart, operatingHoursEnd, dataSourceStrategy,
                 fallbackStrategyMode, roundRobinIndex, serpApiEnabled, searchApiEnabled,
-                flightsentryScraperEnabled, fliEnabled, serpApiQuota, searchApiQuota,
+                openfareScraperEnabled, fliEnabled, serpApiQuota, searchApiQuota,
                 serpApiQuotaMode, searchApiQuotaMode,
                 notificationsEnabled, discordEnabled, slackEnabled,
                 genericWebhookEnabled, smtpEnabled, currency, minIncreaseDollar, minIncreasePercent,
@@ -434,7 +430,7 @@ export function initDb() {
             ) 
             VALUES (
                 1, 'UTC', date('now', 'start of month', '+1 month'), 1, 1, 1, 
-                48, 24, 12, 7, 23, 'serpapi,searchapi,flightsentry-scraper',
+                48, 24, 12, 7, 23, 'serpapi,searchapi,openfarescraper',
                 'sequential-query', 0, 0, 0, 0, 0, 100, 100, 'monthly', 'monthly', 1, 0, 0, 0, 0,
                 'USD', 50.0, 10.0, '[]', 'economy', 'Standard', 0, NULL, NULL, NULL, 12, 1, 1,
                 0, 15, 1, NULL

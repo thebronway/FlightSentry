@@ -29,7 +29,7 @@ interface Props {
 const PROVIDER_NAMES: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  'flightsentry-scraper': 'FlightSentry-Scraper',
+  openfarescraper: 'OpenFareScraper',
   'flight-route-lookup': 'Flight Route Lookup',
 };
 
@@ -46,9 +46,9 @@ export default function DataSourcesTab({
   onAutoSave,
   onAdjustUsage,
 }: Props) {
-  type AllProviderKey = MeteredProviderKey | 'flightsentry-scraper';
-  const allProviderKeys: AllProviderKey[] = ['serpapi', 'searchapi', 'flightsentry-scraper'];
-  const providerOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,flightsentry-scraper')
+  type AllProviderKey = MeteredProviderKey | 'openfarescraper';
+  const allProviderKeys: AllProviderKey[] = ['serpapi', 'searchapi', 'openfarescraper'];
+  const providerOrder = (settings.dataSourceStrategy || 'serpapi,searchapi,openfarescraper')
     .split(',')
     .map(s => s.trim())
     .filter((k): k is AllProviderKey => allProviderKeys.includes(k as AllProviderKey));
@@ -77,7 +77,7 @@ export default function DataSourcesTab({
     const updated = { ...settings };
     if (key === 'serpapi') updated.serpApiEnabled = val;
     if (key === 'searchapi') updated.searchApiEnabled = val;
-    if (key === 'flightsentry-scraper') updated.flightsentryScraperEnabled = val;
+    if (key === 'openfarescraper') updated.openfareScraperEnabled = val;
     onChange(updated);
     if (onAutoSave) {
       const providerLabel = PROVIDER_NAMES[key] || key;
@@ -86,16 +86,16 @@ export default function DataSourcesTab({
   };
 
   const toggleScraperPrioritizeFirst = async (checked: boolean) => {
-    const updated = { ...settings, flightsentryScraperPrioritizeFirst: checked ? 1 : 0 };
+    const updated = { ...settings, openfareScraperPrioritizeFirst: checked ? 1 : 0 };
     onChange(updated);
     if (onAutoSave) {
       await onAutoSave(
         updated,
-        'flightsentry-scraper',
+        'openfarescraper',
         'Saved!',
         checked
-          ? 'FlightSentry-Scraper set to always run first'
-          : 'FlightSentry-Scraper set to follow priority rank'
+          ? 'OpenFareScraper set to always run first'
+          : 'OpenFareScraper set to follow priority rank'
       );
     }
   };
@@ -159,44 +159,44 @@ export default function DataSourcesTab({
         </div>
 
         {providerOrder.map((key, index) => {
-          if (key === 'flightsentry-scraper') {
+          if (key === 'openfarescraper') {
             return (
               <SelfHostedScraperCard
                 key={key}
-                providerName={PROVIDER_NAMES['flightsentry-scraper']}
+                providerName={PROVIDER_NAMES['openfarescraper']}
                 rankIndex={index}
                 totalCount={providerOrder.length}
-                isEnabled={settings.flightsentryScraperEnabled === 1}
-                prioritizeFirst={settings.flightsentryScraperPrioritizeFirst !== 0}
-                scraperUrl={settings.flightsentryScraperUrl || ''}
-                scraperApiKey={settings.flightsentryScraperApiKey || ''}
-                status={providerStatus['flightsentry-scraper']}
-                onToggleEnabled={checked => toggleEnabled('flightsentry-scraper', checked)}
+                isEnabled={settings.openfareScraperEnabled === 1}
+                prioritizeFirst={settings.openfareScraperPrioritizeFirst !== 0}
+                scraperUrl={settings.openfareScraperUrl || ''}
+                scraperApiKey={settings.openfareScraperApiKey || ''}
+                status={providerStatus['openfarescraper']}
+                onToggleEnabled={checked => toggleEnabled('openfarescraper', checked)}
                 onTogglePrioritizeFirst={toggleScraperPrioritizeFirst}
                 onMove={dir => move(index, dir)}
-                onUrlChange={val => onChange({ ...settings, flightsentryScraperUrl: val })}
+                onUrlChange={val => onChange({ ...settings, openfareScraperUrl: val })}
                 onUrlBlur={() => {
                   if (onAutoSave) {
                     onAutoSave(
                       settings,
-                      'flightsentry-scraper',
+                      'openfarescraper',
                       'Saved!',
-                      'FlightSentry-Scraper URL saved'
+                      'OpenFareScraper URL saved'
                     );
                   }
                 }}
-                onApiKeyChange={val => onChange({ ...settings, flightsentryScraperApiKey: val })}
+                onApiKeyChange={val => onChange({ ...settings, openfareScraperApiKey: val })}
                 onApiKeyBlur={() => {
                   if (onAutoSave) {
                     onAutoSave(
                       settings,
-                      'flightsentry-scraper',
+                      'openfarescraper',
                       'Saved!',
-                      'FlightSentry-Scraper API key saved'
+                      'OpenFareScraper API key saved'
                     );
                   }
                 }}
-                onOpenLogs={() => setSelectedLogsProvider('flightsentry-scraper')}
+                onOpenLogs={() => setSelectedLogsProvider('openfarescraper')}
               />
             );
           }

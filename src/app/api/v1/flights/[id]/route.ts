@@ -244,14 +244,60 @@ export async function PATCH(
       }
     }
 
+    let pointsList: string[] = [];
+    if (settings.pointsCurrencies) {
+      try {
+        const p =
+          typeof settings.pointsCurrencies === 'string'
+            ? JSON.parse(settings.pointsCurrencies)
+            : settings.pointsCurrencies;
+        if (Array.isArray(p)) pointsList = p;
+      } catch {}
+    }
+
     const effectiveCurrency =
       patch.currency !== undefined ? patch.currency : existing.currency;
-    const isPointsFlight = isPointsCurrency(effectiveCurrency);
+    const isPointsFlight = Boolean(
+      effectiveCurrency &&
+        (isPointsCurrency(effectiveCurrency) || pointsList.includes(effectiveCurrency))
+    );
     const effectiveIsManual = isPointsFlight
       ? 1
       : patch.isManual !== undefined
       ? patch.isManual
       : existing.isManual ?? 0;
+
+    let normalizedTaxesAmount: number | null = null;
+    let normalizedTaxesCurrency: string | null = null;
+    if (isPointsFlight) {
+      if (patch.taxesAmount !== undefined) {
+        if (patch.taxesAmount !== null && patch.taxesAmount > 0) {
+          normalizedTaxesAmount = patch.taxesAmount;
+          normalizedTaxesCurrency = (
+            patch.taxesCurrency ||
+            existing.taxesCurrency ||
+            defaultCurrency ||
+            'USD'
+          )
+            .trim()
+            .toUpperCase();
+        }
+      } else if (
+        existing.taxesAmount !== null &&
+        existing.taxesAmount !== undefined &&
+        existing.taxesAmount > 0
+      ) {
+        normalizedTaxesAmount = existing.taxesAmount;
+        normalizedTaxesCurrency = (
+          patch.taxesCurrency ||
+          existing.taxesCurrency ||
+          defaultCurrency ||
+          'USD'
+        )
+          .trim()
+          .toUpperCase();
+      }
+    }
 
     // Enforce manual/points pause guard when caller attempts to resume automated checks
     if (
@@ -288,6 +334,8 @@ export async function PATCH(
           : existing.bookingAirline || effectiveAirline || null,
       flightNumber: effectiveFlightNumber ?? null,
       currency: effectiveCurrency ?? null,
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       isManual: effectiveIsManual,
       status: nextStatus,
       monitorRouteAlternatives:

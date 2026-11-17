@@ -6,9 +6,9 @@ import { DataSourceProvider, DataSourceResult } from './datasource';
 import { checkFlightPrice as querySerpApi } from './serpapi';
 import { checkSearchApiPrice as querySearchApi } from './searchapi';
 import {
-  checkFlightSentryScraperPrice as queryFlightSentryScraper,
+  checkOpenFareScraperPrice as queryOpenFareScraper,
   redactScraperSecrets,
-} from './flightsentryScraper';
+} from './openFareScraper';
 import { DevProviderTestInput } from '@/utils/validation';
 import { normalizeAirlineCode, cleanFlightNumber } from '@/utils/airline';
 import { evaluateProviderParity, ProviderParityReport } from './providerParity';
@@ -49,7 +49,7 @@ export interface DevProviderTestResponse {
 const PROVIDER_LABELS: Record<DataSourceProvider, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  'flightsentry-scraper': 'FlightSentry-Scraper',
+  openfarescraper: 'OpenFareScraper',
 };
 
 const SENSITIVE_KEY_PATTERN = /api[_-]?key|token|secret|authorization|password/i;
@@ -222,13 +222,13 @@ function resolveProviderCredentials(
   stored: Settings,
   overrides: DevProviderTestInput['overrides']
 ): ResolvedCredentials {
-  if (provider === 'flightsentry-scraper') {
-    const tempKey = (overrides?.['flightsentry-scraper']?.apiKey || '').trim();
-    const tempUrl = (overrides?.['flightsentry-scraper']?.scraperUrl || '').trim();
+  if (provider === 'openfarescraper') {
+    const tempKey = (overrides?.openfarescraper?.apiKey || '').trim();
+    const tempUrl = (overrides?.openfarescraper?.scraperUrl || '').trim();
     const hasTempOverride = Boolean(tempKey || tempUrl);
 
-    const effectiveKey = tempKey || (stored.flightsentryScraperApiKey || '').trim();
-    const effectiveUrl = tempUrl || (stored.flightsentryScraperUrl || '').trim();
+    const effectiveKey = tempKey || (stored.openfareScraperApiKey || '').trim();
+    const effectiveUrl = tempUrl || (stored.openfareScraperUrl || '').trim();
 
     if (!effectiveUrl || !effectiveKey) {
       return {
@@ -237,7 +237,7 @@ function resolveProviderCredentials(
         scraperUrl: effectiveUrl,
         missingReason: hasTempOverride
           ? 'Both Scraper Base URL and Scraper API Key are required (provide both in overrides or save the missing value in Settings).'
-          : 'No saved FlightSentry-Scraper URL or API key configured in Settings.',
+          : 'No saved OpenFareScraper URL or API key configured in Settings.',
       };
     }
 
@@ -289,10 +289,10 @@ export async function runDevProviderComparison(
   const secretPool = [
     settings.serpApiKey || '',
     settings.searchApiKey || '',
-    settings.flightsentryScraperApiKey || '',
+    settings.openfareScraperApiKey || '',
     input.overrides?.serpapi?.apiKey || '',
     input.overrides?.searchapi?.apiKey || '',
-    input.overrides?.['flightsentry-scraper']?.apiKey || '',
+    input.overrides?.openfarescraper?.apiKey || '',
   ]
     .map((s) => s.trim())
     .filter((s) => s.length >= 6);
@@ -346,7 +346,7 @@ export async function runDevProviderComparison(
             adapterOptions
           );
         } else {
-          adapterResult = await queryFlightSentryScraper(
+          adapterResult = await queryOpenFareScraper(
             syntheticFlight,
             creds.scraperUrl,
             creds.apiKey,
@@ -370,7 +370,7 @@ export async function runDevProviderComparison(
         creds.credentialSource === 'saved' &&
         adapterResult.status !== 'Error' &&
         adapterResult.status !== 'Paused' &&
-        !(provider === 'flightsentry-scraper' && adapterResult.status === 'RateLimited');
+        !(provider === 'openfarescraper' && adapterResult.status === 'RateLimited');
 
       if (shouldCountUsage) {
         settingsDb.incrementApiUsage(provider);

@@ -26,7 +26,7 @@ interface ApiTestWorkspaceProps {
 const EMPTY_OVERRIDES: ProviderOverridesState = {
   serpapi: { apiKey: '' },
   searchapi: { apiKey: '' },
-  'flightsentry-scraper': { apiKey: '', scraperUrl: '' },
+  openfarescraper: { apiKey: '', scraperUrl: '' },
 };
 
 export default function ApiTestWorkspace({
@@ -110,7 +110,7 @@ export default function ApiTestWorkspace({
     setOverrides((prev) => ({
       ...prev,
       [provider]:
-        provider === 'flightsentry-scraper'
+        provider === 'openfarescraper'
           ? { apiKey: '', scraperUrl: '' }
           : { apiKey: '' },
     }));
@@ -140,13 +140,13 @@ export default function ApiTestWorkspace({
           searchapi: overrides.searchapi.apiKey.trim()
             ? { apiKey: overrides.searchapi.apiKey.trim() }
             : undefined,
-          'flightsentry-scraper':
-            overrides['flightsentry-scraper'].apiKey.trim() ||
-            overrides['flightsentry-scraper'].scraperUrl?.trim()
+          openfarescraper:
+            overrides.openfarescraper.apiKey.trim() ||
+            overrides.openfarescraper.scraperUrl?.trim()
               ? {
-                  apiKey: overrides['flightsentry-scraper'].apiKey.trim() || undefined,
+                  apiKey: overrides.openfarescraper.apiKey.trim() || undefined,
                   scraperUrl:
-                    overrides['flightsentry-scraper'].scraperUrl?.trim() || undefined,
+                    overrides.openfarescraper.scraperUrl?.trim() || undefined,
                 }
               : undefined,
         },

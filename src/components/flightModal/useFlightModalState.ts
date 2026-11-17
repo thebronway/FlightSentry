@@ -38,6 +38,7 @@ export interface FlightFormState {
   baselinePrice: string;
   purchasePrice: string;
   currency: string;
+  taxesAmount: string;
   minDropDollar: string;
   minDropPercent: string;
   notes: string;
@@ -81,6 +82,7 @@ const DEFAULT_FORM_STATE: FlightFormState = {
   baselinePrice: '',
   purchasePrice: '',
   currency: '',
+  taxesAmount: '',
   minDropDollar: '',
   minDropPercent: '',
   notes: '',
@@ -251,6 +253,12 @@ export function useFlightModalState({
           baselinePrice: initialFlight.baselinePrice ? String(initialFlight.baselinePrice) : '',
           purchasePrice: initialFlight.purchasePrice ? String(initialFlight.purchasePrice) : '',
           currency: initialFlight.currency || defaultSettings?.currency || 'USD',
+          taxesAmount:
+            initialFlight.taxesAmount !== null &&
+            initialFlight.taxesAmount !== undefined &&
+            initialFlight.taxesAmount > 0
+              ? String(initialFlight.taxesAmount)
+              : '',
           minDropDollar: (initialFlight.minDropDollar !== null && initialFlight.minDropDollar !== undefined) ? String(initialFlight.minDropDollar) : '',
           minDropPercent: (initialFlight.minDropPercent !== null && initialFlight.minDropPercent !== undefined) ? String(initialFlight.minDropPercent) : '',
           notes: initialFlight.notes || '',
@@ -398,6 +406,7 @@ export function useFlightModalState({
         trackingType: nextTrackingType,
         paymentType: newPaymentType,
         currency: nextCurrency,
+        taxesAmount: isPoints ? prev.taxesAmount : '',
         isManual: nextManual,
         pauseTracking: isPoints ? true : preserveManual,
         monitorRouteAlternatives: isPoints ? false : prev.monitorRouteAlternatives,
@@ -424,6 +433,7 @@ export function useFlightModalState({
         ...prev,
         trackingType: nextTrackingType,
         currency: newCurrency,
+        taxesAmount: isPoints ? prev.taxesAmount : '',
         paymentType: isPoints ? 'points' : 'cash',
         isManual: nextManual,
         pauseTracking: nextPause,
@@ -567,6 +577,19 @@ export function useFlightModalState({
       : null;
 
     const parsedPurchase = formData.purchasePrice ? parseFloat(formData.purchasePrice) : null;
+    const rawTaxes =
+      isPointsFlight && formData.trackingType === 'flight_booked' && formData.taxesAmount.trim() !== ''
+        ? parseFloat(formData.taxesAmount)
+        : null;
+    if (rawTaxes !== null && (Number.isNaN(rawTaxes) || rawTaxes < 0)) {
+      setLoading(false);
+      setError('Taxes & fees must be zero or a positive amount.');
+      return;
+    }
+    const normalizedTaxesAmount = rawTaxes !== null && rawTaxes > 0 ? rawTaxes : null;
+    const normalizedTaxesCurrency = normalizedTaxesAmount
+      ? (defaultSettings?.currency || 'USD').trim().toUpperCase()
+      : null;
     let parsedBaseline = formData.baselinePrice ? parseFloat(formData.baselinePrice) : null;
 
     if (!parsedBaseline && parsedPurchase) {
@@ -597,6 +620,8 @@ export function useFlightModalState({
       baselinePrice: parsedBaseline,
       purchasePrice: parsedPurchase,
       currency: formData.currency || defaultSettings?.currency || 'USD',
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       minDropDollar: formData.minDropDollar ? parseFloat(formData.minDropDollar) : null,
       minDropPercent: formData.minDropPercent ? parseFloat(formData.minDropPercent) : null,
       pnr: formData.pnr ? formData.pnr.trim().toUpperCase() : null,

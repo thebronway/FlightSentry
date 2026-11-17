@@ -44,6 +44,8 @@ export interface Flight {
   minIncreasePercent?: number | null;
   maxStops?: number | null;
   currency?: string | null;
+  taxesAmount?: number | null;
+  taxesCurrency?: string | null;
   monitorRouteAlternatives?: number; // 0 (false) or 1 (true)
   bookingDate?: string | null; // YYYY-MM-DD
   isManual?: number; // 0 (false) or 1 (true)
@@ -104,7 +106,7 @@ export interface Settings {
   id: number;
   serpApiKey?: string | null;
   searchApiKey?: string | null;
-  dataSourceStrategy: string; // e.g., "serpapi,searchapi,flightsentry-scraper"
+  dataSourceStrategy: string; // e.g., "serpapi,searchapi,openfarescraper"
   notificationsEnabled: number; // 0 (false) or 1 (true)
   appriseUrl?: string | null;
   smtpHost?: string | null;
@@ -129,20 +131,20 @@ export interface Settings {
   fallbackStrategyMode: string;
   serpApiEnabled: number;
   searchApiEnabled: number;
-  flightsentryScraperEnabled: number;
-  flightsentryScraperPrioritizeFirst?: number;
-  flightsentryScraperUrl?: string | null;
-  flightsentryScraperApiKey?: string | null;
+  openfareScraperEnabled: number;
+  openfareScraperPrioritizeFirst?: number;
+  openfareScraperUrl?: string | null;
+  openfareScraperApiKey?: string | null;
   serpApiQuota: number;
   searchApiQuota: number;
   serpApiQuotaMode?: QuotaResetMode;
   searchApiQuotaMode?: QuotaResetMode;
   serpApiUsed: number;
   searchApiUsed: number;
-  flightsentryScraperUsed: number;
+  openfareScraperUsed: number;
   serpApiPaused: number;
   searchApiPaused: number;
-  flightsentryScraperPaused: number;
+  openfareScraperPaused: number;
   roundRobinIndex: number;
   discordEnabled: number;
   discordWebhookUrl?: string | null;

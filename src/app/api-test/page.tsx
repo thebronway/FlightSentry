@@ -42,12 +42,12 @@ export default function ApiTestPage() {
       configured: Boolean((settings.searchApiKey || '').trim()),
       enabled: settings.searchApiEnabled === 1,
     },
-    'flightsentry-scraper': {
+    openfarescraper: {
       configured: Boolean(
-        (settings.flightsentryScraperUrl || '').trim() &&
-          (settings.flightsentryScraperApiKey || '').trim()
+        (settings.openfareScraperUrl || '').trim() &&
+          (settings.openfareScraperApiKey || '').trim()
       ),
-      enabled: settings.flightsentryScraperEnabled === 1,
+      enabled: settings.openfareScraperEnabled === 1,
     },
   };
 

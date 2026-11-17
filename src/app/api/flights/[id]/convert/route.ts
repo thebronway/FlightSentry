@@ -31,6 +31,8 @@ const convertSchema = z.object({
   flightNumber: z.string().regex(/^\d+$/, 'Flight number must be numbers only').min(1, 'Flight number is required'),
   pnr: z.string().max(10).optional().nullable().or(z.literal('')),
   currency: z.string().max(50).optional().nullable().or(z.literal('')),
+  taxesAmount: z.number().nonnegative().optional().nullable(),
+  taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
   monitorRouteAlternatives: z.number().min(0).max(1).optional().default(1),
   origin: z.string().optional().nullable(),
   destination: z.string().optional().nullable(),
@@ -59,10 +61,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const cleanAirline = parsed.airline.trim().toUpperCase();
     const cleanFlightNumber = parsed.flightNumber ? parsed.flightNumber.trim() : null;
     const cleanPnr = parsed.pnr ? parsed.pnr.trim().toUpperCase() : null;
+    const settings = settingsDb.get();
+    let pointsList: string[] = [];
+    if (settings.pointsCurrencies) {
+      try {
+        const p = typeof settings.pointsCurrencies === 'string'
+          ? JSON.parse(settings.pointsCurrencies)
+          : settings.pointsCurrencies;
+        if (Array.isArray(p)) pointsList = p;
+      } catch {}
+    }
+
     const searchMode = cleanFlightNumber ? 'FlightNumber' : existing.searchMode;
     const effectiveCurrency = parsed.currency || existing.currency;
-    const isPointsBooking = isPointsCurrency(effectiveCurrency);
+    const isPointsBooking = Boolean(
+      effectiveCurrency && (isPointsCurrency(effectiveCurrency) || pointsList.includes(effectiveCurrency))
+    );
     const effectiveIsManual = isPointsBooking ? 1 : (existing.isManual ?? 0);
+    const normalizedTaxesAmount =
+      isPointsBooking && parsed.taxesAmount && parsed.taxesAmount > 0 ? parsed.taxesAmount : null;
+    const normalizedTaxesCurrency = normalizedTaxesAmount
+      ? (parsed.taxesCurrency || settings.currency || 'USD').trim().toUpperCase()
+      : null;
 
     // Update flight record in place
     flightDb.update(id, {
@@ -77,6 +97,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       pnr: cleanPnr,
       searchMode,
       currency: effectiveCurrency,
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       monitorRouteAlternatives: effectiveIsManual === 1 ? 0 : (parsed.monitorRouteAlternatives !== undefined ? parsed.monitorRouteAlternatives : 1),
       origin: parsed.origin ? parsed.origin.trim().toUpperCase() : existing.origin,
       destination: parsed.destination ? parsed.destination.trim().toUpperCase() : existing.destination,
@@ -92,14 +114,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     historyDb.insert(id, parsed.purchasePrice, 'Booked', {
       airline: cleanAirline,
       flightNumber: cleanFlightNumber,
-      metadata: JSON.stringify({ milestone: 'Purchased Flight', pnr: cleanPnr }),
+      metadata: JSON.stringify({
+        milestone: isPointsBooking ? 'Purchased Flight (Points)' : 'Purchased Flight',
+        pnr: cleanPnr,
+        taxesAmount: normalizedTaxesAmount,
+        taxesCurrency: normalizedTaxesCurrency,
+      }),
       sourceUsed: 'Price Paid',
     });
 
     // Recalculate schedule queue
     const updated = flightDb.getById(id);
     if (updated) {
-      const settings = settingsDb.get();
       const nextCheckAt = calculateNextCheck(updated, settings);
       flightDb.updateNextCheckAt(id, nextCheckAt);
     }

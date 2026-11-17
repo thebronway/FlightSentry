@@ -250,7 +250,7 @@ export default function DashboardClient({ children }: DashboardClientProps) {
         globalPause: 0,
         serpApiPaused: 0,
         searchApiPaused: 0,
-        flightsentryScraperPaused: 0,
+        openfareScraperPaused: 0,
       }),
     });
     if (res.ok) {

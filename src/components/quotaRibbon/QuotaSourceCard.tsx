@@ -2,6 +2,7 @@
 
 import { Pause, Play } from 'lucide-react';
 import { getQuotaThresholdLevel, QuotaPauseKey, QuotaSourceItem } from './types';
+import { evaluateOpenFareScraperVersion } from '@/utils/openFareScraperVersion';
 
 interface QuotaSourceCardProps {
   source: QuotaSourceItem;
@@ -42,6 +43,10 @@ export default function QuotaSourceCard({
   const isRemotelyPaused = source.remotePaused === true;
   const isPaused = isLocallyPaused || isRemotelyPaused;
   const hideActionButton = isRemotelyPaused && !isLocallyPaused;
+  const versionCheck =
+    source.isScraper && source.remoteVersion
+      ? evaluateOpenFareScraperVersion(source.remoteVersion)
+      : null;
 
   const hasRollingQuotas =
     source.isScraper &&
@@ -82,7 +87,7 @@ export default function QuotaSourceCard({
     >
       <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="font-bold text-sm text-slate-200 truncate">
               {source.name}
             </span>
@@ -90,12 +95,28 @@ export default function QuotaSourceCard({
               <span
                 title={
                   isRemotelyPaused && !isLocallyPaused
-                    ? source.remoteStatusReason || 'Paused remotely on FlightSentry-Scraper'
+                    ? source.remoteStatusReason || 'Paused remotely on OpenFareScraper'
                     : undefined
                 }
                 className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50 flex-shrink-0"
               >
                 {isRemotelyPaused && !isLocallyPaused ? 'PAUSED (REMOTE)' : 'PAUSED'}
+              </span>
+            )}
+            {versionCheck?.status === 'unsupported' && (
+              <span
+                title={versionCheck.message || undefined}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/60 flex-shrink-0"
+              >
+                UNSUPPORTED (v{versionCheck.normalizedVersion || versionCheck.reportedVersion} &lt; v{versionCheck.minVersion})
+              </span>
+            )}
+            {versionCheck?.status === 'outdated' && (
+              <span
+                title={versionCheck.message || undefined}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-700/70 flex-shrink-0"
+              >
+                UPDATE RECOMMENDED (v{versionCheck.normalizedVersion})
               </span>
             )}
           </div>

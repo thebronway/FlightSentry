@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isApiTesterEnabled } from '@/utils/devGate';
 import { devProviderTestSchema } from '@/utils/validation';
 import { runDevProviderComparison } from '@/services/devApiTester';
-import { redactScraperSecrets } from '@/services/flightsentryScraper';
+import { redactScraperSecrets } from '@/services/openFareScraper';
 import { requireApiAuth } from '@/services/auth/apiGuard';
 
 export const dynamic = 'force-dynamic';

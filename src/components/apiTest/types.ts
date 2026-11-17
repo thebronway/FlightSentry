@@ -43,11 +43,11 @@ export const ALL_TEST_PROVIDERS: ProviderMetadata[] = [
     keyPlaceholder: 'Temporary SearchApi.io key override...',
   },
   {
-    id: 'flightsentry-scraper',
-    label: 'FlightSentry-Scraper',
+    id: 'openfarescraper',
+    label: 'OpenFareScraper',
     badge: 'Self-Hosted Scraper',
     badgeClass: 'bg-amber-950/40 text-amber-400 border-amber-800/40',
-    keyPlaceholder: 'fss_... temporary key override',
+    keyPlaceholder: 'ofs_... temporary key override',
     supportsScraperUrl: true,
   },
 ];

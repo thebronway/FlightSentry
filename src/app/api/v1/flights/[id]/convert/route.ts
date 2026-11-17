@@ -77,13 +77,36 @@ export async function POST(
       );
     }
 
+    const settings = settingsDb.get();
+    const defaultCurrency = (settings.currency || 'USD').trim();
+    let pointsList: string[] = [];
+    if (settings.pointsCurrencies) {
+      try {
+        const p =
+          typeof settings.pointsCurrencies === 'string'
+            ? JSON.parse(settings.pointsCurrencies)
+            : settings.pointsCurrencies;
+        if (Array.isArray(p)) pointsList = p;
+      } catch {}
+    }
+
     const parsed = parsedResult.data;
     const cleanAirline = parsed.airline.trim().toUpperCase();
     const cleanFlightNumber = parsed.flightNumber.trim();
     const cleanPnr = parsed.pnr ? parsed.pnr.trim().toUpperCase() : null;
     const effectiveCurrency = parsed.currency || existing.currency;
-    const isPointsBooking = isPointsCurrency(effectiveCurrency);
+    const isPointsBooking = Boolean(
+      effectiveCurrency &&
+        (isPointsCurrency(effectiveCurrency) || pointsList.includes(effectiveCurrency))
+    );
     const effectiveIsManual = isPointsBooking ? 1 : existing.isManual ?? 0;
+    const normalizedTaxesAmount =
+      isPointsBooking && parsed.taxesAmount && parsed.taxesAmount > 0
+        ? parsed.taxesAmount
+        : null;
+    const normalizedTaxesCurrency = normalizedTaxesAmount
+      ? (parsed.taxesCurrency || defaultCurrency || 'USD').trim().toUpperCase()
+      : null;
 
     flightDb.update(id, {
       status:
@@ -103,6 +126,8 @@ export async function POST(
       pnr: cleanPnr,
       searchMode: 'FlightNumber',
       currency: effectiveCurrency,
+      taxesAmount: normalizedTaxesAmount,
+      taxesCurrency: normalizedTaxesCurrency,
       monitorRouteAlternatives:
         effectiveIsManual === 1
           ? 0
@@ -141,14 +166,13 @@ export async function POST(
       airline: cleanAirline,
       flightNumber: cleanFlightNumber,
       metadata: JSON.stringify({
-        milestone: 'Purchased Flight',
+        milestone: isPointsBooking ? 'Purchased Flight (Points)' : 'Purchased Flight',
         pnr: cleanPnr,
+        taxesAmount: normalizedTaxesAmount,
+        taxesCurrency: normalizedTaxesCurrency,
       }),
       sourceUsed: 'Price Paid',
     });
-
-    const settings = settingsDb.get();
-    const defaultCurrency = (settings.currency || 'USD').trim();
     const updated = flightDb.getById(id)!;
     const nextCheckAt = calculateNextCheck(updated, settings);
     flightDb.updateNextCheckAt(id, nextCheckAt);

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const result = await executeSearchStrategy(flight, settings);
 
-    if (result.status === 'RateLimited' && result.sourceUsed !== 'flightsentry-scraper') {
+    if (result.status === 'RateLimited' && result.sourceUsed !== 'openfarescraper') {
       const pauseHours = Math.random() * (8 - 4) + 4;
       const pauseUntil = new Date(Date.now() + pauseHours * 3600000).toISOString();
       settingsDb.update({ circuitBreakerUntil: pauseUntil });
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const shouldIncrementUsage =
       result.status !== 'Error' &&
       result.status !== 'Paused' &&
-      !(result.sourceUsed === 'flightsentry-scraper' && result.status === 'RateLimited') &&
+      !(result.sourceUsed === 'openfarescraper' && result.status === 'RateLimited') &&
       Boolean(result.sourceUsed);
 
     if (shouldIncrementUsage && result.sourceUsed) {

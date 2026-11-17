@@ -6,8 +6,7 @@ import { formatCurrency } from '@/utils/format';
 const SOURCE_LABEL_MAP: Record<string, string> = {
   serpapi: 'SerpAPI',
   searchapi: 'SearchApi.io',
-  'flightsentry-scraper': 'FlightSentry-Scraper',
-  fastflights: 'Fast-Flights',
+  openfarescraper: 'OpenFareScraper',
   'Price Paid': 'Price Paid',
   manual: 'Manual Price Entry',
 };
@@ -90,7 +89,7 @@ export default function HistoryCheckBadges({ record, currency }: Props) {
       {record.sourceUsed && (
         <span
           className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
-            record.sourceUsed === 'flightsentry-scraper' || record.sourceUsed === 'fastflights'
+            record.sourceUsed === 'openfarescraper'
               ? 'bg-amber-950/40 text-amber-300 border-amber-800/40'
               : 'bg-slate-800/60 text-slate-300 border-slate-700/60'
           }`}

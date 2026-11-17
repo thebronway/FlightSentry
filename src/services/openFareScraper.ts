@@ -8,6 +8,7 @@ import {
 } from '../utils/airline';
 import { filterItinerariesBySearchPreferences } from '../utils/routeIntelligence';
 import { resolveToAirportList } from '../utils/coLocations';
+import { evaluateOpenFareScraperVersion } from '../utils/openFareScraperVersion';
 
 export interface ScraperHealthResponse {
   status: 'ok' | 'rate_limited' | 'cooldown' | 'paused';
@@ -73,7 +74,7 @@ export interface ScraperItinerary {
 
 export interface ScraperQueryResponse {
   status: 'Success' | 'SoldOut' | 'RateLimited' | 'Paused' | 'Error';
-  provider: 'flightsentry-scraper';
+  provider: 'openfarescraper';
   currency: string;
   lowestPrice: number | null;
   itineraries: ScraperItinerary[];
@@ -99,13 +100,15 @@ export class ScraperHttpError extends Error {
 }
 
 export function redactScraperSecrets(value: string): string {
-  return value.replace(/fss_[a-fA-F0-9]+/g, 'fss_[REDACTED]');
+  return value
+    .replace(/ofs_[a-fA-F0-9]+/g, 'ofs_[REDACTED]')
+    .replace(/ofs_admin_session=[^;\s"']+/gi, 'ofs_admin_session=[REDACTED]');
 }
 
 function normalizeScraperBaseUrl(rawUrl: string): string {
   const parsed = new URL(rawUrl.trim());
   if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username || parsed.password) {
-    throw new Error('Invalid FlightSentry-Scraper URL: must use http or https without credentials');
+    throw new Error('Invalid OpenFareScraper URL: must use http or https without credentials');
   }
   return rawUrl.trim().replace(/\/+$/, '');
 }
@@ -149,13 +152,13 @@ export async function checkScraperHealth(
   }
 
   if (!payload || typeof payload !== 'object' || typeof payload.state !== 'string') {
-    throw new Error('Invalid health telemetry response from FlightSentry-Scraper');
+    throw new Error('Invalid health telemetry response from OpenFareScraper');
   }
 
   return payload as ScraperHealthResponse;
 }
 
-export const checkFlightSentryScraperPrice = async (
+export const checkOpenFareScraperPrice = async (
   flight: Flight,
   baseUrl?: string | null,
   apiKey?: string | null,
@@ -166,17 +169,17 @@ export const checkFlightSentryScraperPrice = async (
   const trimmedKey = (apiKey || '').trim();
 
   if (!trimmedUrl || !trimmedKey) {
-    console.error('[FlightSentry-Scraper] Base URL or API key is missing or not configured.');
+    console.error('[OpenFareScraper] Base URL or API key is missing or not configured.');
     return {
       price: null,
       status: 'Error',
-      errorMessage: 'FlightSentry-Scraper URL or API key is missing or not configured.',
+      errorMessage: 'OpenFareScraper URL or API key is missing or not configured.',
     };
   }
 
   if (!flight.origin || !flight.destination) {
     console.error(
-      `[FlightSentry-Scraper] Validation failed: Origin and Destination are required. (Flight ID: ${flight.id})`
+      `[OpenFareScraper] Validation failed: Origin and Destination are required. (Flight ID: ${flight.id})`
     );
     return {
       price: null,
@@ -192,17 +195,17 @@ export const checkFlightSentryScraperPrice = async (
     return {
       price: null,
       status: 'Error',
-      errorMessage: redactScraperSecrets(urlErr?.message || 'Invalid FlightSentry-Scraper URL'),
+      errorMessage: redactScraperSecrets(urlErr?.message || 'Invalid OpenFareScraper URL'),
     };
   }
 
-  // 1. Pre-flight health & quota gate (5,000 ms timeout)
+  // 1. Pre-flight health, version & quota gate (5,000 ms timeout)
   let health: ScraperHealthResponse;
   try {
     health = await checkScraperHealth(normalizedBaseUrl, trimmedKey);
   } catch (healthErr: any) {
-    const safeMsg = redactScraperSecrets(healthErr?.message || 'FlightSentry-Scraper health check failed');
-    console.warn(`[FlightSentry-Scraper] Pre-flight health check failed: ${safeMsg}`);
+    const safeMsg = redactScraperSecrets(healthErr?.message || 'OpenFareScraper health check failed');
+    console.warn(`[OpenFareScraper] Pre-flight health check failed: ${safeMsg}`);
     return {
       price: null,
       status: 'Error',
@@ -210,11 +213,28 @@ export const checkFlightSentryScraperPrice = async (
     };
   }
 
+  const versionEval = evaluateOpenFareScraperVersion(health.version);
+  if (versionEval.isBlocked) {
+    const blockMsg =
+      versionEval.message ||
+      `OpenFareScraper version is below minimum required v${versionEval.minVersion}.`;
+    console.error(`[OpenFareScraper] Blocking scrape due to unsupported version: ${blockMsg}`);
+    return {
+      price: null,
+      status: 'Error',
+      errorMessage: blockMsg,
+    };
+  }
+
+  if (versionEval.status === 'outdated' && versionEval.message) {
+    console.warn(`[OpenFareScraper] ${versionEval.message}`);
+  }
+
   if (health.paused === true || health.state === 'paused' || health.status === 'paused') {
     const reason = health.statusReason
-      ? `FlightSentry-Scraper is paused: ${redactScraperSecrets(health.statusReason)}`
-      : 'FlightSentry-Scraper is globally paused';
-    console.log(`[FlightSentry-Scraper] Skipping scrape because remote service is paused.`);
+      ? `OpenFareScraper is paused: ${redactScraperSecrets(health.statusReason)}`
+      : 'OpenFareScraper is globally paused';
+    console.log(`[OpenFareScraper] Skipping scrape because remote service is paused.`);
     return {
       price: null,
       status: 'Paused',
@@ -232,7 +252,7 @@ export const checkFlightSentryScraperPrice = async (
     return {
       price: null,
       status: 'RateLimited',
-      errorMessage: `FlightSentry-Scraper cooldown active${reasonSuffix}${retrySuffix}`,
+      errorMessage: `OpenFareScraper cooldown active${reasonSuffix}${retrySuffix}`,
     };
   }
 
@@ -257,7 +277,7 @@ export const checkFlightSentryScraperPrice = async (
     return {
       price: null,
       status: 'RateLimited',
-      errorMessage: `FlightSentry-Scraper rate limit / rolling quota reached${reasonSuffix}${retrySuffix}`,
+      errorMessage: `OpenFareScraper rate limit / rolling quota reached${reasonSuffix}${retrySuffix}`,
     };
   }
 
@@ -327,7 +347,7 @@ export const checkFlightSentryScraperPrice = async (
 
   // 3. Execute POST /api/v1/scrape (90,000 ms timeout)
   console.log(
-    `[FlightSentry-Scraper] Querying [${origins.join(',')}] -> [${destinations.join(',')}] on ${flight.departureDate}`
+    `[OpenFareScraper] Querying [${origins.join(',')}] -> [${destinations.join(',')}] on ${flight.departureDate}`
   );
 
   let res: Response;
@@ -345,11 +365,11 @@ export const checkFlightSentryScraperPrice = async (
     });
   } catch (err: any) {
     const safeMsg = redactScraperSecrets(err?.message || String(err));
-    console.error(`[FlightSentry-Scraper] Scrape request exception: ${safeMsg}`);
+    console.error(`[OpenFareScraper] Scrape request exception: ${safeMsg}`);
     return {
       price: null,
       status: 'Error',
-      errorMessage: `FlightSentry-Scraper request failed: ${safeMsg}`,
+      errorMessage: `OpenFareScraper request failed: ${safeMsg}`,
     };
   }
 
@@ -366,7 +386,7 @@ export const checkFlightSentryScraperPrice = async (
   // Handle HTTP 503 / Paused cleanly without tripping circuit breaker
   if (res.status === 503 || body?.status === 'Paused') {
     const safeMsg = redactScraperSecrets(
-      body?.error || 'FlightSentry-Scraper is globally paused (HTTP 503)'
+      body?.error || 'OpenFareScraper is globally paused (HTTP 503)'
     );
     return {
       price: null,
@@ -379,7 +399,7 @@ export const checkFlightSentryScraperPrice = async (
   if (res.status === 429 || body?.status === 'RateLimited') {
     const retryAfter = body?.retryAfter || res.headers.get('Retry-After');
     const baseMsg = redactScraperSecrets(
-      body?.error || 'FlightSentry-Scraper rate limit or cooldown active (HTTP 429)'
+      body?.error || 'OpenFareScraper rate limit or cooldown active (HTTP 429)'
     );
     const retrySuffix = retryAfter && !baseMsg.includes(retryAfter) ? ` (retry after ${retryAfter})` : '';
     return {
@@ -391,9 +411,9 @@ export const checkFlightSentryScraperPrice = async (
 
   if (!res.ok || body?.status === 'Error') {
     const safeMsg = redactScraperSecrets(
-      body?.error || `FlightSentry-Scraper HTTP ${res.status}`
+      body?.error || `OpenFareScraper HTTP ${res.status}`
     );
-    console.error(`[FlightSentry-Scraper] Error response: ${safeMsg}`);
+    console.error(`[OpenFareScraper] Error response: ${safeMsg}`);
     return {
       price: null,
       status: 'Error',
@@ -402,14 +422,14 @@ export const checkFlightSentryScraperPrice = async (
   }
 
   const rawItineraries = Array.isArray(body?.itineraries) ? body.itineraries : [];
-  console.log(`[FlightSentry-Scraper] Returned ${rawItineraries.length} itineraries`);
+  console.log(`[OpenFareScraper] Returned ${rawItineraries.length} itineraries`);
 
   if (body?.status === 'SoldOut' || rawItineraries.length === 0) {
     return {
       price: null,
       status: 'SoldOut',
       errorMessage: redactScraperSecrets(
-        body?.error || 'FlightSentry-Scraper returned 0 matching flight itineraries for this route and date'
+        body?.error || 'OpenFareScraper returned 0 matching flight itineraries for this route and date'
       ),
     };
   }
@@ -526,7 +546,7 @@ export const checkFlightSentryScraperPrice = async (
     return {
       price: null,
       status: 'SoldOut',
-      errorMessage: `FlightSentry-Scraper returned ${parsedItineraries.length} itineraries, but flight ${targetCode} ${targetNum} was not found`,
+      errorMessage: `OpenFareScraper returned ${parsedItineraries.length} itineraries, but flight ${targetCode} ${targetNum} was not found`,
     };
   }
 
@@ -570,6 +590,6 @@ export const checkFlightSentryScraperPrice = async (
   return {
     price: null,
     status: 'SoldOut',
-    errorMessage: `FlightSentry-Scraper returned ${parsedItineraries.length} priced itineraries, but 0 matched filters`,
+    errorMessage: `OpenFareScraper returned ${parsedItineraries.length} priced itineraries, but 0 matched filters`,
   };
 };

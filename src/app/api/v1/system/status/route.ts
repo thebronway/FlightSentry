@@ -104,16 +104,16 @@ export async function GET(req: NextRequest) {
               resetDate:
                 settings.searchApiResetDate || settings.quotaResetDate,
             },
-            flightsentryScraper: {
-              enabled: settings.flightsentryScraperEnabled === 1,
-              paused: settings.flightsentryScraperPaused === 1,
+            openfareScraper: {
+              enabled: settings.openfareScraperEnabled === 1,
+              paused: settings.openfareScraperPaused === 1,
               configured: Boolean(
-                (settings.flightsentryScraperUrl || '').trim() &&
-                  (settings.flightsentryScraperApiKey || '').trim()
+                (settings.openfareScraperUrl || '').trim() &&
+                  (settings.openfareScraperApiKey || '').trim()
               ),
               prioritizeFirst:
-                (settings.flightsentryScraperPrioritizeFirst ?? 1) === 1,
-              used: settings.flightsentryScraperUsed ?? 0,
+                (settings.openfareScraperPrioritizeFirst ?? 1) === 1,
+              used: settings.openfareScraperUsed ?? 0,
             },
           },
         },

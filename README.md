@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.9.2-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.9.3-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -37,12 +37,12 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 ## Data Sources
 FlightSentry connects to multiple flight search APIs and a self-hosted scraper service to pull live flight fares. Several API providers offer free tiers (typically around 100 searches per month). FlightSentry rotates requests, balances quota usage, or fails over across configured sources to maintain price tracking coverage.
 
-Pairing `FlightSentry-Scraper` with at least one API provider ensures uninterrupted price checks when the scraper is paused, in cooldown, or at its hourly/daily limit.
+Pairing `OpenFareScraper` with at least one API provider ensures uninterrupted price checks when the scraper is paused, in cooldown, or at its hourly/daily limit.
 
 ### Current Supported Data Sources
 - **[SerpAPI](https://serpapi.com/):** Provides 250 free searches per month.
 - **[SearchApi.io](https://www.searchapi.io/):** Provides 100 free searches.
-- **[FlightSentry-Scraper](https://github.com/thebronway/FlightSentry):** Self-hosted Google Flights scraper service with API key authentication and rolling hourly/daily limits.
+- **[OpenFareScraper](https://github.com/thebronway/OpenFareScraper):** Self-hosted Google Flights scraper service with `ofs_` API key authentication, version compatibility checks, and rolling hourly/daily limits.
 
 ### Future Supported Data Sources
 - TBD

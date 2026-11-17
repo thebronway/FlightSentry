@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   AlertCircle,
 } from 'lucide-react';
-import type { ScraperHealthResponse } from '@/services/flightsentryScraper';
+import type { ScraperHealthResponse } from '@/services/openFareScraper';
+import { evaluateOpenFareScraperVersion } from '@/utils/openFareScraperVersion';
 
 interface Props {
   providerName: string;
@@ -91,8 +92,8 @@ export default function SelfHostedScraperCard({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            flightsentryScraperUrl: urlToTest,
-            flightsentryScraperApiKey: keyToTest,
+            openfareScraperUrl: urlToTest,
+            openfareScraperApiKey: keyToTest,
           }),
         });
         const data = await res.json();
@@ -108,7 +109,7 @@ export default function SelfHostedScraperCard({
       } catch (err: any) {
         setHealthResult(null);
         if (showErrors) {
-          setTestError(err?.message || 'Network error connecting to FlightSentry-Scraper');
+          setTestError(err?.message || 'Network error connecting to OpenFareScraper');
         }
       } finally {
         setTesting(false);
@@ -224,13 +225,13 @@ export default function SelfHostedScraperCard({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              htmlFor="flightsentry-scraper-url"
+              htmlFor="openfarescraper-url"
               className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
             >
               Scraper Base URL
             </label>
             <input
-              id="flightsentry-scraper-url"
+              id="openfarescraper-url"
               type="url"
               disabled={!isEnabled}
               value={scraperUrl}
@@ -244,20 +245,20 @@ export default function SelfHostedScraperCard({
               onKeyDown={e => {
                 if (e.key === 'Enter') e.currentTarget.blur();
               }}
-              placeholder="http://flightsentry-scraper:4001"
+              placeholder="http://openfarescraper:4001"
               className="w-full min-h-[44px] sm:min-h-[38px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm font-mono"
             />
           </div>
 
           <div>
             <label
-              htmlFor="flightsentry-scraper-apikey"
+              htmlFor="openfarescraper-apikey"
               className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1"
             >
               API Key
             </label>
             <input
-              id="flightsentry-scraper-apikey"
+              id="openfarescraper-apikey"
               type="password"
               disabled={!isEnabled}
               value={scraperApiKey}
@@ -271,7 +272,7 @@ export default function SelfHostedScraperCard({
               onKeyDown={e => {
                 if (e.key === 'Enter') e.currentTarget.blur();
               }}
-              placeholder="fss_..."
+              placeholder="ofs_..."
               className="w-full min-h-[44px] sm:min-h-[38px] border border-gunmetal-border px-3 py-2 rounded-md bg-gunmetal-canvas text-slate-200 focus:outline-none focus:border-slate-500 disabled:opacity-50 text-sm font-mono"
             />
           </div>
@@ -292,7 +293,7 @@ export default function SelfHostedScraperCard({
                 Always run scraper first (override priority rank to preserve API quotas)
               </span>
               <span className="text-[11px] text-gunmetal-muted block">
-                When checked, FlightSentry-Scraper is queried before metered APIs regardless of its #{rankIndex + 1} rank. When unchecked, it follows its rank and the active Query Routing Strategy alongside your API providers.
+                When checked, OpenFareScraper is queried before metered APIs regardless of its #{rankIndex + 1} rank. When unchecked, it follows its rank and the active Query Routing Strategy alongside your API providers.
               </span>
             </div>
           </label>
@@ -305,20 +306,43 @@ export default function SelfHostedScraperCard({
           </div>
         )}
 
-        {healthResult && (
+        {healthResult && (() => {
+          const versionCheck = evaluateOpenFareScraperVersion(healthResult.version);
+          const versionBadgeClass =
+            versionCheck.status === 'supported'
+              ? 'bg-green-950/60 text-green-400 border-green-800/60'
+              : versionCheck.status === 'outdated'
+              ? 'bg-amber-950/60 text-amber-300 border-amber-700/70'
+              : 'bg-red-950/60 text-red-400 border-red-800/60';
+          const versionSuffix =
+            versionCheck.status === 'outdated'
+              ? ' • Update Recommended'
+              : versionCheck.status === 'unsupported'
+              ? ' • Unsupported'
+              : '';
+
+          return (
           <div className="p-3.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border space-y-3 text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                  {healthResult.state === 'ready' ? (
+                  {healthResult.state === 'ready' && versionCheck.status === 'supported' ? (
                     <CheckCircle2 className="w-4 h-4 text-green-400" />
+                  ) : versionCheck.status === 'unsupported' ? (
+                    <AlertCircle className="w-4 h-4 text-red-400" />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-amber-400" />
                   )}
                   <span>Scraper Telemetry</span>
                 </span>
-                <span className="px-2 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border font-mono text-[11px] text-slate-300">
-                  v{healthResult.version}
+                <span
+                  title={
+                    versionCheck.message ||
+                    `Supported (minimum v${versionCheck.minVersion}, recommended v${versionCheck.recommendedVersion}+)`
+                  }
+                  className={`px-2 py-0.5 rounded border font-mono text-[11px] font-semibold ${versionBadgeClass}`}
+                >
+                  v{healthResult.version}{versionSuffix}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded border text-[11px] font-bold ${
@@ -380,8 +404,33 @@ export default function SelfHostedScraperCard({
                 </span>
               </div>
             </div>
+
+            {versionCheck.status === 'unsupported' && versionCheck.message && (
+              <div className="p-2.5 rounded-md bg-red-950/40 border border-red-800/70 flex items-start gap-2 text-xs text-red-300">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-red-200 block">
+                    Minimum Version Required (v{versionCheck.minVersion}+)
+                  </span>
+                  <span>{versionCheck.message}</span>
+                </div>
+              </div>
+            )}
+
+            {versionCheck.status === 'outdated' && versionCheck.message && (
+              <div className="p-2.5 rounded-md bg-amber-950/40 border border-amber-700/70 flex items-start gap-2 text-xs text-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-amber-100 block">
+                    Update Recommended (v{versionCheck.recommendedVersion}+)
+                  </span>
+                  <span>{versionCheck.message}</span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

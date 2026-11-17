@@ -161,12 +161,12 @@ export function getDataSourceStatus(settings?: any | null): {
 
   const serpKey = (settings.serpApiKey || '').trim();
   const searchKey = (settings.searchApiKey || '').trim();
-  const scraperUrl = (settings.flightsentryScraperUrl || '').trim();
-  const scraperKey = (settings.flightsentryScraperApiKey || '').trim();
+  const scraperUrl = (settings.openfareScraperUrl || '').trim();
+  const scraperKey = (settings.openfareScraperApiKey || '').trim();
 
   const serpConfigured = isEnabled(settings.serpApiEnabled) && Boolean(serpKey);
   const searchConfigured = isEnabled(settings.searchApiEnabled) && Boolean(searchKey);
-  const scraperConfigured = isEnabled(settings.flightsentryScraperEnabled) && Boolean(scraperUrl) && Boolean(scraperKey);
+  const scraperConfigured = isEnabled(settings.openfareScraperEnabled) && Boolean(scraperUrl) && Boolean(scraperKey);
 
   const anyConfigured = serpConfigured || searchConfigured || scraperConfigured;
 
@@ -192,7 +192,7 @@ export function getDataSourceStatus(settings?: any | null): {
 
   const serpActive = serpConfigured && !isPaused(settings.serpApiPaused) && (settings.serpApiQuota === 0 || settings.serpApiUsed < settings.serpApiQuota);
   const searchActive = searchConfigured && !isPaused(settings.searchApiPaused) && (settings.searchApiQuota === 0 || settings.searchApiUsed < settings.searchApiQuota);
-  const scraperActive = scraperConfigured && !isPaused(settings.flightsentryScraperPaused);
+  const scraperActive = scraperConfigured && !isPaused(settings.openfareScraperPaused);
 
   const anyActive = serpActive || searchActive || scraperActive;
 

@@ -110,9 +110,16 @@ export default function FlightCard({
                   {formatCurrency(flight.currentPrice, flight.currency)}
                 </span>
                 {flight.currency && isPointsCurrency(flight.currency) && (
-                  <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0">
-                    <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
-                  </span>
+                  <>
+                    <span className="bg-amber-950/60 text-amber-300 border border-amber-800/60 px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0">
+                      <Coins className="w-3 h-3 text-amber-400" /> {flight.currency}
+                    </span>
+                    {flight.taxesAmount !== null && flight.taxesAmount !== undefined && flight.taxesAmount > 0 && (
+                      <span className="text-xs font-mono font-semibold text-slate-300 whitespace-nowrap">
+                        +{formatCurrency(flight.taxesAmount, flight.taxesCurrency || settings?.currency || 'USD')} taxes/fees
+                      </span>
+                    )}
+                  </>
                 )}
                 {!isPurchased && !isManualMode && currentPriceAirline && (
                   <AirlineBadge
