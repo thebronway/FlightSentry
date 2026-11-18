@@ -1,7 +1,7 @@
 # FlightSentry
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v0.9.5-blue.svg)
+![Version](https://img.shields.io/badge/version-v0.9.6-blue.svg)
 ![Docker](https://img.shields.io/docker/pulls/thebronway/flightsentry?logo=docker)
 
 ### A self-hosted flight price tracker that monitors flight prices and sends alerts when fares drop.
@@ -18,7 +18,7 @@ FlightSentry tracks prices for specific flight numbers or entire routes and send
 **Support:** Find this useful? [Support my work (Buy me a coffee)](https://buymeacoffee.com/brianconway).
 
 ## Features
-- **Route & Flight Tracking:** Monitor general city-pair routes or track specific airline carrier codes and flight numbers with route auto-detection and mismatch guidance alerts.
+- **Route & Flight Tracking:** Monitor general city-pair routes, nonstop flights, or multi-leg connecting itineraries with route auto-detection and mismatch guidance alerts.
 - **Tracking Goals:** Support for prospective fare monitoring ("Planning to Book") and post-purchase rebooking credit drop tracking ("Already Booked") with booking confirmation (PNR) logging.
 - **Cabin Class & Restrictions:** Support for Economy, Premium Economy, Business, and First Class, with options to filter out or include Basic fares.
 - **Interactive Price Graphs:** Multi-airline and single-flight trend charts with carrier filter toggles, tooltips, benchmark lines, and route corridor gauges.

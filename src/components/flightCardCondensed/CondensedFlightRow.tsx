@@ -137,7 +137,7 @@ export default function CondensedFlightRow({
 
       {/* 6. Status */}
       <td className="py-3 px-4 whitespace-nowrap">
-        <FlightStatusBadges flight={flight} size="xs" align="start" />
+        <FlightStatusBadges flight={flight} size="xs" align="start" layout="row" />
       </td>
 
       {/* 7. Actions */}

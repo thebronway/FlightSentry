@@ -4,6 +4,8 @@ import { historyDb } from '@/db/history';
 import { settingsDb } from '@/db/settings';
 import { calculateNextCheck } from '@/utils/queue';
 import { isPointsCurrency } from '@/utils/format';
+import { serializeFlightLegs } from '@/utils/flightLegs';
+import { getTodayDateString } from '@/utils/date';
 import { requirePublicApiAuth } from '@/services/auth/apiGuard';
 import {
   badRequestError,
@@ -91,9 +93,21 @@ export async function POST(
     }
 
     const parsed = parsedResult.data;
-    const cleanAirline = parsed.airline.trim().toUpperCase();
-    const cleanFlightNumber = parsed.flightNumber.trim();
+    const normalizedLegs =
+      Array.isArray(parsed.legs) && parsed.legs.length >= 2 ? parsed.legs : null;
+    const serializedLegs = serializeFlightLegs(normalizedLegs);
+    const cleanAirline = normalizedLegs
+      ? normalizedLegs[0].airline.trim().toUpperCase()
+      : (parsed.airline || '').trim().toUpperCase();
+    const cleanFlightNumber = normalizedLegs
+      ? normalizedLegs[0].flightNumber.trim()
+      : (parsed.flightNumber || '').trim();
     const cleanPnr = parsed.pnr ? parsed.pnr.trim().toUpperCase() : null;
+    const todayStr = getTodayDateString(settings.timezone);
+    const effectiveBookingDate =
+      parsed.bookingDate && parsed.bookingDate.trim()
+        ? parsed.bookingDate.trim()
+        : existing.bookingDate || todayStr;
     const effectiveCurrency = parsed.currency || existing.currency;
     const isPointsBooking = Boolean(
       effectiveCurrency &&
@@ -107,6 +121,16 @@ export async function POST(
     const normalizedTaxesCurrency = normalizedTaxesAmount
       ? (parsed.taxesCurrency || defaultCurrency || 'USD').trim().toUpperCase()
       : null;
+    const effectiveOrigin = normalizedLegs
+      ? normalizedLegs[0].origin
+      : parsed.origin
+      ? parsed.origin.trim().toUpperCase()
+      : existing.origin;
+    const effectiveDestination = normalizedLegs
+      ? normalizedLegs[normalizedLegs.length - 1].destination
+      : parsed.destination
+      ? parsed.destination.trim().toUpperCase()
+      : existing.destination;
 
     flightDb.update(id, {
       status:
@@ -119,10 +143,12 @@ export async function POST(
       purchasePrice: parsed.purchasePrice,
       originalPurchasePrice:
         existing.originalPurchasePrice ?? parsed.purchasePrice,
+      bookingDate: effectiveBookingDate,
       priceTrackingDirection: 'drop',
       airline: cleanAirline,
       bookingAirline: existing.bookingAirline || cleanAirline,
       flightNumber: cleanFlightNumber,
+      legs: serializedLegs,
       pnr: cleanPnr,
       searchMode: 'FlightNumber',
       currency: effectiveCurrency,
@@ -134,12 +160,8 @@ export async function POST(
           : parsed.monitorRouteAlternatives !== undefined
           ? parsed.monitorRouteAlternatives
           : 1,
-      origin: parsed.origin
-        ? parsed.origin.trim().toUpperCase()
-        : existing.origin,
-      destination: parsed.destination
-        ? parsed.destination.trim().toUpperCase()
-        : existing.destination,
+      origin: effectiveOrigin,
+      destination: effectiveDestination,
       includedAirlines:
         parsed.includedAirlines !== undefined
           ? parsed.includedAirlines
@@ -160,6 +182,26 @@ export async function POST(
           : existing.latestDeparture,
       noRedeye:
         parsed.noRedeye !== undefined ? parsed.noRedeye : existing.noRedeye,
+      maxLayoverMinutes:
+        parsed.maxLayoverMinutes !== undefined
+          ? parsed.maxLayoverMinutes
+          : existing.maxLayoverMinutes,
+      excludedConnectingAirports:
+        parsed.excludedConnectingAirports !== undefined
+          ? parsed.excludedConnectingAirports
+          : existing.excludedConnectingAirports,
+      maxTotalDurationMinutes:
+        parsed.maxTotalDurationMinutes !== undefined
+          ? parsed.maxTotalDurationMinutes
+          : existing.maxTotalDurationMinutes,
+      includedAlliances:
+        parsed.includedAlliances !== undefined
+          ? parsed.includedAlliances
+          : existing.includedAlliances,
+      excludedAlliances:
+        parsed.excludedAlliances !== undefined
+          ? parsed.excludedAlliances
+          : existing.excludedAlliances,
     });
 
     historyDb.insert(id, parsed.purchasePrice, 'Booked', {
@@ -168,6 +210,7 @@ export async function POST(
       metadata: JSON.stringify({
         milestone: isPointsBooking ? 'Purchased Flight (Points)' : 'Purchased Flight',
         pnr: cleanPnr,
+        legs: normalizedLegs || undefined,
         taxesAmount: normalizedTaxesAmount,
         taxesCurrency: normalizedTaxesCurrency,
       }),

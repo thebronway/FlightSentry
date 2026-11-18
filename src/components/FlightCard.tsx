@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { Flight, Settings } from '@/types';
 import { formatCurrency, isPointsCurrency } from '@/utils/format';
 import { getCurrentPriceAirline, getOperatingAirlines } from '@/utils/airline';
-import { parseFlightLegs } from '@/utils/flightLegs';
 import AirlineBadge from './common/AirlineBadge';
 import FlightStatusBadges from './flightCardShared/FlightStatusBadges';
 import FlightRouteDisplay from './flightCardShared/FlightRouteDisplay';
@@ -45,7 +44,6 @@ export default function FlightCard({
   const delta = benchmarkPrice - flight.currentPrice;
 
   const isFlightNumMode = flight.searchMode === 'FlightNumber' && Boolean(flight.flightNumber);
-  const trackedLegs = useMemo(() => parseFlightLegs(flight.legs), [flight.legs]);
   const isManualMode = flight.isManual === 1 || isPointsCurrency(flight.currency);
   const operatingAirlines = useMemo(() => getOperatingAirlines(flight), [flight]);
   const currentPriceAirline = useMemo(() => getCurrentPriceAirline(flight), [flight]);
@@ -75,39 +73,18 @@ export default function FlightCard({
             <FlightStatusBadges flight={flight} size="sm" align="end" />
           </div>
 
-          {/* Dedicated Airlines Bubble Row (spans full width across the card) */}
-          {!isPurchased && (
+          {/* Dedicated Operating Airlines Bubble Row for Route Mode */}
+          {!isPurchased && !isFlightNumMode && operatingAirlines.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
-              {isFlightNumMode ? (
-                trackedLegs.length >= 2 ? (
-                  trackedLegs.map((leg, idx) => (
-                    <AirlineBadge
-                      key={`${leg.airline}-${leg.flightNumber}-${idx}`}
-                      code={leg.airline}
-                      flightNumber={leg.flightNumber}
-                      size="sm"
-                      align={idx === 0 ? 'left' : 'center'}
-                    />
-                  ))
-                ) : (
-                  <AirlineBadge
-                    code={flight.airline}
-                    flightNumber={flight.flightNumber}
-                    size="sm"
-                    align="left"
-                  />
-                )
-              ) : operatingAirlines.length > 0 ? (
-                operatingAirlines.map((code, idx) => (
-                  <AirlineBadge
-                    key={code}
-                    code={code}
-                    size="xs"
-                    showFlightNumber={false}
-                    align={idx === 0 ? 'left' : 'center'}
-                  />
-                ))
-              ) : null}
+              {operatingAirlines.map((code, idx) => (
+                <AirlineBadge
+                  key={code}
+                  code={code}
+                  size="xs"
+                  showFlightNumber={false}
+                  align={idx === 0 ? 'left' : 'center'}
+                />
+              ))}
             </div>
           )}
 
@@ -135,7 +112,7 @@ export default function FlightCard({
                     )}
                   </>
                 )}
-                {!isPurchased && !isManualMode && currentPriceAirline && (
+                {!isPurchased && !isManualMode && !isFlightNumMode && currentPriceAirline && (
                   <AirlineBadge
                     code={currentPriceAirline.code}
                     flightNumber={currentPriceAirline.flightNumber}

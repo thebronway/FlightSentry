@@ -68,7 +68,7 @@ const normalizedLegsArraySchema = z
     }
   });
 
-const flightLegsInputSchema = z.preprocess((val) => {
+export const flightLegsInputSchema = z.preprocess((val) => {
   if (val === undefined || val === null || val === '') return null;
   if (typeof val === 'string') {
     const trimmed = val.trim();
@@ -758,50 +758,85 @@ export const publicFlightHistoryEntrySchema = z.object({
     .or(z.literal('')),
 });
 
-export const publicFlightConvertSchema = z.object({
-  purchasePrice: z.number().positive('Purchase price must be greater than zero'),
-  airline: airlineCodeSchema,
-  flightNumber: z
-    .string()
-    .trim()
-    .regex(/^\d+$/, 'Flight number must be numbers only')
-    .min(1, 'Flight number is required'),
-  pnr: z.string().trim().max(10).optional().nullable().or(z.literal('')),
-  currency: z.string().trim().max(50).optional().nullable().or(z.literal('')),
-  taxesAmount: z.number().nonnegative().optional().nullable(),
-  taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
-  monitorRouteAlternatives: z.number().int().min(0).max(1).optional().default(1),
-  origin: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Origin must be a 3-letter IATA code')
-    .optional()
-    .nullable(),
-  destination: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Destination must be a 3-letter IATA code')
-    .optional()
-    .nullable(),
-  includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
-  excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
-  maxStops: z.number().int().min(0).max(2).optional().nullable(),
-  earliestDeparture: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
-    .optional()
-    .nullable()
-    .or(z.literal('')),
-  latestDeparture: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
-    .optional()
-    .nullable()
-    .or(z.literal('')),
-  noRedeye: z.number().int().min(0).max(1).optional().default(0),
-});
+export const publicFlightConvertSchema = z
+  .object({
+    purchasePrice: z.number().positive('Purchase price must be greater than zero'),
+    airline: z.string().trim().toUpperCase().optional().nullable(),
+    flightNumber: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, 'Flight number must be numbers only')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    legs: flightLegsInputSchema,
+    bookingDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    pnr: z.string().trim().max(10).optional().nullable().or(z.literal('')),
+    currency: z.string().trim().max(50).optional().nullable().or(z.literal('')),
+    taxesAmount: z.number().nonnegative().optional().nullable(),
+    taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
+    monitorRouteAlternatives: z.number().int().min(0).max(1).optional().default(1),
+    origin: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Origin must be a 3-letter IATA code')
+      .optional()
+      .nullable(),
+    destination: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^([A-Z]{3})(\s*,\s*[A-Z]{3})*$/, 'Destination must be a 3-letter IATA code')
+      .optional()
+      .nullable(),
+    includedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+    excludedAirlines: commaSeparatedAirlinesOrAlliancesSchema,
+    maxStops: z.number().int().min(0).max(2).optional().nullable(),
+    earliestDeparture: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    latestDeparture: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM format')
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    noRedeye: z.number().int().min(0).max(1).optional().default(0),
+    maxLayoverMinutes: z.number().int().nonnegative().optional().nullable(),
+    excludedConnectingAirports: z.string().optional().nullable(),
+    maxTotalDurationMinutes: z.number().int().positive().optional().nullable(),
+    includedAlliances: z.string().optional().nullable(),
+    excludedAlliances: z.string().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    const hasLegs = Array.isArray(data.legs) && data.legs.length >= 2;
+    if (!hasLegs) {
+      const cleanAirline = (data.airline || '').trim().toUpperCase();
+      if (!isValidAirlineCode(cleanAirline)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['airline'],
+          message: INVALID_AIRLINE_MESSAGE,
+        });
+      }
+      if (!data.flightNumber || !data.flightNumber.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['flightNumber'],
+          message: 'Flight number is required',
+        });
+      }
+    }
+  });
 
 export const publicFlightRebookSchema = z.object({
   newPrice: z.number().positive('New rebooked price must be greater than zero'),

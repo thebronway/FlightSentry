@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SearchMode } from '@/types';
 import { matchesAirportOrMetro } from '@/utils/coLocations';
+import { isValidAirlineCode, normalizeAirlineCode } from '@/utils/airline';
 import type { DetectedRouteCandidate } from '@/services/flightLookup';
 
 export type { DetectedRouteCandidate };
@@ -10,6 +11,7 @@ export type RouteAlertState = 'confirmed' | 'mismatch' | 'multiple' | null;
 
 interface UseRouteLookupParams {
   isOpen: boolean;
+  enabled?: boolean;
   searchMode: SearchMode;
   airline: string;
   flightNumber: string;
@@ -19,8 +21,18 @@ interface UseRouteLookupParams {
   onAutoPopulate: (origin: string, destination: string) => void;
 }
 
+function resolveLookupCarrier(rawAirline: string, rawFlightNum?: string): string {
+  const trimmed = (rawAirline || '').trim();
+  if (!trimmed) return '';
+  const norm = normalizeAirlineCode(trimmed, rawFlightNum);
+  if (norm !== 'UN' && isValidAirlineCode(norm)) return norm;
+  const upper = trimmed.toUpperCase();
+  return isValidAirlineCode(upper) ? upper : '';
+}
+
 export function useRouteLookup({
   isOpen,
+  enabled = true,
   searchMode,
   airline,
   flightNumber,
@@ -190,7 +202,7 @@ export function useRouteLookup({
   useEffect(() => {
     clearPendingTimers();
 
-    if (!isOpen || searchMode !== 'FlightNumber') {
+    if (!isOpen || !enabled || searchMode !== 'FlightNumber') {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -203,11 +215,11 @@ export function useRouteLookup({
       return;
     }
 
-    const cleanAirline = airline.trim().toUpperCase();
+    const cleanAirline = resolveLookupCarrier(airline, flightNumber);
     const cleanFlightNum = flightNumber.trim().replace(/\D/g, '');
     const cleanDate = departureDate?.trim() || '';
 
-    if (cleanAirline.length < 2 || cleanFlightNum.length < 1) {
+    if (!cleanAirline || cleanFlightNum.length < 1) {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -231,34 +243,34 @@ export function useRouteLookup({
     return () => {
       clearPendingTimers();
     };
-  }, [airline, flightNumber, departureDate, searchMode, isOpen, clearPendingTimers, performLookup]);
+  }, [airline, flightNumber, departureDate, searchMode, isOpen, enabled, clearPendingTimers, performLookup]);
 
   // Immediate trigger when focus leaves Carrier Code or Flight Number input (supports 1-digit flight numbers too)
   const triggerBlurLookup = useCallback(() => {
     clearPendingTimers();
-    if (!isOpen || searchMode !== 'FlightNumber') return;
+    if (!isOpen || !enabled || searchMode !== 'FlightNumber') return;
 
-    const cleanAirline = airline.trim().toUpperCase();
+    const cleanAirline = resolveLookupCarrier(airline, flightNumber);
     const cleanFlightNum = flightNumber.trim().replace(/\D/g, '');
     const cleanDate = departureDate?.trim() || '';
 
-    if (cleanAirline.length < 2 || cleanFlightNum.length < 1) return;
+    if (!cleanAirline || cleanFlightNum.length < 1) return;
     void performLookup(cleanAirline, cleanFlightNum, cleanDate, false);
-  }, [isOpen, searchMode, airline, flightNumber, departureDate, clearPendingTimers, performLookup]);
+  }, [isOpen, enabled, searchMode, airline, flightNumber, departureDate, clearPendingTimers, performLookup]);
 
   // On-demand manual lookup trigger (e.g. inline Lookup button or Enter key in Flight Number field)
   const triggerManualLookup = useCallback(() => {
     clearPendingTimers();
-    if (!isOpen || searchMode !== 'FlightNumber') return;
+    if (!isOpen || !enabled || searchMode !== 'FlightNumber') return;
 
-    const cleanAirline = airline.trim().toUpperCase();
+    const cleanAirline = resolveLookupCarrier(airline, flightNumber);
     const cleanFlightNum = flightNumber.trim().replace(/\D/g, '');
     const cleanDate = departureDate?.trim() || '';
 
-    if (cleanAirline.length < 2 || cleanFlightNum.length < 1) return;
+    if (!cleanAirline || cleanFlightNum.length < 1) return;
     lastQueriedKeyRef.current = '';
     void performLookup(cleanAirline, cleanFlightNum, cleanDate, true);
-  }, [isOpen, searchMode, airline, flightNumber, departureDate, clearPendingTimers, performLookup]);
+  }, [isOpen, enabled, searchMode, airline, flightNumber, departureDate, clearPendingTimers, performLookup]);
 
   // Keep confirmation / mismatch / multi-route alert synchronized if Origin or Destination changes
   useEffect(() => {

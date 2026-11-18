@@ -1,35 +1,27 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-17*  
-*Current Version: v0.9.5*
+*Current Version: v0.9.6*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.9.6: Layover
-- Layover tracking needs a rework. It doesnt amke sense how to do it, there needs to be a nonstop/layover toggle
-- Flight Number lookup doesnt work.
-- Component is brittle, needs a redesign.
-- Need to be done in multiple phases
-
 ### Release v0.9.7: Live Search Progress & Failover Popup
-- **Search Router Progress Telemetry (`src/services/datasource.ts`)**
-  - Add an optional `onProgress` callback to `executeSearchStrategy()` emitting structured `searching`, `failover`, and `completed` events with the active provider label, flight/route context, and failover reason.
-- **SSE Streaming Price Check Endpoints (`src/app/api/flights/[id]/check/route.ts` & `src/app/api/flights/route.ts`)**
-  - Stream real-time `SearchProgressEvent` frames over Server-Sent Events (`text/event-stream`) when requested by interactive dashboard actions during manual price checks and initial flight creation, while preserving standard JSON responses for direct API callers.
-- **Compact Floating Search Popup (`src/components/SearchProgressPopup.tsx`)**
-  - Render a non-blocking bottom-right floating card (`fixed bottom-4 right-4 z-50 max-w-sm w-full`, styled per `DESIGN_GUIDE.md`) displaying an active spinner, the data source currently being queried (`OpenFareScraper`, `SerpAPI`, `SearchApi.io`), and a live `amber` failover notice whenever a provider fails or hits a limit and switches to another.
-  - Auto-dismiss ~2.5 seconds after the search completes, with a manual close (`X`) button.
-- **Dashboard & Flight Modal Integration (`src/hooks/useFlightActions.ts`, `src/components/flightModal/useFlightModalState.ts`, `src/components/dashboard/DashboardClient.tsx`)**
-  - Connect card/table **Check live price now** actions and live fare discovery on new flights to read the SSE progress stream and drive `SearchProgressPopup`.
+- **Search Router Progress Telemetry**
+  - Display active provider label, flight/route context, and failover reason.
+- **Compact Floating Search Popup**
+  - displaying an active spinner, the data source currently being queried, and a live `amber` failover notice whenever a provider fails or hits a limit and switches to another.
+  - Auto-dismiss ~1 second after the search completes, with a manual close (`X`) button.
+- Do it for anytime a search is being done.
 
 ### Release v0.9.8: Brand Optimization Application
 - Apply `DESIGN_GUIDE.md` across the entire app:
   - Standardize primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and align secondary, toolbar, destructive, and semantic action buttons.
   - Consolidate status colors to canonical `sky`, `emerald`, `amber`, and `rose` tokens (removing stray `gray-*`, `blue-*`, `green-*`, `red-*`, and `yellow-*` classes).
   - Standardize all modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 & 3 modals, `44px` minimum mobile touch targets, and single-line `lucide-react` imports.
+  - Looks at the guide and make sure every element follows it, ask questions if there is uncertaintiy or ambiguity, happy to expand the guide if needed.
 
 ### Release v0.9.9: Email Scanner Overhaul & Dev Email Import Tester
 - **IMAP Cursor Integrity & Scan Audit Trail**

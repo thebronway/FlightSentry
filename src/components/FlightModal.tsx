@@ -49,7 +49,10 @@ export default function FlightModal({
     triggerBlurLookup,
     triggerManualLookup,
     handleFieldChange,
-    handleEnableLayover,
+    itineraryType,
+    setDraftAirline,
+    setDraftBookingAirline,
+    handleItineraryTypeChange,
     handleAddLayoverLeg,
     handleUpdateLayoverLeg,
     handleRemoveLayoverLeg,
@@ -166,6 +169,7 @@ export default function FlightModal({
           {/* 2. Flight Details (Carrier & Flight #) for Flight Watch & Booked */}
           {isFlightMode && (
             <FlightIdentitySection
+              itineraryType={itineraryType}
               airline={formData.airline}
               bookingAirline={formData.bookingAirline}
               flightNumber={formData.flightNumber}
@@ -182,8 +186,11 @@ export default function FlightModal({
               isBooked={isBooked}
               isPoints={isPointsFlight}
               currency={formData.currency || defaultSettings?.currency || 'USD'}
+              onItineraryTypeChange={handleItineraryTypeChange}
               onAirlineChange={val => handleFieldChange({ airline: val })}
+              onAirlineDraftChange={setDraftAirline}
               onBookingAirlineChange={val => handleFieldChange({ bookingAirline: val })}
+              onBookingAirlineDraftChange={setDraftBookingAirline}
               onFlightNumberChange={val => handleFieldChange({ flightNumber: val })}
               onDepartureDateChange={val => handleFieldChange({ departureDate: val })}
               onShowRouteDetailsChange={val => handleFieldChange({ showRouteDetails: val })}
@@ -191,7 +198,6 @@ export default function FlightModal({
               onAdoptRoute={adoptDetectedRoute}
               onFieldBlurLookup={triggerBlurLookup}
               onManualLookup={triggerManualLookup}
-              onEnableLayover={handleEnableLayover}
               onAddLayoverLeg={handleAddLayoverLeg}
               onUpdateLayoverLeg={handleUpdateLayoverLeg}
               onRemoveLayoverLeg={handleRemoveLayoverLeg}

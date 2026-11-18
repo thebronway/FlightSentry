@@ -1,4 +1,6 @@
 import packageInfo from '../../package.json';
+import { normalizeAirlineCode, isValidAirlineCode, getIcaoAirlineCode } from '../utils/airline';
+import { isMetroCode } from '../utils/coLocations';
 
 const USER_AGENT = `FlightSentry/${packageInfo.version}`;
 
@@ -21,63 +23,41 @@ export interface RouteLookupResult {
   error?: string;
 }
 
-// IATA carrier code to ICAO mapping for open aviation database callsign resolution
-const IATA_TO_ICAO: Record<string, string> = {
-  AS: 'ASA',
-  AA: 'AAL',
-  DL: 'DAL',
-  UA: 'UAL',
-  WN: 'SWA',
-  B6: 'JBU',
-  NK: 'NKS',
-  F9: 'FFT',
-  HA: 'HAL',
-  G4: 'AAY',
-  SY: 'SCX',
-  MX: 'MXY',
-  AC: 'ACA',
-  WS: 'WJA',
-  BA: 'BAW',
-  AF: 'AFR',
-  LH: 'DLH',
-  KL: 'KLM',
-  IB: 'IBE',
-  EI: 'EIN',
-  AZ: 'ITY',
-  LX: 'SWR',
-  OS: 'AUA',
-  SK: 'SAS',
-  TP: 'TAP',
-  TK: 'THY',
-  VS: 'VIR',
-  AY: 'FIN',
-  SQ: 'SIA',
-  QF: 'QFA',
-  NZ: 'ANZ',
-  EK: 'UAE',
-  QR: 'QTR',
-  EY: 'ETD',
-  CX: 'CPA',
-  NH: 'ANA',
-  JL: 'JAL',
-  KE: 'KAL',
-  BR: 'EVA',
-  CI: 'CAL',
-  AM: 'AMX',
-  AV: 'AVA',
-  CM: 'CMP',
-  LA: 'LAN',
-};
+const NON_AIRPORT_TOKENS = new Set([
+  'THE', 'AND', 'FOR', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT',
+  'DAY', 'GET', 'HAS', 'HIM', 'HIS', 'HOW', 'ITS', 'MAY', 'NEW', 'NOW', 'OLD', 'SEE',
+  'TWO', 'WAY', 'WHO', 'DID', 'LET', 'PUT', 'SAY', 'SHE', 'TOO', 'USE', 'FLY', 'AIR',
+  'JET', 'NON', 'VIA', 'UTC', 'GMT', 'EST', 'PST', 'CST', 'MST', 'EDT', 'PDT', 'CDT',
+  'MDT', 'API', 'APP', 'WEB', 'COM', 'ORG', 'NET', 'GOV', 'EDU', 'PDF', 'XML', 'CSS',
+  'DIV', 'IMG', 'URL', 'FAQ', 'MAP', 'TOP', 'END', 'MIN', 'MAX', 'AVG', 'PER', 'HRS',
+  'SEC', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN', 'JAN', 'FEB', 'MAR', 'APR',
+  'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'ETA', 'ETD', 'STD', 'STA', 'ATD',
+  'ATA', 'PNR', 'PAX', 'USA', 'USD', 'EUR', 'GBP', 'CAD', 'AUD',
+]);
+
+function normalizeFlightDesignator(raw: string): string {
+  const cleaned = raw.trim().toUpperCase().replace(/\s+/g, '');
+  const match = cleaned.match(/^([A-Z0-9]{2,3})0*(\d+)$/);
+  if (match) {
+    return `${match[1]}${match[2]}`;
+  }
+  return cleaned;
+}
 
 export const lookupFlightRoute = async (
   airline: string,
   flightNumber: string,
   departureDate?: string | null
 ): Promise<RouteLookupResult> => {
-  const cleanAirline = airline.trim().toUpperCase();
-  const cleanFlightNumber = flightNumber.trim().replace(/\D/g, '');
+  const normalizedCarrier = normalizeAirlineCode(airline, flightNumber);
+  const cleanAirline =
+    normalizedCarrier !== 'UN' && isValidAirlineCode(normalizedCarrier)
+      ? normalizedCarrier
+      : airline.trim().toUpperCase();
+  const rawDigits = flightNumber.trim().replace(/\D/g, '');
+  const cleanFlightNumber = rawDigits.replace(/^0+(?=\d)/, '') || rawDigits;
   const flightKey = `${cleanAirline}${cleanFlightNumber}`;
-  const icaoCode = IATA_TO_ICAO[cleanAirline] || cleanAirline;
+  const icaoCode = getIcaoAirlineCode(cleanAirline);
   const icaoKey = `${icaoCode}${cleanFlightNumber}`;
 
   console.log(`[FlightLookup] Zero-quota route detection started: Key="${flightKey}", ICAO="${icaoKey}"`);
@@ -86,7 +66,15 @@ export const lookupFlightRoute = async (
   const addCandidate = (candidate: DetectedRouteCandidate) => {
     const origin = candidate.origin.trim().toUpperCase();
     const destination = candidate.destination.trim().toUpperCase();
-    if (!/^[A-Z]{3}$/.test(origin) || !/^[A-Z]{3}$/.test(destination) || origin === destination) {
+    if (
+      !/^[A-Z]{3}$/.test(origin) ||
+      !/^[A-Z]{3}$/.test(destination) ||
+      origin === destination ||
+      isMetroCode(origin) ||
+      isMetroCode(destination) ||
+      NON_AIRPORT_TOKENS.has(origin) ||
+      NON_AIRPORT_TOKENS.has(destination)
+    ) {
       return;
     }
     const existing = candidates.find(c => c.origin === origin && c.destination === destination);
@@ -136,7 +124,7 @@ export const lookupFlightRoute = async (
         console.log(`[FlightLookup] Querying HexDB v2: ${url}`);
         const res = await fetch(url, {
           headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(4000),
         });
 
         if (res.ok) {
@@ -181,7 +169,7 @@ export const lookupFlightRoute = async (
         console.log(`[FlightLookup] Querying ADS-B: ${url}`);
         const res = await fetch(url, {
           headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(4000),
         });
 
         if (res.ok) {
@@ -215,67 +203,47 @@ export const lookupFlightRoute = async (
     return found;
   };
 
-  // 3. adsb.lol Routeset API (returns multi-stop `_airports` array for scheduled callsigns)
-  const fetchAdsbLolRoutes = async (): Promise<DetectedRouteCandidate[]> => {
-    const found: DetectedRouteCandidate[] = [];
-    try {
-      const res = await fetch('https://api.adsb.lol/api/0/routeset', {
-        method: 'POST',
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          planes: [{ callsign: icaoKey, lat: 0.1, lng: 0.1 }],
-        }),
-        signal: AbortSignal.timeout(3500),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const entries: any[] = Array.isArray(data) ? data : [];
-        for (const entry of entries) {
-          const airportsList: any[] = Array.isArray(entry?._airports) ? entry._airports : [];
-          if (airportsList.length >= 2) {
-            const iataStops = airportsList
-              .map((ap: any) => String(ap?.iata || '').trim().toUpperCase())
-              .filter((code: string) => code.length === 3);
-            found.push(...expandStopSequence(iataStops, undefined, 'schedule_api'));
-          }
-        }
-      }
-    } catch (err: any) {
-      console.warn(`[FlightLookup] adsb.lol routeset lookup error for ${icaoKey}:`, err.message);
-    }
-    return found;
-  };
-
-  // 4. Flightradar24 Live Search (supplements with any currently airborne legs)
+  // 3. Flightradar24 Schedule & Live Search (matches IATA and ICAO designators)
   const fetchFr24LiveRoutes = async (): Promise<DetectedRouteCandidate[]> => {
     const found: DetectedRouteCandidate[] = [];
+    const expectedKeys = new Set([
+      normalizeFlightDesignator(flightKey),
+      normalizeFlightDesignator(icaoKey),
+    ]);
     try {
-      const fr24Url = `https://www.flightradar24.com/v1/search/web/find?query=${encodeURIComponent(flightKey)}&limit=10`;
+      const fr24Url = `https://www.flightradar24.com/v1/search/web/find?query=${encodeURIComponent(flightKey)}&limit=15`;
       const res = await fetch(fr24Url, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           Accept: 'application/json',
         },
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(4000),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const results: any[] = data.results || [];
+        const results: any[] = Array.isArray(data?.results) ? data.results : [];
         for (const item of results) {
-          if (item.detail?.schd_from && item.detail?.schd_to) {
-            const itemFlight = String(item.detail?.flight || '').trim().toUpperCase();
-            if (itemFlight && itemFlight !== flightKey && itemFlight !== icaoKey) {
+          if (item?.detail?.schd_from && item?.detail?.schd_to) {
+            const candidateDesignators = [
+              item.detail?.flight,
+              item.detail?.callsign,
+              item.id,
+            ]
+              .filter(Boolean)
+              .map((val: unknown) => normalizeFlightDesignator(String(val)));
+
+            const matchesDesignator =
+              candidateDesignators.length === 0 ||
+              candidateDesignators.some(d => expectedKeys.has(d));
+
+            if (!matchesDesignator) {
               continue;
             }
-            const origin = String(item.detail.schd_from).toUpperCase();
-            const destination = String(item.detail.schd_to).toUpperCase();
+
+            const origin = String(item.detail.schd_from).trim().toUpperCase();
+            const destination = String(item.detail.schd_to).trim().toUpperCase();
             found.push({
               origin,
               destination,
@@ -291,16 +259,14 @@ export const lookupFlightRoute = async (
     return found;
   };
 
-  const [hexDbRoutes, adsbRoutes, adsbLolRoutes, fr24Routes] = await Promise.all([
+  const [hexDbRoutes, adsbRoutes, fr24Routes] = await Promise.all([
     fetchHexDbRoutes(),
     fetchAdsbRoutes(),
-    fetchAdsbLolRoutes(),
     fetchFr24LiveRoutes(),
   ]);
 
   hexDbRoutes.forEach(addCandidate);
   adsbRoutes.forEach(addCandidate);
-  adsbLolRoutes.forEach(addCandidate);
   fr24Routes.forEach(addCandidate);
 
   if (candidates.length > 0) {
@@ -322,10 +288,10 @@ export const lookupFlightRoute = async (
     };
   }
 
-  // 3. Zero-Quota Public Web Search Scraper (DuckDuckGo HTML)
+  // 4. Zero-Quota Public Web Search Scraper (DuckDuckGo HTML, strictly uppercase IATA pairs)
   try {
     const dateQueryPart = departureDate ? ` ${departureDate}` : '';
-    const ddgQuery = `flight ${cleanAirline} ${cleanFlightNumber}${dateQueryPart} route departure arrival`;
+    const ddgQuery = `"${cleanAirline} ${cleanFlightNumber}" OR "${flightKey}"${dateQueryPart} flight route`;
     const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(ddgQuery)}`;
     console.log(`[FlightLookup] Querying DuckDuckGo HTML: ${ddgUrl}`);
     const ddgRes = await fetch(ddgUrl, {
@@ -333,35 +299,61 @@ export const lookupFlightRoute = async (
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(4500),
     });
 
     if (ddgRes.ok) {
       const html = await ddgRes.text();
+      const plainText = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&rarr;|&#8594;|&#x2192;/gi, ' → ')
+        .replace(/&ndash;|&#8211;|&mdash;|&#8212;/gi, ' - ')
+        .replace(/&amp;/gi, '&')
+        .replace(/\s+/g, ' ');
+
+      const flightContextRegex = new RegExp(
+        `\\b(?:${cleanAirline}\\s*0*${cleanFlightNumber}|${icaoCode}\\s*0*${cleanFlightNumber})\\b`,
+        'i'
+      );
+
       const patterns = [
-        /\(([A-Z]{3})\)\s*(?:to|→|-)\s*\(([A-Z]{3})\)/i,
-        /\bfrom\s+([A-Z]{3})\s+to\s+([A-Z]{3})\b/i,
-        /\b([A-Z]{3})\s*(?:to|→|-)\s*([A-Z]{3})\b/i,
+        /\(([A-Z]{3})\)\s*(?:to|→|-)\s*\(([A-Z]{3})\)/g,
+        /\bfrom\s+([A-Z]{3})\s+to\s+([A-Z]{3})\b/g,
+        /\b([A-Z]{3})\s*(?:→|-)\s*([A-Z]{3})\b/g,
       ];
 
       for (const pattern of patterns) {
-        const match = html.match(pattern);
-        if (match && match[1].toUpperCase() !== match[2].toUpperCase()) {
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(plainText)) !== null) {
           const origin = match[1].toUpperCase();
           const destination = match[2].toUpperCase();
-          addCandidate({ origin, destination, source: 'web_search' });
-          if (candidates.length > 0) {
-            console.log(`[FlightLookup] Resolved via search scraper: ${origin} -> ${destination}`);
-            return {
-              success: true,
-              origin,
-              destination,
-              airlineCode: cleanAirline,
-              flightNumber: cleanFlightNumber,
-              source: 'web_search',
-              routes: candidates,
-            };
+          if (origin === destination) continue;
+          const windowStart = Math.max(0, match.index - 140);
+          const windowEnd = Math.min(plainText.length, match.index + match[0].length + 140);
+          const surrounding = plainText.slice(windowStart, windowEnd);
+          if (!flightContextRegex.test(surrounding)) {
+            continue;
           }
+          addCandidate({ origin, destination, source: 'web_search' });
+        }
+        if (candidates.length > 0) {
+          const primary = candidates[0];
+          console.log(
+            `[FlightLookup] Resolved via search scraper: ${candidates
+              .map(c => `${c.origin} -> ${c.destination}`)
+              .join(', ')}`
+          );
+          return {
+            success: true,
+            origin: primary.origin,
+            destination: primary.destination,
+            airlineCode: cleanAirline,
+            flightNumber: cleanFlightNumber,
+            source: 'web_search',
+            routes: candidates,
+          };
         }
       }
     }

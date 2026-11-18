@@ -11,7 +11,7 @@ import {
   TrackedFlightLeg,
 } from '@/types';
 import { useRouteLookup } from '@/hooks/useRouteLookup';
-import { getDataSourceStatus, isValidAirlineCode } from '@/utils/airline';
+import { getDataSourceStatus, isValidAirlineCode, normalizeAirlineCode } from '@/utils/airline';
 import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
 import { isPointsCurrency } from '@/utils/format';
@@ -19,6 +19,7 @@ import { parseFlightLegs, serializeFlightLegs } from '@/utils/flightLegs';
 
 export type TrackingOption = 'route_watch' | 'flight_watch' | 'flight_booked';
 export type PaymentType = 'cash' | 'points';
+export type ItineraryType = 'nonstop' | 'layover';
 
 export interface FlightFormState {
   trackingType: TrackingOption;
@@ -131,6 +132,8 @@ export function useFlightModalState({
   const [lookupFailed, setLookupFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [draftAirline, setDraftAirline] = useState('');
+  const [draftBookingAirline, setDraftBookingAirline] = useState('');
 
   const prevIsOpenRef = useRef(false);
   const prevInitialFlightIdRef = useRef<number | undefined>(undefined);
@@ -158,8 +161,30 @@ export function useFlightModalState({
     );
   }, [formData.paymentType, formData.currency, pointsList]);
 
-  // Route lookup for flight watching & booked flights
+  const resolveCarrierInput = useCallback((committed: string, draft: string): string => {
+    const cleanCommitted = (committed || '').trim().toUpperCase();
+    if (cleanCommitted) return cleanCommitted;
+    const rawDraft = (draft || '').trim();
+    if (!rawDraft) return '';
+    const norm = normalizeAirlineCode(rawDraft);
+    if (norm !== 'UN' && isValidAirlineCode(norm)) return norm;
+    const upper = rawDraft.toUpperCase();
+    return isValidAirlineCode(upper) ? upper : upper;
+  }, []);
+
+  const effectiveAirlineInput = useMemo(
+    () => resolveCarrierInput(formData.airline, draftAirline),
+    [formData.airline, draftAirline, resolveCarrierInput]
+  );
+
+  const effectiveBookingAirlineInput = useMemo(
+    () => resolveCarrierInput(formData.bookingAirline, draftBookingAirline),
+    [formData.bookingAirline, draftBookingAirline, resolveCarrierInput]
+  );
+
+  // Route lookup for single-leg flight watching & booked flights (disabled in multi-leg layover mode)
   const isFlightMode = formData.trackingType === 'flight_watch' || formData.trackingType === 'flight_booked';
+  const isMultiLeg = isFlightMode && formData.legs.length >= 2;
   const effectiveSearchMode: SearchMode = isFlightMode ? 'FlightNumber' : 'Route';
 
   const {
@@ -174,8 +199,9 @@ export function useFlightModalState({
     resetLookupState,
   } = useRouteLookup({
     isOpen,
+    enabled: isFlightMode && !isMultiLeg,
     searchMode: effectiveSearchMode,
-    airline: formData.airline,
+    airline: effectiveAirlineInput,
     flightNumber: formData.flightNumber,
     departureDate: formData.departureDate,
     origin: formData.origin,
@@ -308,6 +334,8 @@ export function useFlightModalState({
         setFormData(nextState);
         initialSnapshotRef.current = JSON.stringify(nextState);
       }
+      setDraftAirline('');
+      setDraftBookingAirline('');
       setError(null);
       setLookupFailed(false);
       setShowUnsavedPrompt(false);
@@ -403,18 +431,20 @@ export function useFlightModalState({
   const handleEnableLayover = useCallback(() => {
     setFormData(prev => {
       if (prev.legs.length >= 2) return prev;
+      const carryAirline = resolveCarrierInput(prev.airline, draftAirline);
+      const carryBooking = resolveCarrierInput(prev.bookingAirline, draftBookingAirline);
       const firstOrigin = sanitizeSingleAirport(prev.origin) || detectedRoute?.origin || '';
       const finalDest = sanitizeSingleAirport(prev.destination) || detectedRoute?.destination || '';
       const initialLegs: TrackedFlightLeg[] = [
         {
-          airline: prev.airline.trim().toUpperCase(),
-          bookingAirline: prev.bookingAirline ? prev.bookingAirline.trim().toUpperCase() : null,
+          airline: carryAirline,
+          bookingAirline: carryBooking || null,
           flightNumber: prev.flightNumber.trim().replace(/\D/g, ''),
           origin: firstOrigin,
           destination: '',
         },
         {
-          airline: prev.airline.trim().toUpperCase(),
+          airline: '',
           bookingAirline: null,
           flightNumber: '',
           origin: '',
@@ -423,29 +453,26 @@ export function useFlightModalState({
       ];
       return {
         ...prev,
+        bookingAirline: carryBooking || prev.bookingAirline,
         ...syncTopLevelFromLegs(initialLegs, prev),
       };
     });
+    setDraftAirline('');
     if (error) setError(null);
-  }, [detectedRoute, error]);
+  }, [detectedRoute, draftAirline, draftBookingAirline, resolveCarrierInput, error]);
 
   const handleAddLayoverLeg = useCallback(() => {
     setFormData(prev => {
       if (prev.legs.length < 2 || prev.legs.length >= 4) return prev;
-      const lastIdx = prev.legs.length - 1;
-      const priorLast = prev.legs[lastIdx];
+      const priorLast = prev.legs[prev.legs.length - 1];
       const nextLegs: TrackedFlightLeg[] = [
-        ...prev.legs.slice(0, lastIdx),
+        ...prev.legs,
         {
-          ...priorLast,
-          destination: '',
-        },
-        {
-          airline: priorLast.airline || prev.airline.trim().toUpperCase(),
+          airline: '',
           bookingAirline: null,
           flightNumber: '',
-          origin: '',
-          destination: priorLast.destination || '',
+          origin: priorLast.destination || '',
+          destination: '',
         },
       ];
       return {
@@ -465,6 +492,12 @@ export function useFlightModalState({
           nextLegs[index + 1] = {
             ...nextLegs[index + 1],
             origin: patch.destination,
+          };
+        }
+        if (patch.origin !== undefined && index > 0 && !nextLegs[index - 1].destination) {
+          nextLegs[index - 1] = {
+            ...nextLegs[index - 1],
+            destination: patch.origin,
           };
         }
         return {
@@ -523,6 +556,17 @@ export function useFlightModalState({
     });
     if (error) setError(null);
   }, [error]);
+
+  const handleItineraryTypeChange = useCallback(
+    (nextType: ItineraryType) => {
+      if (nextType === 'layover') {
+        handleEnableLayover();
+      } else {
+        handleClearLayovers();
+      }
+    },
+    [handleEnableLayover, handleClearLayovers]
+  );
 
   const handleTrackingTypeChange = useCallback((newType: TrackingOption) => {
     setFormData(prev => {
@@ -673,6 +717,9 @@ export function useFlightModalState({
       }
     }
 
+    const resolvedPrimaryAirline = resolveCarrierInput(formData.airline, draftAirline);
+    const resolvedPrimaryBookingAirline = resolveCarrierInput(formData.bookingAirline, draftBookingAirline);
+
     // Validation by tracking type
     if (formData.trackingType === 'route_watch') {
       if (!formData.origin.trim() || !formData.destination.trim()) {
@@ -680,36 +727,40 @@ export function useFlightModalState({
         return;
       }
     } else if (formData.trackingType === 'flight_watch') {
-      if (!formData.airline.trim() || !formData.flightNumber.trim()) {
-        setError('Carrier and flight number are required to watch a specific flight.');
-        return;
+      if (!hasLayoverLegs) {
+        if (!resolvedPrimaryAirline || !formData.flightNumber.trim()) {
+          setError('Carrier and flight number are required to watch a specific flight.');
+          return;
+        }
+        if (!isValidAirlineCode(resolvedPrimaryAirline)) {
+          setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
+          return;
+        }
       }
-      if (!isValidAirlineCode(formData.airline)) {
-        setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
-        return;
-      }
-      if (formData.bookingAirline.trim() && !isValidAirlineCode(formData.bookingAirline)) {
+      if (resolvedPrimaryBookingAirline && !isValidAirlineCode(resolvedPrimaryBookingAirline)) {
         setError("Booking Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
         return;
       }
-      if (formData.showRouteDetails && (!formData.origin.trim() || !formData.destination.trim())) {
+      if (!hasLayoverLegs && formData.showRouteDetails && (!formData.origin.trim() || !formData.destination.trim())) {
         setError('Please enter Origin and Destination airports, or uncheck route details to auto-detect.');
         return;
       }
-      if (!formData.origin.trim() && !detectedRoute?.origin) {
+      if (!hasLayoverLegs && !formData.origin.trim() && !detectedRoute?.origin) {
         setError('Origin airport is required. Please check "Specify Route Details" or ensure carrier and flight number are valid.');
         return;
       }
     } else if (formData.trackingType === 'flight_booked') {
-      if (!formData.airline.trim() || !formData.flightNumber.trim()) {
-        setError('Carrier and flight number are required for booked flights.');
-        return;
+      if (!hasLayoverLegs) {
+        if (!resolvedPrimaryAirline || !formData.flightNumber.trim()) {
+          setError('Carrier and flight number are required for booked flights.');
+          return;
+        }
+        if (!isValidAirlineCode(resolvedPrimaryAirline)) {
+          setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
+          return;
+        }
       }
-      if (!isValidAirlineCode(formData.airline)) {
-        setError("Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
-        return;
-      }
-      if (formData.bookingAirline.trim() && !isValidAirlineCode(formData.bookingAirline)) {
+      if (resolvedPrimaryBookingAirline && !isValidAirlineCode(resolvedPrimaryBookingAirline)) {
         setError("Booking Carrier must be a valid 2-character IATA airline code (e.g. DL, B6, 9W) and cannot be 'XX' or 'UN'.");
         return;
       }
@@ -725,11 +776,11 @@ export function useFlightModalState({
         setError('Booking date cannot be in the future.');
         return;
       }
-      if (formData.showRouteDetails && (!formData.origin.trim() || !formData.destination.trim())) {
+      if (!hasLayoverLegs && formData.showRouteDetails && (!formData.origin.trim() || !formData.destination.trim())) {
         setError('Please enter Origin and Destination airports, or uncheck route details to auto-detect.');
         return;
       }
-      if (!formData.origin.trim() && !detectedRoute?.origin) {
+      if (!hasLayoverLegs && !formData.origin.trim() && !detectedRoute?.origin) {
         setError('Origin airport is required. Please check "Specify Route Details" or ensure carrier and flight number are valid.');
         return;
       }
@@ -800,10 +851,8 @@ export function useFlightModalState({
 
     const cleanAirline = serializedLegs
       ? formData.legs[0].airline.trim().toUpperCase()
-      : formData.airline
-      ? formData.airline.trim().toUpperCase()
-      : '';
-    const cleanBookingAirline = formData.bookingAirline ? formData.bookingAirline.trim().toUpperCase() : '';
+      : resolvedPrimaryAirline || '';
+    const cleanBookingAirline = resolvedPrimaryBookingAirline || '';
     const cleanFlightNum = serializedLegs
       ? formData.legs[0].flightNumber.trim()
       : effectiveSearchModeVal === 'FlightNumber' && formData.flightNumber.trim()
@@ -900,6 +949,10 @@ export function useFlightModalState({
     triggerBlurLookup,
     triggerManualLookup,
     handleFieldChange,
+    itineraryType: (isMultiLeg ? 'layover' : 'nonstop') as ItineraryType,
+    setDraftAirline,
+    setDraftBookingAirline,
+    handleItineraryTypeChange,
     handleEnableLayover,
     handleAddLayoverLeg,
     handleUpdateLayoverLeg,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lookupFlightRoute } from '@/services/flightLookup';
-import { isValidAirlineCode } from '@/utils/airline';
+import { isValidAirlineCode, normalizeAirlineCode } from '@/utils/airline';
 import { logsDb } from '@/db/logs';
 import { requireApiAuth } from '@/services/auth/apiGuard';
 
@@ -23,7 +23,13 @@ export async function POST(req: NextRequest) {
 
     console.log(`[RouteLookup API] Received request for Carrier: "${airline}", Flight#: "${flightNumber}"`);
 
-    const cleanAirline = airline ? airline.toUpperCase() : '';
+    const normalizedAirline = airline ? normalizeAirlineCode(airline, flightNumber) : '';
+    const cleanAirline =
+      normalizedAirline && normalizedAirline !== 'UN' && isValidAirlineCode(normalizedAirline)
+        ? normalizedAirline
+        : airline
+        ? airline.toUpperCase()
+        : '';
     const cleanFlightNumber = flightNumber ? flightNumber.replace(/\D/g, '') : '';
 
     if (!isValidAirlineCode(cleanAirline) || !cleanFlightNumber || !/^\d{1,5}$/.test(cleanFlightNumber)) {

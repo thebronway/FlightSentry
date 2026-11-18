@@ -1,9 +1,15 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-17*  
-*Current Version: v0.9.5*
+*Current Version: v0.9.6*
 
 ## Changelog
+
+### Release v0.9.6
+- Added a **Nonstop / Direct** vs. **Layover / Connecting** toggle and redesigned multi-leg setup with auto-linked layover airports and automatic per-leg route lookup.
+- Fixed flight number route lookup by normalizing carrier names, consolidating `IATA_TO_ICAO` into `airlineThemes.ts`, and resolving uncommitted carrier inputs.
+- Added multi-leg connecting itinerary support, a Nonstop/Layover toggle, and booking date persistence to **Convert to Booked**.
+- Standardized dashboard cards and list rows with uniform flight pills, continuation arrows, and a 3-line flight, airport, and departure date layout.
 
 ### Release v0.9.5
 - Relabeled **Current Local Time** to **Current Configured Time** in **Settings → General**, reordered General cards (**Application Version**, **Configured Time**, **Currency**, **Instance Setup Wizard**), and synced the onboarding wizard steps to match.

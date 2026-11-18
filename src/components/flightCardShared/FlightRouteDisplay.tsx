@@ -1,11 +1,10 @@
 'use client';
 
-import { Fragment } from 'react';
 import { Flight } from '@/types';
 import { ArrowRight } from 'lucide-react';
 import { getAirlineTheme, getOperatingAirlines } from '@/utils/airline';
 import { resolveLocationDisplay } from '@/utils/coLocations';
-import { parseFlightLegs, getLayoverAirports } from '@/utils/flightLegs';
+import { parseFlightLegs } from '@/utils/flightLegs';
 import AirlineBadge from '../common/AirlineBadge';
 import Tooltip from '../common/Tooltip';
 
@@ -26,26 +25,56 @@ export default function FlightRouteDisplay({
   const isCondensed = variant === 'condensed';
   const operatingAirlines = getOperatingAirlines(flight);
 
+  const weekdayLabel = (() => {
+    const parts = (flight.departureDate || '').split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return '';
+    const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return dt.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }).toUpperCase();
+  })();
+
+  const renderDepartureReadout = () => (
+    <div className="mt-2 flex items-center gap-1.5 font-mono">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400/90">
+        DEP
+      </span>
+      <span className="text-xs font-bold text-slate-200">
+        {flight.departureDate}
+      </span>
+      {weekdayLabel && (
+        <>
+          <span className="text-[11px] text-gunmetal-muted">·</span>
+          <span className="text-[11px] font-semibold text-gunmetal-muted">
+            {weekdayLabel}
+          </span>
+        </>
+      )}
+    </div>
+  );
+
   if (isFlightNumMode) {
     const trackedLegs = parseFlightLegs(flight.legs);
     if (trackedLegs.length >= 2) {
-      const layovers = getLayoverAirports(trackedLegs);
       const airportChain = [trackedLegs[0].origin, ...trackedLegs.map(l => l.destination)];
       return (
         <div>
+          {/* Line 1: Uniform Flight Pills with Leading Continuation Arrows */}
           <div className="flex flex-wrap items-center gap-1.5">
             {trackedLegs.map((leg, idx) => {
               const legTheme = getAirlineTheme(leg.airline);
               return (
-                <Fragment key={`${leg.airline}-${leg.flightNumber}-${idx}`}>
+                <span
+                  key={`${leg.airline}-${leg.flightNumber}-${idx}`}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap"
+                >
                   {idx > 0 && (
-                    <ArrowRight className={`${isCondensed ? 'w-2.5 h-2.5' : 'w-3 h-3'} text-gunmetal-muted flex-shrink-0`} />
+                    <ArrowRight className={`${isCondensed ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-gunmetal-muted flex-shrink-0`} />
                   )}
                   <span
+                    title={`${legTheme.name} · ${leg.origin} → ${leg.destination}`}
                     className={`inline-flex items-center rounded-lg border shadow-sm font-sans font-bold ${
                       isCondensed
-                        ? 'gap-1 px-1.5 py-0.5 text-[11px]'
-                        : 'gap-1.5 px-2.5 py-1 text-xs sm:text-sm'
+                        ? 'gap-1.5 px-2 py-0.5 text-xs'
+                        : 'gap-2 px-3 py-1 text-base'
                     }`}
                     style={{
                       backgroundColor: `${legTheme.color}15`,
@@ -53,17 +82,18 @@ export default function FlightRouteDisplay({
                     }}
                   >
                     <span
-                      className={`rounded-full flex-shrink-0 ${isCondensed ? 'w-1.5 h-1.5' : 'w-2 h-2'}`}
+                      className={`rounded-full flex-shrink-0 ${isCondensed ? 'w-2 h-2' : 'w-2.5 h-2.5'}`}
                       style={{ backgroundColor: legTheme.color }}
                     />
-                    <span className="text-slate-100">{isCondensed ? legTheme.code : legTheme.shortName}</span>
+                    <span className="text-slate-100">{legTheme.code}</span>
                     <span className="font-mono font-black" style={{ color: legTheme.color }}>
                       {leg.flightNumber}
                     </span>
                   </span>
-                </Fragment>
+                </span>
               );
             })}
+
             {flight.bookingAirline && flight.bookingAirline !== trackedLegs[0].airline && (
               <span
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-slate-300 whitespace-nowrap"
@@ -74,44 +104,41 @@ export default function FlightRouteDisplay({
             )}
           </div>
 
-          <div className={`text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 ${isCondensed ? 'mt-1' : 'mt-1.5'}`}>
-            {!isCondensed && (
-              <>
-                <span className="text-xs text-gunmetal-muted font-medium">{flight.departureDate}</span>
-                <span className="text-xs text-gunmetal-muted">•</span>
-              </>
-            )}
-
+          {/* Line 2: Airports Chain */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-gunmetal-muted">
             <div className="inline-flex flex-wrap items-center gap-1">
               {airportChain.map((code, idx) => {
                 const isLayoverStop = idx > 0 && idx < airportChain.length - 1;
+                const isLastStop = idx === airportChain.length - 1;
                 return (
-                  <Fragment key={`${code}-${idx}`}>
-                    {idx > 0 && (
-                      <ArrowRight className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
-                    )}
+                  <span key={`${code}-${idx}`} className="inline-flex items-center gap-1 whitespace-nowrap">
                     <span
+                      title={isLayoverStop ? `Layover at ${code}` : undefined}
                       className={`rounded font-mono font-bold shadow-sm ${
                         isLayoverStop
-                          ? 'bg-sky-950/60 border border-sky-700/60 text-sky-300'
-                          : 'bg-slate-800/90 border border-sky-700/60 text-slate-100'
-                      } ${isCondensed ? 'px-1.5 py-0.5 text-[11px]' : 'px-1.5 py-0.5 text-xs'}`}
+                          ? isCondensed
+                            ? 'px-1 py-0.5 text-[10px] bg-amber-950/50 border border-amber-700/60 text-amber-300'
+                            : 'px-1.5 py-0.5 text-[11px] bg-amber-950/50 border border-amber-700/60 text-amber-300'
+                          : isCondensed
+                          ? 'px-1.5 py-0.5 text-xs bg-slate-800/90 border border-sky-700/60 text-slate-100'
+                          : 'px-2 py-0.5 text-xs bg-slate-800/90 border border-sky-700/60 text-slate-100'
+                      }`}
                     >
                       {code}
                     </span>
-                  </Fragment>
+                    {!isLastStop && (
+                      <ArrowRight className="w-3 h-3 text-gunmetal-muted flex-shrink-0" />
+                    )}
+                  </span>
                 );
               })}
             </div>
 
-            {layovers.length > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-semibold bg-sky-950/60 text-sky-300 border-sky-800/60">
-                {layovers.length} {layovers.length === 1 ? 'stop' : 'stops'} · {layovers.join(', ')}
-              </span>
-            )}
-
             {isCondensed && flight.pnr && <span>• PNR: {flight.pnr}</span>}
           </div>
+
+          {/* Line 3: Stylized Cockpit Date Readout (Card View) */}
+          {!isCondensed && renderDepartureReadout()}
         </div>
       );
     }
@@ -119,8 +146,10 @@ export default function FlightRouteDisplay({
     const theme = getAirlineTheme(flight.airline);
     return (
       <div>
+        {/* Line 1: Single Flight Number Pill (Uniform Style) */}
         <div className="flex items-center gap-2">
           <span
+            title={theme.name}
             className={`inline-flex items-center rounded-lg border shadow-sm font-sans font-bold ${
               isCondensed
                 ? 'gap-1.5 px-2 py-0.5 text-xs'
@@ -135,7 +164,7 @@ export default function FlightRouteDisplay({
               className={`rounded-full flex-shrink-0 ${isCondensed ? 'w-2 h-2' : 'w-2.5 h-2.5'}`}
               style={{ backgroundColor: theme.color }}
             />
-            <span className="text-slate-100">{theme.shortName}</span>
+            <span className="text-slate-100">{theme.code}</span>
             <span className="font-mono font-black" style={{ color: theme.color }}>
               {flight.flightNumber}
             </span>
@@ -150,27 +179,21 @@ export default function FlightRouteDisplay({
           )}
         </div>
 
-        <div className={`text-xs text-gunmetal-muted flex flex-wrap items-center gap-1.5 ${isCondensed ? 'mt-1' : 'mt-1.5'}`}>
-          {!isCondensed && (
-            <>
-              <span className="text-xs text-gunmetal-muted font-medium">{flight.departureDate}</span>
-              {flight.origin && flight.destination && <span className="text-xs text-gunmetal-muted">•</span>}
-            </>
-          )}
-
+        {/* Line 2: Airports */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-gunmetal-muted">
           {flight.origin && flight.destination && (
             <div className="inline-flex items-center gap-1.5">
               {originDisplay.isCluster && originDisplay.tooltipText ? (
                 <Tooltip content={originDisplay.tooltipText} align="left">
                   <span className={`rounded font-mono font-bold shadow-sm cursor-help bg-sky-950/60 border border-sky-500/70 text-sky-200 ${
-                    isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
+                    isCondensed ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'
                   }`}>
                     {originDisplay.code}
                   </span>
                 </Tooltip>
               ) : (
                 <span className={`rounded font-mono font-bold shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
-                  isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
+                  isCondensed ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'
                 }`}>
                   {originDisplay.code}
                 </span>
@@ -181,14 +204,14 @@ export default function FlightRouteDisplay({
               {destDisplay.isCluster && destDisplay.tooltipText ? (
                 <Tooltip content={destDisplay.tooltipText} align="center">
                   <span className={`rounded font-mono font-bold shadow-sm cursor-help bg-sky-950/60 border border-sky-500/70 text-sky-200 ${
-                    isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
+                    isCondensed ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'
                   }`}>
                     {destDisplay.code}
                   </span>
                 </Tooltip>
               ) : (
                 <span className={`rounded font-mono font-bold shadow-sm bg-slate-800/90 border border-sky-700/60 text-slate-100 ${
-                  isCondensed ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-xs'
+                  isCondensed ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'
                 }`}>
                   {destDisplay.code}
                 </span>
@@ -198,6 +221,9 @@ export default function FlightRouteDisplay({
 
           {isCondensed && flight.pnr && <span>• PNR: {flight.pnr}</span>}
         </div>
+
+        {/* Line 3: Stylized Cockpit Date Readout (Card View) */}
+        {!isCondensed && renderDepartureReadout()}
       </div>
     );
   }
