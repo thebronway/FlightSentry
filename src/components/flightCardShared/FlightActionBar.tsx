@@ -86,7 +86,7 @@ export default function FlightActionBar({
           <button
             onClick={e => {
               e.stopPropagation();
-              checkNow(flight.id);
+              checkNow(flight);
             }}
             className={`${btnBaseClass} text-sky-400 hover:text-sky-300 hover:bg-sky-950/40`}
           >

@@ -318,4 +318,28 @@ CREATE TABLE IF NOT EXISTS api_request_logs (
 
 CREATE INDEX IF NOT EXISTS idx_api_request_logs_created
     ON api_request_logs(createdAt DESC);
+
+CREATE TABLE IF NOT EXISTS search_telemetry (
+    id TEXT PRIMARY KEY,
+    flightId INTEGER,
+    searchKind TEXT NOT NULL DEFAULT 'fare_search',
+    context TEXT NOT NULL,
+    route TEXT,
+    flightNumber TEXT,
+    departureDate TEXT,
+    activeProvider TEXT NOT NULL,
+    providerLabel TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'searching',
+    failoverReason TEXT,
+    previousProvider TEXT,
+    previousProviderLabel TEXT,
+    attemptNumber INTEGER NOT NULL DEFAULT 1,
+    totalProviders INTEGER NOT NULL DEFAULT 1,
+    startedAt TEXT NOT NULL,
+    updatedAt TEXT NOT NULL,
+    completedAt TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_telemetry_updated
+    ON search_telemetry(updatedAt DESC);
 `;

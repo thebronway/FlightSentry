@@ -1,20 +1,12 @@
 # FlightSentry Roadmap
 
 *Last updated: 2026-11-17*  
-*Current Version: v0.9.6*
+*Current Version: v0.9.7*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.9.7: Live Search Progress & Failover Popup
-- **Search Router Progress Telemetry**
-  - Display active provider label, flight/route context, and failover reason.
-- **Compact Floating Search Popup**
-  - displaying an active spinner, the data source currently being queried, and a live `amber` failover notice whenever a provider fails or hits a limit and switches to another.
-  - Auto-dismiss ~1 second after the search completes, with a manual close (`X`) button.
-- Do it for anytime a search is being done.
 
 ### Release v0.9.8: Brand Optimization Application
 - Apply `DESIGN_GUIDE.md` across the entire app:
@@ -41,6 +33,7 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - Display a step-by-step parser breakdown (resolved sender/carrier, parser tier hit, extracted legs, payment/points detection, matched tracked flight ID, and skip/rejection reasons) with an optional **Stage to Email Queue** button for end-to-end queue testing.
 - **Sanitized Fixture Regression Suite**
   - Add an automated test suite with sanitized email fixtures covering direct and forwarded confirmations, round-trip and multi-leg itineraries, `.ics` attachments, `message/rfc822` forwards, points/miles redemptions, schedule changes, and cancellations.
+- Would you like to see recent .emls of added/canceled flights on multiple airlines? I have some. 
 
 ### Release v1.0.0
 - Site Launch

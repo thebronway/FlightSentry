@@ -9,6 +9,13 @@ import {
   redactScraperSecrets,
 } from './openFareScraper';
 import { ensureStopCategoryRepresentation } from '../utils/routeIntelligence';
+import {
+  beginSearchTelemetry,
+  finishSearchTelemetry,
+  formatProviderLabel,
+  recordSearchAttempt,
+  recordSearchFailover,
+} from './searchTelemetry';
 
 export type DataSourceProvider = 'serpapi' | 'searchapi' | 'openfarescraper';
 
@@ -158,10 +165,19 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
 
   if (activeAll.length === 0) {
     console.warn(`[Router] No data source strategies eligible or available to run.`);
+    const emptyMsg =
+      'No eligible data source providers available (check enabled state, pause status, credentials, and quota)';
+    const emptyTelemetryId = beginSearchTelemetry({
+      flight,
+      searchKind: 'fare_search',
+      activeProvider: 'none',
+      totalProviders: 0,
+    });
+    finishSearchTelemetry(emptyTelemetryId, 'failed', emptyMsg);
     return {
       price: null,
       status: 'Error',
-      errorMessage: 'No eligible data source providers available (check enabled state, pause status, credentials, and quota)',
+      errorMessage: emptyMsg,
     };
   }
 
@@ -223,24 +239,61 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
     executionQueue = await orderPool(activeAll);
   }
 
+  const telemetryId = beginSearchTelemetry({
+    flight,
+    searchKind: 'fare_search',
+    activeProvider: executionQueue[0],
+    totalProviders: executionQueue.length,
+  });
+
   let lastResult: DataSourceResult | null = null;
   let lastErrorMessage: string | null = null;
+  let previousStrategy: DataSourceProvider | null = null;
+  let pendingFailoverReason: string | null = null;
 
   for (let i = 0; i < executionQueue.length; i++) {
     const strategy = executionQueue[i];
+    const providerLabel = formatProviderLabel(strategy);
+
+    if (i === 0) {
+      recordSearchAttempt(telemetryId, {
+        activeProvider: strategy,
+        attemptNumber: 1,
+        totalProviders: executionQueue.length,
+      });
+    } else if (previousStrategy) {
+      recordSearchFailover(telemetryId, {
+        previousProvider: previousStrategy,
+        nextProvider: strategy,
+        failoverReason:
+          pendingFailoverReason ||
+          `${formatProviderLabel(previousStrategy)} unavailable — switched to ${providerLabel}`,
+        attemptNumber: i + 1,
+        totalProviders: executionQueue.length,
+      });
+    }
+
     const remainingMetered = executionQueue.slice(i + 1).some(p => p !== 'openfarescraper');
     const result = await executeProvider(strategy);
     lastResult = result;
 
     if (result.status === 'Success') {
+      finishSearchTelemetry(telemetryId, 'completed');
       return result;
     }
 
     if (result.status === 'SoldOut') {
       if (strategy === 'openfarescraper' && remainingMetered) {
         console.warn(`[Router] Self-hosted scraper reported SoldOut. Verifying with metered provider failover.`);
+        previousStrategy = strategy;
+        pendingFailoverReason = `${providerLabel} returned 0 flights — verifying with metered provider`;
         continue;
       }
+      finishSearchTelemetry(
+        telemetryId,
+        'failed',
+        result.errorMessage || '0 matching itineraries found for this route and date'
+      );
       return result;
     }
 
@@ -248,16 +301,28 @@ export const executeSearchStrategy = async (flight: Flight, settings: Settings):
       lastErrorMessage = result.errorMessage;
     }
 
+    previousStrategy = strategy;
     if (result.status === 'Paused') {
       console.warn(`[Router] Provider ${strategy} is paused. Failing over to next provider.`);
+      pendingFailoverReason = result.errorMessage || `${providerLabel} is paused`;
     } else if (result.status === 'RateLimited') {
       console.warn(`[Router] Rate limit detected on ${strategy}. Failing over to next provider.`);
+      pendingFailoverReason = result.errorMessage || `${providerLabel} hit rate limit or cooldown`;
+    } else {
+      pendingFailoverReason = result.errorMessage || `${providerLabel} query failed`;
     }
   }
 
   if (lastResult && (lastResult.status === 'Paused' || lastResult.status === 'RateLimited') && activeMetered.length === 0) {
+    finishSearchTelemetry(
+      telemetryId,
+      'failed',
+      lastResult.errorMessage || lastErrorMessage || 'Provider paused or rate-limited'
+    );
     return lastResult;
   }
 
-  return { price: null, status: 'Error', errorMessage: lastErrorMessage || 'All active data source providers failed' };
+  const finalError = lastErrorMessage || 'All active data source providers failed';
+  finishSearchTelemetry(telemetryId, 'failed', finalError);
+  return { price: null, status: 'Error', errorMessage: finalError };
 };

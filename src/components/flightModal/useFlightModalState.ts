@@ -16,6 +16,11 @@ import { isMetroCode } from '@/utils/coLocations';
 import { getTodayDateString } from '@/utils/date';
 import { isPointsCurrency } from '@/utils/format';
 import { parseFlightLegs, serializeFlightLegs } from '@/utils/flightLegs';
+import {
+  buildFlightContextLabel,
+  notifySearchFinished,
+  notifySearchStarted,
+} from '@/utils/searchEvents';
 
 export type TrackingOption = 'route_watch' | 'flight_watch' | 'flight_booked';
 export type PaymentType = 'cash' | 'points';
@@ -901,6 +906,24 @@ export function useFlightModalState({
       excludedAlliances: formData.excludedAlliances ? formData.excludedAlliances.trim().toUpperCase() : null,
     };
 
+    const triggersInitialFareSearch = !initialFlight && !isAutomatedDisabled;
+    const modalContext = buildFlightContextLabel({
+      origin: effectiveOrigin,
+      destination: effectiveDest,
+      airline: cleanAirline,
+      flightNumber: cleanFlightNum,
+    });
+    const searchToken = triggersInitialFareSearch
+      ? notifySearchStarted({
+          searchKind: 'fare_search',
+          context: modalContext.context,
+          route: modalContext.route,
+          flightNumber: modalContext.flightNumber,
+        })
+      : '';
+    let searchOk = false;
+    let searchErr: string | null = null;
+
     try {
       const endpoint = initialFlight ? `/api/flights/${initialFlight.id}` : '/api/flights';
       const method = initialFlight ? 'PUT' : 'POST';
@@ -914,17 +937,23 @@ export function useFlightModalState({
       if (!res.ok) {
         const data = await res.json();
         const errMessage = data.error?.message || data.error || 'Failed to save flight';
+        searchErr = errMessage;
         setLookupFailed(true);
         throw new Error(errMessage);
       }
 
+      searchOk = true;
       setFormData(DEFAULT_FORM_STATE);
       setLookupFailed(false);
       onSuccess();
       onClose();
     } catch (err: any) {
+      searchErr = err.message;
       setError(err.message);
     } finally {
+      if (searchToken) {
+        notifySearchFinished(searchToken, { ok: searchOk, errorMessage: searchErr });
+      }
       setLoading(false);
     }
   };

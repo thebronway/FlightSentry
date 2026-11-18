@@ -2,6 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { Flight } from '@/types';
+import {
+  buildFlightContextLabel,
+  notifySearchFinished,
+  notifySearchStarted,
+} from '@/utils/searchEvents';
 
 export const CABIN_LABEL_MAP: Record<string, string> = {
   economy: 'Economy',
@@ -66,20 +71,41 @@ export function useFlightActions(onRefresh: () => void) {
   );
 
   const checkNow = useCallback(
-    async (flightId: number) => {
+    async (flightOrId: number | Flight) => {
+      const flightObj = typeof flightOrId === 'number' ? null : flightOrId;
+      const flightId = typeof flightOrId === 'number' ? flightOrId : flightOrId.id;
+      const ctx = flightObj
+        ? buildFlightContextLabel(flightObj)
+        : { context: `Flight #${flightId}`, route: null, flightNumber: null };
+
+      const searchToken = notifySearchStarted({
+        flightId,
+        searchKind: 'fare_search',
+        context: ctx.context,
+        route: ctx.route,
+        flightNumber: ctx.flightNumber,
+      });
+
+      let checkOk = false;
+      let checkError: string | null = null;
+
       try {
         setLoadingFlightId(flightId);
         const res = await fetch(`/api/flights/${flightId}/check`, { method: 'POST' });
         if (res.ok) {
+          checkOk = true;
           onRefresh();
         } else {
           const data = await res.json().catch(() => ({}));
-          alert(data.error || 'Check failed. Ensure API quota is not exceeded.');
+          checkError = data.error || 'Check failed. Ensure API quota is not exceeded.';
+          alert(checkError);
         }
       } catch (err) {
         console.error('Failed to trigger manual flight check:', err);
-        alert('Check request encountered an unexpected error.');
+        checkError = 'Check request encountered an unexpected error.';
+        alert(checkError);
       } finally {
+        notifySearchFinished(searchToken, { ok: checkOk, errorMessage: checkError });
         setLoadingFlightId(null);
       }
     },

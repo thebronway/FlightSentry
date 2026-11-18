@@ -1,9 +1,14 @@
 # FlightSentry Changelog
 
 *Last updated: 2026-11-17*  
-*Current Version: v0.9.6*
+*Current Version: v0.9.7*
 
 ## Changelog
+
+### Release v0.9.7
+- Added search router progress telemetry (`search_telemetry` SQLite table and `GET /api/flights/search-telemetry`) tracking active data source, flight/route context, and failover reason.
+- Added a floating `SearchProgressPopup` displaying an active spinner, current provider, and `amber` failover alerts across fare searches, route lookups, and background worker checks.
+- Configured ~1-second auto-dismissal on search completion with a manual `X` close button.
 
 ### Release v0.9.6
 - Added a **Nonstop / Direct** vs. **Layover / Connecting** toggle and redesigned multi-leg setup with auto-linked layover airports and automatic per-leg route lookup.

@@ -67,6 +67,30 @@ export interface Flight {
 
 export type CheckResultStatus = 'Success' | 'SoldOut' | 'Error' | 'RateLimited' | 'Paused';
 
+export type SearchTelemetryKind = 'fare_search' | 'route_lookup';
+export type SearchTelemetryStatus = 'searching' | 'failover' | 'completed' | 'failed';
+
+export interface SearchTelemetryItem {
+  id: string;
+  flightId?: number | null;
+  searchKind: SearchTelemetryKind;
+  context: string;
+  route?: string | null;
+  flightNumber?: string | null;
+  departureDate?: string | null;
+  activeProvider: string;
+  providerLabel: string;
+  status: SearchTelemetryStatus;
+  failoverReason?: string | null;
+  previousProvider?: string | null;
+  previousProviderLabel?: string | null;
+  attemptNumber: number;
+  totalProviders: number;
+  startedAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
 export interface AdapterExecutionOptions {
   onRawPayload?: (raw: unknown) => void;
 }

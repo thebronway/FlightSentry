@@ -5,6 +5,7 @@ import { SearchMode } from '@/types';
 import { matchesAirportOrMetro } from '@/utils/coLocations';
 import { isValidAirlineCode, normalizeAirlineCode } from '@/utils/airline';
 import type { DetectedRouteCandidate } from '@/services/flightLookup';
+import { notifySearchFinished, notifySearchStarted } from '@/utils/searchEvents';
 
 export type { DetectedRouteCandidate };
 export type RouteAlertState = 'confirmed' | 'mismatch' | 'multiple' | null;
@@ -83,6 +84,14 @@ export function useRouteLookup({
       lastQueriedKeyRef.current = queryKey;
 
       setRouteLookupLoading(true);
+      const searchToken = notifySearchStarted({
+        searchKind: 'route_lookup',
+        context: `${cleanAirline} ${cleanFlightNum} • Route Lookup`,
+        flightNumber: `${cleanAirline} ${cleanFlightNum}`,
+        providerLabel: 'Aviation Route DBs',
+      });
+      let lookupOk = false;
+      let lookupErr: string | null = null;
       try {
         const res = await fetch('/api/flights/lookup-route', {
           method: 'POST',
@@ -131,12 +140,14 @@ export function useRouteLookup({
         }
 
         if (normalizedRoutes.length === 0) {
+          lookupErr = data.error || 'Route not found';
           setDetectedRoutes([]);
           setSelectedRouteIndex(0);
           setRouteAlert(null);
           return;
         }
 
+        lookupOk = true;
         setDetectedRoutes(normalizedRoutes);
 
         const currOrig = latestOriginRef.current.trim().toUpperCase();
@@ -186,9 +197,11 @@ export function useRouteLookup({
         }
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
+          lookupErr = err?.message || 'Route lookup failed';
           console.error('[useRouteLookup] Error querying route lookup:', err);
         }
       } finally {
+        notifySearchFinished(searchToken, { ok: lookupOk, errorMessage: lookupErr });
         if (!controller.signal.aborted) {
           setRouteLookupLoading(false);
         }

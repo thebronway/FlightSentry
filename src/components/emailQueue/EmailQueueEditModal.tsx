@@ -5,6 +5,7 @@ import { X, Pencil, Check, Trash2, AlertCircle, DollarSign, Coins, Compass } fro
 import { CabinClass, EmailQueueEventType, EmailQueueItem, FareTier } from '@/types';
 import { getCurrencySymbol, isPointsCurrency } from '@/utils/format';
 import { isValidAirlineCode } from '@/utils/airline';
+import { notifySearchFinished, notifySearchStarted } from '@/utils/searchEvents';
 import SettingsModalPortal from '../settings/shared/SettingsModalPortal';
 import SettingsSelect from '../settings/shared/SettingsSelect';
 import { ActiveFlightSummary } from './EmailQueueItemCard';
@@ -109,6 +110,14 @@ export default function EmailQueueEditModal({
 
     setDetectingRoute(true);
     setError(null);
+    const searchToken = notifySearchStarted({
+      searchKind: 'route_lookup',
+      context: `${cleanCarrier} ${cleanNum} • Route Lookup`,
+      flightNumber: `${cleanCarrier} ${cleanNum}`,
+      providerLabel: 'Aviation Route DBs',
+    });
+    let detectOk = false;
+    let detectErr: string | null = null;
     try {
       const res = await fetch('/api/flights/lookup-route', {
         method: 'POST',
@@ -121,14 +130,18 @@ export default function EmailQueueEditModal({
       });
       const data = await res.json();
       if (res.ok && data.success && data.origin && data.destination) {
+        detectOk = true;
         setOrigin(data.origin);
         setDestination(data.destination);
       } else {
-        setError(data.error || `Could not auto-detect route for ${cleanCarrier} ${cleanNum}.`);
+        detectErr = data.error || `Could not auto-detect route for ${cleanCarrier} ${cleanNum}.`;
+        setError(detectErr);
       }
     } catch (err: any) {
-      setError(err?.message || 'Route lookup failed');
+      detectErr = err?.message || 'Route lookup failed';
+      setError(detectErr);
     } finally {
+      notifySearchFinished(searchToken, { ok: detectOk, errorMessage: detectErr });
       setDetectingRoute(false);
     }
   };

@@ -5,6 +5,7 @@ import { ArrowDown, ArrowRight, CheckCircle2, GitBranch, Loader2, Plus, Search, 
 import { TrackedFlightLeg } from '@/types';
 import AirlineTagInput from '../common/AirlineTagInput';
 import { isValidAirlineCode, normalizeAirlineCode } from '@/utils/airline';
+import { notifySearchFinished, notifySearchStarted } from '@/utils/searchEvents';
 
 interface DetectedLegCandidate {
   origin: string;
@@ -121,6 +122,13 @@ export default function ConnectingLegsSection({
 
       setLookingUpIndex(idx);
       setLookupFeedback(prev => (prev?.index === idx ? null : prev));
+      const searchToken = notifySearchStarted({
+        searchKind: 'route_lookup',
+        context: `${carrier} ${flightNum} • Leg ${idx + 1} Lookup`,
+        flightNumber: `${carrier} ${flightNum}`,
+        providerLabel: 'Aviation Route DBs',
+      });
+      let legLookupOk = false;
       try {
         const res = await fetch('/api/flights/lookup-route', {
           method: 'POST',
@@ -149,6 +157,7 @@ export default function ConnectingLegsSection({
         const freshLeg = latestLegsRef.current[idx] || leg;
 
         if (candidates.length === 1) {
+          legLookupOk = true;
           const match = candidates[0];
           const canAutoSetOrigin = !freshLeg.origin || freshLeg.origin === match.origin;
           const canAutoSetDest = !freshLeg.destination || freshLeg.destination === match.destination;
@@ -174,6 +183,7 @@ export default function ConnectingLegsSection({
             });
           }
         } else if (candidates.length > 1) {
+          legLookupOk = true;
           setLookupFeedback({
             index: idx,
             status: 'multiple',
@@ -194,6 +204,7 @@ export default function ConnectingLegsSection({
           text: 'Route lookup unavailable — enter airport codes manually.',
         });
       } finally {
+        notifySearchFinished(searchToken, { ok: legLookupOk });
         setLookingUpIndex(prev => (prev === idx ? null : prev));
       }
     },

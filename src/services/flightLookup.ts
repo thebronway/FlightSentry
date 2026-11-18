@@ -1,6 +1,11 @@
 import packageInfo from '../../package.json';
 import { normalizeAirlineCode, isValidAirlineCode, getIcaoAirlineCode } from '../utils/airline';
 import { isMetroCode } from '../utils/coLocations';
+import {
+  beginSearchTelemetry,
+  finishSearchTelemetry,
+  recordSearchFailover,
+} from './searchTelemetry';
 
 const USER_AGENT = `FlightSentry/${packageInfo.version}`;
 
@@ -61,6 +66,15 @@ export const lookupFlightRoute = async (
   const icaoKey = `${icaoCode}${cleanFlightNumber}`;
 
   console.log(`[FlightLookup] Zero-quota route detection started: Key="${flightKey}", ICAO="${icaoKey}"`);
+
+  const telemetryId = beginSearchTelemetry({
+    searchKind: 'route_lookup',
+    context: `${cleanAirline} ${cleanFlightNumber} • Route Lookup`,
+    flightNumber: `${cleanAirline} ${cleanFlightNumber}`,
+    departureDate: departureDate || null,
+    activeProvider: 'aviation_db',
+    totalProviders: 2,
+  });
 
   const candidates: DetectedRouteCandidate[] = [];
   const addCandidate = (candidate: DetectedRouteCandidate) => {
@@ -276,6 +290,7 @@ export const lookupFlightRoute = async (
         .map(c => `${c.origin} -> ${c.destination}`)
         .join(', ')}`
     );
+    finishSearchTelemetry(telemetryId, 'completed');
     return {
       success: true,
       origin: primary.origin,
@@ -287,6 +302,14 @@ export const lookupFlightRoute = async (
       routes: candidates,
     };
   }
+
+  recordSearchFailover(telemetryId, {
+    previousProvider: 'aviation_db',
+    nextProvider: 'web_search',
+    failoverReason: 'No route match in aviation databases — checking web search fallback',
+    attemptNumber: 2,
+    totalProviders: 2,
+  });
 
   // 4. Zero-Quota Public Web Search Scraper (DuckDuckGo HTML, strictly uppercase IATA pairs)
   try {
@@ -345,6 +368,7 @@ export const lookupFlightRoute = async (
               .map(c => `${c.origin} -> ${c.destination}`)
               .join(', ')}`
           );
+          finishSearchTelemetry(telemetryId, 'completed');
           return {
             success: true,
             origin: primary.origin,
@@ -362,10 +386,12 @@ export const lookupFlightRoute = async (
   }
 
   console.warn(`[FlightLookup] Route could not be resolved automatically for ${cleanAirline} ${cleanFlightNumber}.`);
+  const notFoundError = `Could not auto-detect route for ${cleanAirline} ${cleanFlightNumber}. Please enter Origin and Destination manually.`;
+  finishSearchTelemetry(telemetryId, 'failed', notFoundError);
   return {
     success: false,
     airlineCode: cleanAirline,
     flightNumber: cleanFlightNumber,
-    error: `Could not auto-detect route for ${cleanAirline} ${cleanFlightNumber}. Please enter Origin and Destination manually.`,
+    error: notFoundError,
   };
 };
