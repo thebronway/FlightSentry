@@ -46,8 +46,9 @@ This document tracks planned improvements, enhancements, and technical debt for 
   - No public demo yet
   - No hosted version yet (but coming in the future maybe)
 
-### Release v1.0.1
-- TBD
+### Release v1.0.1: UI Polish: Authentication Transition Stability
+- Issue: Users experience brief visual flickering and layout shifts during the login process. This includes the "Sign Out" button abruptly popping into the navigation bar, the "Sign In" button momentarily resetting its loading state before the redirect completes, and the Passkey section rendering slightly after the main login card.
+- Proposed Solution: Stabilize the authentication handoff by preloading the user's session state on the server before the initial render (eliminating Navbar layout shifts), persisting the "Signing In..." state until the browser has fully navigated to the dashboard, and optimizing client-side security checks so all login components mount simultaneously in the first frame.
 
 ### Release v1.0.2: Mobile Optimization
 - Audit every page and modal against `DESIGN_GUIDE.md` mobile standards (full-screen mobile modals, `44px` touch targets, and zero horizontal overflow).

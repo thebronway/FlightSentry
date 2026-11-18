@@ -184,7 +184,7 @@ export default function SelfHostedScraperCard({
             title="View OpenFareScraper setup guide and Docker image on Docker Hub"
             className="min-h-[44px] sm:min-h-[34px] flex items-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1 text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-sky-300 hover:text-white hover:bg-gunmetal-border rounded-md shadow-sm transition-colors"
           >
-            <span>Docker Hub</span>
+            <span>Get on Docker Hub</span>
             <ExternalLink className="w-3 h-3" />
           </a>
           <button
