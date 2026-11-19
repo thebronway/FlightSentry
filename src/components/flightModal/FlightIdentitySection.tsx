@@ -373,7 +373,7 @@ export default function FlightIdentitySection({
                 key={`${candidate.origin}-${candidate.destination}`}
                 type="button"
                 onClick={() => onSelectRouteCandidate(idx)}
-                className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold bg-sky-900/50 hover:bg-sky-800/75 text-sky-100 border border-sky-600/70 rounded-md transition-colors cursor-pointer shadow-sm"
+                className="min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold bg-sky-950/60 hover:bg-sky-900/75 text-sky-200 hover:text-white border border-sky-700/80 rounded-md transition-colors cursor-pointer shadow-sm"
               >
                 <span>{candidate.origin}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-sky-300" />
@@ -410,7 +410,7 @@ export default function FlightIdentitySection({
                     key={`${candidate.origin}-${candidate.destination}`}
                     type="button"
                     onClick={() => onSelectRouteCandidate(idx)}
-                    className="px-2 py-1 text-[11px] font-mono font-semibold bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-100 border border-emerald-700/60 rounded transition-colors cursor-pointer"
+                    className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 text-xs font-mono font-semibold bg-emerald-950/60 hover:bg-emerald-900/75 text-emerald-200 hover:text-white border border-emerald-700/80 rounded transition-colors cursor-pointer"
                   >
                     {candidate.origin} → {candidate.destination}
                   </button>
@@ -458,7 +458,7 @@ export default function FlightIdentitySection({
                 key={`${candidate.origin}-${candidate.destination}`}
                 type="button"
                 onClick={() => onAdoptRoute(idx)}
-                className="px-3 py-1.5 text-xs font-semibold bg-amber-900/50 hover:bg-amber-800/60 text-amber-100 border border-amber-700/60 rounded-md transition-colors cursor-pointer"
+                className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 text-xs font-semibold bg-amber-950/60 hover:bg-amber-900/75 text-amber-200 hover:text-white border border-amber-700/80 rounded-md transition-colors cursor-pointer"
               >
                 Use {candidate.origin} → {candidate.destination}
               </button>

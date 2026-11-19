@@ -213,7 +213,7 @@ export default function SettingsForm({
     }
   };
 
-  if (!settings) return <div className="text-center py-10 dark:text-gray-400">Loading settings...</div>;
+  if (!settings) return <div className="text-center py-10 text-gunmetal-muted text-sm">Loading settings...</div>;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -304,7 +304,7 @@ export default function SettingsForm({
       {toast && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-5 sm:right-5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl shadow-black/80 backdrop-blur-md text-xs sm:text-sm font-semibold max-w-full sm:max-w-md ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl shadow-black/80 backdrop-blur-md text-sm font-semibold max-w-full sm:max-w-md ${
               toast.type === 'success'
                 ? 'bg-gunmetal-card/95 border-emerald-500/80 text-slate-100 ring-1 ring-emerald-500/40'
                 : 'bg-gunmetal-card/95 border-rose-500/80 text-slate-100 ring-1 ring-rose-500/40'

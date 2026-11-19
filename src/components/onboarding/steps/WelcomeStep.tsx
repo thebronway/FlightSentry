@@ -45,7 +45,7 @@ const HIGHLIGHTS = [
   },
   {
     icon: ShieldCheck,
-    accent: 'text-teal-400',
+    accent: 'text-sky-400',
     title: 'Optional Auth, Passkeys & REST API',
     description:
       'Unlocked by default for trusted local homelabs, or secured with scrypt passwords, WebAuthn passkeys, and scoped /api/v1/* bearer keys.',

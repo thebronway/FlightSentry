@@ -137,10 +137,10 @@ export default function MeteredProviderCard({
           )}
           {status && (
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              className={`text-xs font-semibold px-2.5 py-0.5 rounded border ${
                 status.type === 'success'
-                  ? 'bg-green-950/60 text-green-400 border-green-800/60'
-                  : 'bg-red-950/60 text-red-400 border-red-800/60'
+                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
+                  : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
               }`}
             >
               {status.message}
@@ -300,9 +300,9 @@ export default function MeteredProviderCard({
               <span
                 className={`font-semibold ${
                   threshold === 'critical'
-                    ? 'text-red-400'
+                    ? 'text-rose-400'
                     : threshold === 'warning'
-                    ? 'text-yellow-300'
+                    ? 'text-amber-300'
                     : 'text-slate-200'
                 }`}
               >
@@ -310,13 +310,13 @@ export default function MeteredProviderCard({
               </span>
               {remainingCount !== null && (
                 <span
-                  className={`px-2 py-0.5 rounded border text-[11px] font-semibold ${
+                  className={`px-2 py-0.5 rounded border text-xs font-semibold ${
                     isExhausted
-                      ? 'bg-red-950/60 text-red-400 border-red-800/60'
+                      ? 'bg-rose-950/60 text-rose-400 border-rose-800/60'
                       : threshold === 'critical'
-                      ? 'bg-red-950/50 text-red-300 border-red-500/70'
+                      ? 'bg-rose-950/50 text-rose-300 border-rose-500/70'
                       : threshold === 'warning'
-                      ? 'bg-yellow-950/50 text-yellow-300 border-yellow-500/70'
+                      ? 'bg-amber-950/50 text-amber-300 border-amber-500/70'
                       : 'bg-gunmetal-card text-slate-300 border-gunmetal-border'
                   }`}
                 >
@@ -347,7 +347,7 @@ export default function MeteredProviderCard({
               disabled={isAdjusting}
               onClick={() => commitUsageAdjustment('increment', 1)}
               title={`Log 1 manually used query for ${providerName}`}
-              className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded-md shadow-sm transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+              className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-md shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5 text-sky-400" />
               <span>Log +1 Query</span>

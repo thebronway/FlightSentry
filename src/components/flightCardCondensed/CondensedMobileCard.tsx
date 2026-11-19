@@ -85,7 +85,7 @@ export default function CondensedMobileCard({
             )}
           </div>
           {delta !== 0 && (
-            <span className={`text-[11px] font-semibold ${isDrop ? 'text-green-400' : 'text-red-400'} block text-right`}>
+            <span className={`text-[11px] font-semibold ${isDrop ? 'text-emerald-400' : 'text-rose-400'} block text-right`}>
               {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
             </span>
           )}

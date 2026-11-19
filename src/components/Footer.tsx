@@ -3,15 +3,15 @@ import packageInfo from '../../package.json';
 
 export default function Footer() {
   return (
-    <footer className="mt-auto py-6 border-t border-slate-200 dark:border-gunmetal-border bg-white dark:bg-gunmetal-nav transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500 dark:text-gunmetal-muted">
+    <footer className="mt-auto py-6 border-t border-gunmetal-border bg-gunmetal-nav transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between text-sm text-gunmetal-muted">
         
         <div className="mb-4 md:mb-0">
           <a 
             href="https://github.com/thebronway/FlightSentry/blob/main/CHANGELOG.md" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="hover:text-slate-900 dark:hover:text-white transition-colors font-medium"
+            className="hover:text-white transition-colors font-medium"
           >
             FlightSentry v{packageInfo.version}
           </a>
@@ -23,7 +23,7 @@ export default function Footer() {
             target="_blank" 
             rel="noopener noreferrer" 
             title="Developer's Website & Projects"
-            className="hover:text-emerald-500 transition-colors flex items-center gap-1.5 font-medium"
+            className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Globe className="w-4 h-4" />
             <span>Developer's Website</span>
@@ -32,7 +32,7 @@ export default function Footer() {
             href="https://github.com/thebronway/FlightSentry/issues" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="hover:text-purple-500 transition-colors flex items-center gap-1.5 font-medium"
+            className="hover:text-purple-400 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Github className="w-4 h-4" />
             <span>Report An Issue</span>
@@ -41,7 +41,7 @@ export default function Footer() {
             href="https://buymeacoffee.com/brianconway" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="hover:text-yellow-500 transition-colors flex items-center gap-1.5 font-medium"
+            className="hover:text-amber-400 transition-colors flex items-center gap-1.5 font-medium"
           >
             <Coffee className="w-4 h-4" />
             <span>Support FlightSentry</span>

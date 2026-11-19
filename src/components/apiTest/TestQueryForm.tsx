@@ -207,7 +207,7 @@ export default function TestQueryForm({
           <button
             type="submit"
             disabled={isRunning || selectedCount === 0}
-            className="min-h-[44px] sm:min-h-[38px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider bg-sky-600 hover:bg-sky-500 text-white border border-sky-400/50 shadow-sm transition-colors disabled:opacity-40 disabled:pointer-events-none cursor-pointer whitespace-nowrap flex-shrink-0"
+            className="min-h-[44px] sm:min-h-[38px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer whitespace-nowrap flex-shrink-0"
           >
             {isRunning ? (
               <>

@@ -236,8 +236,8 @@ export default function PastFlightsRetentionCard({
 
               <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
                 {errorMsg && (
-                  <div className="bg-red-950/40 border border-red-800/70 p-3 rounded-md text-xs text-red-300 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="bg-rose-950/45 border border-rose-700/70 p-3 rounded-md text-xs text-rose-200 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                     <span>{errorMsg}</span>
                   </div>
                 )}
@@ -313,7 +313,7 @@ export default function PastFlightsRetentionCard({
                     type="button"
                     disabled={purging || targetDeleteCount === 0}
                     onClick={handleConfirmCleanup}
-                    className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-700/80 rounded-md transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+                    className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 hover:text-white border border-rose-700/80 rounded-lg transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                   >
                     {purging ? (
                       <>

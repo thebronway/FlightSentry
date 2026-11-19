@@ -58,10 +58,10 @@ export default function QuotaRibbonHeader({
         <button
           type="button"
           onClick={onToggleGlobalPause}
-          className={`flex-1 sm:flex-initial min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm cursor-pointer ${
+          className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] min-w-[44px] flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm cursor-pointer ${
             isAllPaused
-              ? 'bg-amber-950/50 border border-amber-500 text-amber-300 hover:bg-amber-900/60'
-              : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700'
+              ? 'bg-amber-950/60 hover:bg-amber-900/75 border border-amber-700/80 text-amber-200 hover:text-white'
+              : 'bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white'
           }`}
         >
           {isAllPaused ? (
@@ -80,7 +80,7 @@ export default function QuotaRibbonHeader({
             onClick={onToggleCollapse}
             aria-expanded={!isCollapsed}
             title={isCollapsed ? 'Expand ribbon' : 'Collapse ribbon'}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold bg-gunmetal-card border border-gunmetal-border text-gunmetal-muted hover:text-slate-200 hover:border-slate-500 transition-colors shadow-sm flex-shrink-0 cursor-pointer"
+            className="min-h-[44px] sm:min-h-[36px] min-w-[44px] flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-300 hover:text-white transition-colors shadow-sm flex-shrink-0 cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronDown className="w-4 h-4 flex-shrink-0" />

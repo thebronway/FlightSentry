@@ -1,19 +1,12 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-17*  
-*Current Version: v0.9.7*
+*Last updated: 2026-11-18*  
+*Current Version: v0.9.8*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
-
-### Release v0.9.8: Brand Optimization Application
-- Apply `DESIGN_GUIDE.md` across the entire app:
-  - Standardize primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and align secondary, toolbar, destructive, and semantic action buttons.
-  - Consolidate status colors to canonical `sky`, `emerald`, `amber`, and `rose` tokens (removing stray `gray-*`, `blue-*`, `green-*`, `red-*`, and `yellow-*` classes).
-  - Standardize all modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 & 3 modals, `44px` minimum mobile touch targets, and single-line `lucide-react` imports.
-  - Looks at the guide and make sure every element follows it, ask questions if there is uncertaintiy or ambiguity, happy to expand the guide if needed.
 
 ### Release v0.9.9: Email Scanner Overhaul & Dev Email Import Tester
 - **IMAP Cursor Integrity & Scan Audit Trail**

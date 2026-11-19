@@ -95,7 +95,7 @@ export default function CurrencyWarningModal({
               <button
                 type="button"
                 onClick={onConfirm}
-                className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/80 rounded-md transition-colors shadow-sm"
+                className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-amber-950/60 hover:bg-amber-900/75 text-amber-200 hover:text-white border border-amber-700/80 rounded-lg transition-colors shadow-sm cursor-pointer"
               >
                 Switch to {pendingCurrency}
               </button>

@@ -238,7 +238,7 @@ export default function CredentialsCard({ status, onSaved, onError }: Props) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-md bg-slate-200 hover:bg-white text-slate-900 font-bold text-xs flex items-center gap-2 transition-colors disabled:opacity-40 cursor-pointer"
+            className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>

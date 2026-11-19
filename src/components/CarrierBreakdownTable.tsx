@@ -143,7 +143,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
               key={row.airline}
               className={`border rounded-lg p-3.5 space-y-2.5 shadow-sm ${
                 row.isRouteFloor
-                  ? 'bg-green-950/15 border-emerald-700/60 border-l-4 border-l-emerald-500'
+                  ? 'bg-emerald-950/15 border-emerald-700/60 border-l-4 border-l-emerald-500'
                   : 'bg-gunmetal-card/90 border-gunmetal-border'
               }`}
             >
@@ -157,7 +157,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-bold text-sm text-slate-100">{row.airline}</span>
                       {row.isRouteFloor && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-950/70 text-green-300 border border-green-800/60 uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 uppercase tracking-wider">
                           <Award className="w-3 h-3" /> Route Floor
                         </span>
                       )}
@@ -171,11 +171,11 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                     {formatCurrency(row.currentLowestPrice, flight?.currency)}
                   </span>
                   {row.deltaStatus === 'dropped' ? (
-                    <span className="text-[11px] font-bold text-green-400 font-mono">
+                    <span className="text-[11px] font-bold text-emerald-400 font-mono">
                       ▼ {formatCurrency(Math.abs(row.priceDelta), flight?.currency)}
                     </span>
                   ) : row.deltaStatus === 'risen' ? (
-                    <span className="text-[11px] font-bold text-red-400 font-mono">
+                    <span className="text-[11px] font-bold text-rose-400 font-mono">
                       ▲ {formatCurrency(row.priceDelta, flight?.currency)}
                     </span>
                   ) : (
@@ -210,7 +210,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                   )}
                 </div>
                 <span className="font-mono text-[11px]">
-                  <span className="text-green-400 font-semibold">{formatCurrency(row.allTimeLow, flight?.currency)}</span>
+                  <span className="text-emerald-400 font-semibold">{formatCurrency(row.allTimeLow, flight?.currency)}</span>
                   <span className="text-gunmetal-muted mx-1">–</span>
                   <span className="text-slate-400">{formatCurrency(row.allTimeHigh, flight?.currency)}</span>
                 </span>
@@ -310,7 +310,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                   <tr
                     key={row.airline}
                     className={`hover:bg-gunmetal-canvas/60 transition-colors ${
-                      row.isRouteFloor ? 'bg-green-950/15' : ''
+                      row.isRouteFloor ? 'bg-emerald-950/15' : ''
                     }`}
                   >
                   {/* Airline Name & Color Badge */}
@@ -386,7 +386,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                         {formatCurrency(row.currentLowestPrice, flight?.currency)}
                       </span>
                       {row.isRouteFloor && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-950/70 text-green-300 border border-green-800/60 uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 uppercase tracking-wider">
                           <Award className="w-3 h-3" /> Route Floor
                         </span>
                       )}
@@ -395,7 +395,7 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
 
                   {/* Airline-Specific Historical Low / High */}
                   <td className="py-3 px-3.5 whitespace-nowrap font-mono text-xs">
-                    <span className="text-green-400 font-semibold">
+                    <span className="text-emerald-400 font-semibold">
                       {formatCurrency(row.allTimeLow, flight?.currency)}
                     </span>
                     <span className="text-gunmetal-muted mx-1.5">–</span>
@@ -407,11 +407,11 @@ export default function CarrierBreakdownTable({ history, flight }: Props) {
                   {/* Check-to-Check Price Delta Trend Indicator */}
                   <td className="py-3 px-3.5 text-right whitespace-nowrap">
                     {row.deltaStatus === 'dropped' ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-green-400 bg-green-950/40 border border-green-800/40 px-2 py-0.5 rounded">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded">
                         ▼ {formatCurrency(Math.abs(row.priceDelta), flight?.currency)}
                       </span>
                     ) : row.deltaStatus === 'risen' ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-red-400 bg-red-950/40 border border-red-800/40 px-2 py-0.5 rounded">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded">
                         ▲ {formatCurrency(row.priceDelta, flight?.currency)}
                       </span>
                     ) : (

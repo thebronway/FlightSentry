@@ -228,8 +228,8 @@ export default function ImapAccountModal({
         aria-modal="true"
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4"
       >
-        <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden sm:max-w-xl">
-          <div className="px-4 sm:px-6 py-4 border-b border-gunmetal-border flex items-center justify-between bg-gunmetal-nav/70">
+        <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden max-w-2xl">
+          <div className="px-4 sm:px-6 py-4 border-b border-gunmetal-border flex items-center justify-between bg-gunmetal-card">
             <div className="flex items-center gap-2.5">
               <Mail className="w-5 h-5 text-sky-400" />
               <h2 className="text-base sm:text-lg font-bold text-slate-100">
@@ -240,13 +240,13 @@ export default function ImapAccountModal({
               type="button"
               onClick={onClose}
               aria-label="Close modal"
-              className="p-2 rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-border/60 transition-colors cursor-pointer"
+              className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] inline-flex items-center justify-center rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto [overflow-anchor:none] p-4 sm:p-6 space-y-4 min-h-0">
             {/* Quick Provider Presets */}
             <div>
               <span className="block text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted mb-1.5">
@@ -258,7 +258,7 @@ export default function ImapAccountModal({
                     key={preset.id}
                     type="button"
                     onClick={() => applyPreset(preset)}
-                    className="px-2.5 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-canvas border border-gunmetal-border text-slate-300 hover:text-white hover:border-slate-500 transition-colors cursor-pointer"
+                    className="min-h-[44px] sm:min-h-[34px] px-3 sm:px-2.5 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-300 hover:text-white transition-colors cursor-pointer"
                   >
                     {preset.name}
                   </button>
@@ -416,14 +416,14 @@ export default function ImapAccountModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] px-4 py-2 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md text-xs font-semibold transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] px-4 py-2 bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || testing}
-                  className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] px-5 py-2 bg-slate-200 hover:bg-white text-slate-900 rounded-md text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[38px] px-5 py-2 bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-lg text-xs sm:text-sm font-semibold shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                 >
                   {saving ? 'Verifying & Saving...' : editingAccount ? 'Save Changes' : 'Verify & Add Account'}
                 </button>

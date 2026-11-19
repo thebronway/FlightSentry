@@ -111,7 +111,7 @@ export default function ImapAccountCard({
                   setConfirmingDelete(false);
                   onDelete(account);
                 }}
-                className="min-h-[44px] sm:min-h-[34px] px-2.5 py-1 text-xs font-bold bg-rose-900/70 hover:bg-rose-800 text-rose-100 border border-rose-600 rounded-md transition-colors cursor-pointer"
+                className="min-h-[44px] sm:min-h-[34px] px-2.5 py-1 text-xs font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 hover:text-white border border-rose-700/80 rounded-md shadow-sm transition-colors cursor-pointer"
               >
                 Confirm
               </button>

@@ -77,7 +77,7 @@ export default function DataSourceLogsModal({
         aria-modal="true"
         className="fixed inset-0 !mt-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4"
       >
-        <div className="bg-gunmetal-card border-0 sm:border border-gunmetal-border rounded-none sm:rounded-xl shadow-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="bg-gunmetal-card border-0 sm:border border-gunmetal-border rounded-none sm:rounded-2xl shadow-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
           <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gunmetal-border flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 min-w-0">
               <h3 className="font-bold text-base text-slate-100 truncate">
@@ -109,7 +109,7 @@ export default function DataSourceLogsModal({
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3">
+          <div className="p-4 sm:p-6 flex-1 overflow-y-auto [overflow-anchor:none] space-y-3 min-h-0">
             {loading && logs.length === 0 ? (
               <div className="py-12 text-center text-xs text-gunmetal-muted">
                 Loading recent query logs...
@@ -135,7 +135,7 @@ export default function DataSourceLogsModal({
                         ? 'bg-gunmetal-canvas/40 border-gunmetal-border'
                         : isRateLimited || isPaused
                         ? 'bg-amber-950/20 border-amber-900/40'
-                        : 'bg-red-950/20 border-red-900/40'
+                        : 'bg-rose-950/20 border-rose-900/40'
                     }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -145,10 +145,10 @@ export default function DataSourceLogsModal({
                             isManual
                               ? 'bg-sky-950/60 text-sky-400 border-sky-800/60'
                               : isSuccess
-                              ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                              ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
                               : isRateLimited || isPaused
                               ? 'bg-amber-950/60 text-amber-400 border-amber-800/60'
-                              : 'bg-red-950/60 text-red-400 border-red-800/60'
+                              : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
                           }`}
                         >
                           {isManual ? (
@@ -199,7 +199,7 @@ export default function DataSourceLogsModal({
                           isRateLimited || isPaused
                             ? 'text-amber-300/90 font-mono'
                             : !isSuccess && !isManual
-                            ? 'text-red-300/90 font-mono'
+                            ? 'text-rose-300/90 font-mono'
                             : 'text-gunmetal-muted'
                         }`}
                       >

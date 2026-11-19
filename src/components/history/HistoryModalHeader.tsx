@@ -115,7 +115,7 @@ export default function HistoryModalHeader({
           target="_blank"
           rel="noopener noreferrer"
           title="Search this itinerary on Google Flights"
-          className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 sm:py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-blue-950/30 border border-gunmetal-border text-slate-200 hover:text-[#4285F4] rounded-lg sm:rounded-md shadow-sm transition-colors"
+          className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 sm:py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-[#4285F4]/15 border border-gunmetal-border text-slate-200 hover:text-[#4285F4] rounded-lg sm:rounded-md shadow-sm transition-colors"
         >
           <GoogleIcon className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Google Flights</span>

@@ -20,10 +20,10 @@ export default function QueryRoutingStrategyCard({
         <label className="block text-sm font-semibold text-slate-200">Query Routing Strategy</label>
         {status && (
           <span
-            className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+            className={`text-xs font-semibold px-2.5 py-0.5 rounded border ${
               status.type === 'success'
-                ? 'bg-green-950/60 text-green-400 border-green-800/60'
-                : 'bg-red-950/60 text-red-400 border-red-800/60'
+                ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
+                : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
             }`}
           >
             {status.message}

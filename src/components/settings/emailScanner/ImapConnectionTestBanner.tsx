@@ -20,13 +20,13 @@ export default function ImapConnectionTestBanner({ feedback }: Props) {
       className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 ${
         feedback.type === 'success'
           ? 'bg-emerald-950/35 border-emerald-800/60 text-emerald-200'
-          : 'bg-red-950/35 border-red-800/60 text-red-200'
+          : 'bg-rose-950/45 border-rose-700/70 text-rose-200'
       }`}
     >
       {feedback.type === 'success' ? (
         <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
       ) : (
-        <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
       )}
       <div className="space-y-0.5 min-w-0">
         <p className="font-semibold break-words">{feedback.message}</p>

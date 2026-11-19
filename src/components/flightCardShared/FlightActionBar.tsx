@@ -42,12 +42,12 @@ export default function FlightActionBar({
   const googleFlightsUrl = getGoogleFlightsUrl(flight, settings?.currency);
   const isCard = variant === 'card';
 
-  const btnPadding = isCard ? 'p-2' : 'p-1.5';
+  const btnPadding = isCard ? 'min-h-[44px] sm:min-h-0 p-2' : 'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-1.5';
   const iconSize = isCard ? 'w-4 h-4' : 'w-3.5 h-3.5';
   const tooltipWrapperClass = isCard ? 'w-full' : '';
   const btnBaseClass = isCard
     ? `w-full flex justify-center items-center ${btnPadding} rounded-md transition-colors`
-    : `${btnPadding} rounded transition-colors`;
+    : `inline-flex justify-center items-center ${btnPadding} rounded transition-colors`;
 
   const hasSpecialAction = (!isPurchased && onConvertToBooked) || (isPurchased && onRebook);
   const containerClass = isCard
@@ -127,7 +127,7 @@ export default function FlightActionBar({
           target="_blank"
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
-          className={`${btnBaseClass} text-slate-300 hover:text-[#4285F4] hover:bg-blue-950/30`}
+          className={`${btnBaseClass} text-slate-300 hover:text-[#4285F4] hover:bg-[#4285F4]/15`}
         >
           <GoogleIcon className={iconSize} />
         </a>

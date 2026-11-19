@@ -63,7 +63,7 @@ export default function FlightStatBadges({
           )}
         </div>
         {delta !== 0 && (
-          <span className={`text-xs font-bold block mt-0.5 ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+          <span className={`text-xs font-bold block mt-0.5 ${isDrop ? 'text-emerald-400' : 'text-rose-400'}`}>
             {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
           </span>
         )}
@@ -91,7 +91,7 @@ export default function FlightStatBadges({
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gunmetal-muted block">
           {isRebooked ? 'Rebook Savings' : 'All-Time Low'}
         </span>
-        <span className={`text-xl font-bold block mt-0.5 ${isRebooked ? 'text-emerald-400' : 'text-green-400'}`}>
+        <span className="text-xl font-bold block mt-0.5 text-emerald-400">
           {isRebooked ? `+${formatCurrency(lifetimeCredits, flight.currency)}` : formatCurrency(allTimeLow, flight.currency)}
         </span>
         {isRebooked && (

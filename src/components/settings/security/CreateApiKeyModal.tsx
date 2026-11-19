@@ -134,10 +134,10 @@ export default function CreateApiKeyModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed inset-0 !mt-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4"
+        className="fixed inset-0 !mt-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4"
       >
-        <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-          <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-gunmetal-border flex items-center justify-between gap-2">
+        <div className="bg-gunmetal-card border-0 sm:border border-gunmetal-border rounded-none sm:rounded-2xl shadow-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="px-4 sm:px-6 py-4 border-b border-gunmetal-border flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="p-2 rounded-lg bg-sky-950/60 border border-sky-800/60 flex-shrink-0">
                 <KeyRound className="w-5 h-5 text-sky-400" />
@@ -164,7 +164,7 @@ export default function CreateApiKeyModal({
           </div>
 
           {createdRawKey ? (
-            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+            <div className="flex-1 p-4 sm:p-6 overflow-y-auto [overflow-anchor:none] space-y-4 min-h-0">
               <div className="p-3 rounded-lg bg-amber-950/35 border border-amber-700/60 text-xs text-amber-200 flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -221,18 +221,18 @@ export default function CreateApiKeyModal({
                 </code>
               </div>
 
-              <div className="pt-2 border-t border-gunmetal-border flex justify-end">
+              <div className="pt-3 border-t border-gunmetal-border flex justify-end">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[44px] px-5 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-md transition-colors cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[38px] px-5 py-2 text-xs sm:text-sm font-semibold bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-lg shadow-sm transition-colors cursor-pointer"
                 >
                   Done
                 </button>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-4">
+            <form onSubmit={handleSubmit} className="flex-1 p-4 sm:p-6 overflow-y-auto [overflow-anchor:none] space-y-4 min-h-0">
               <div>
                 <label
                   htmlFor="api-key-name"
@@ -313,19 +313,19 @@ export default function CreateApiKeyModal({
                 </select>
               </div>
 
-              <div className="pt-2 border-t border-gunmetal-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+              <div className="pt-3 border-t border-gunmetal-border flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={submitting}
-                  className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md transition-colors cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border rounded-lg transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !name.trim()}
-                  className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-md transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-lg transition-colors shadow-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{submitting ? 'Generating...' : 'Generate API Key'}</span>

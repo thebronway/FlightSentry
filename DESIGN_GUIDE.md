@@ -1,6 +1,6 @@
 # FlightSentry Design System & Brand Guide
 
-*Version: 1.0 (Baseline for FlightSentry v0.9.5+ and Sister Applications)*
+*Version: 1.1 (Updated for FlightSentry v0.9.8+ and Sister Applications)*
 
 ## 1. Purpose & Brand Philosophy
 
@@ -104,6 +104,7 @@ Do **not** mix `green-*` with `emerald-*`, `red-*` with `rose-*`, `yellow-*` wit
 | **Warning / Pause / Points** | `amber` | Text: `text-amber-400` / `text-amber-300`<br>Badge: `bg-amber-950/60 text-amber-300 border-amber-800/60`<br>Banner: `bg-amber-950/30 border-amber-800/60 text-amber-200` | Paused state, cooldown/rate-limit warnings, points/miles currencies, unconfigured notices. |
 | **Destructive / Surge / Error** | `rose` | Text: `text-rose-400` / `text-rose-300`<br>Badge: `bg-rose-950/60 text-rose-300 border-rose-800/60`<br>Alert: `bg-rose-950/45 border-rose-700/70 text-rose-200` | Price surges, validation errors, failed tests, delete/revoke actions. |
 | **Auxiliary Category Accent** | `purple` | Text: `text-purple-400` | Secondary icon accents (e.g., GitHub links, timing badges) where four states need distinction. |
+| **External Brand Links** | Third-party brand hex | Google Flights: `hover:text-[#4285F4] hover:bg-[#4285F4]/15` | External third-party action links (e.g., Google Flights) retain their brand hover accent instead of `blue-*` utilities. |
 
 ---
 
@@ -234,10 +235,30 @@ All modals render via portal (`SettingsModalPortal` or root overlay) with `role=
 - **Field Labels:**
   - Section/card field labels: `block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5`
   - Modal inline labels: `block text-xs font-semibold text-slate-300 mb-1.5`
-- **Status Pills & Tags:**
-  - `inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] sm:text-[11px] font-semibold` using the canonical `sky`, `emerald`, `amber`, or `rose` badge classes in Section 2.3.
+- **Status Pills & Inline Badges:**
+  - Inline status pills placed beside `text-xs` or `text-sm` labels (such as scraper health states and auto-save confirmation pills) match adjacent text scale: `inline-flex items-center gap-1 px-2.5 py-0.5 rounded border text-xs font-semibold` using the canonical `sky`, `emerald`, `amber`, or `rose` classes in Section 2.3. Compact metadata tags inside dense rows use `px-2 py-0.5 rounded border text-[10px] sm:text-[11px] font-semibold`.
+- **Segmented Controls & Toggle Tracks:**
+  - Outer track: `inline-flex items-center p-0.5 rounded-lg bg-gunmetal-canvas border border-gunmetal-border`.
+  - Active option uses Toolbar Active (`bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm`); inactive options use `border border-transparent text-gunmetal-muted hover:text-slate-200`.
+- **Floating Toasts & Search Progress Popups:**
+  - Container: `fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-5 sm:right-5 z-50 max-w-full sm:max-w-md`.
+  - Card surface: `bg-gunmetal-card/95 backdrop-blur-md border rounded-xl shadow-2xl shadow-black/80 px-4 py-3 text-sm font-semibold text-slate-100` with `w-5 h-5` semantic status icons (`emerald-400`, `amber-400`, `rose-400`, `sky-400`).
+- **Tooltips & Quota Progress Bars:**
+  - Tooltips (`Tooltip.tsx`): `bg-gunmetal-card/95 text-slate-100 text-[11px] font-sans font-semibold px-2.5 py-1 rounded shadow-2xl border border-slate-600 backdrop-blur-sm z-50`.
+  - Quota bars: `w-full bg-gunmetal-card border border-gunmetal-border rounded-full h-1.5` (or `h-2`) with `bg-sky-500` (normal), `bg-amber-400` (warning), `bg-amber-600` (paused), and `bg-rose-500` (critical).
 - **Empty States:**
   - `py-12 px-4 text-center border-2 border-dashed border-gunmetal-border rounded-xl bg-gunmetal-canvas/30 space-y-2` with a centered muted icon (`w-7 h-7 text-gunmetal-muted mx-auto`), `text-sm font-semibold text-slate-300` title, and `text-xs text-gunmetal-muted` guidance.
+
+### 5.4 Z-Index Layering Hierarchy
+
+| Layer | Class | Usage |
+| :--- | :--- | :--- |
+| **Sticky Modal Header** | `z-10` | Modal top bars above scrolling body content. |
+| **Sticky Modal Footer / Chart Tooltip** | `z-20` | Modal action footers and interactive SVG chart scrubbers. |
+| **Sticky App Chrome** | `z-30` | Persistent navigation or page headers. |
+| **Dropdown Menus** | `z-40` | Custom select menus and popovers. |
+| **Modals, Tooltips & Floating Toasts** | `z-50` | Primary dialog backdrops, hover tooltips, Settings toast, and SearchProgressPopup. |
+| **Nested Sub-Modals** | `z-[60]` | Secondary modals opened on top of an active `z-50` modal (e.g., `EmailQueueEditModal`). |
 
 ---
 

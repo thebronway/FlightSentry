@@ -1,9 +1,18 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-17*  
-*Current Version: v0.9.7*
+*Last updated: 2026-11-18*  
+*Current Version: v0.9.8*
 
 ## Changelog
+
+### Release v0.9.8
+- Standardized primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and aligned secondary, toolbar, destructive, and semantic action buttons across the app.
+- Consolidated semantic colors to `sky`, `emerald`, `amber`, and `rose` tokens, keeping `#4285F4` dedicated to Google Flights links.
+- Standardized modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 and Tier 3 modals, and `44px` minimum mobile touch targets.
+- Standardized floating settings and search progress toasts (`text-sm`) and matched inline status badge sizing (`text-xs`) to adjacent labels.
+- Expanded `DESIGN_GUIDE.md` with toast, inline status badge, segmented toggle, tooltip, quota bar, external link, and `z-index` standards.
+
+### Release v0.9.7
 
 ### Release v0.9.7
 - Added search router progress telemetry (`search_telemetry` SQLite table and `GET /api/flights/search-telemetry`) tracking active data source, flight/route context, and failover reason.

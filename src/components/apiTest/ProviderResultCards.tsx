@@ -28,8 +28,8 @@ const STATUS_BADGE_MAP: Record<
   },
   RateLimited: {
     label: 'Rate Limited (429)',
-    className: 'bg-orange-950/60 text-orange-300 border-orange-700/70',
-    icon: <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />,
+    className: 'bg-amber-950/60 text-amber-300 border-amber-700/70',
+    icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
   },
   Paused: {
     label: 'Paused (503)',
@@ -38,8 +38,8 @@ const STATUS_BADGE_MAP: Record<
   },
   Error: {
     label: 'Error',
-    className: 'bg-red-950/60 text-red-300 border-red-700/70',
-    icon: <AlertCircle className="w-3.5 h-3.5 text-red-400" />,
+    className: 'bg-rose-950/60 text-rose-300 border-rose-700/70',
+    icon: <AlertCircle className="w-3.5 h-3.5 text-rose-400" />,
   },
 };
 
@@ -147,7 +147,7 @@ export default function ProviderResultCards({
 
                 {/* Error or Diagnostic Details */}
                 {item.errorMessage && (
-                  <div className="p-2.5 rounded-md bg-red-950/30 border border-red-800/60 text-xs text-red-200 break-words leading-relaxed">
+                  <div className="p-2.5 rounded-md bg-rose-950/45 border border-rose-700/70 text-xs text-rose-200 break-words leading-relaxed">
                     {item.errorMessage}
                   </div>
                 )}

@@ -212,9 +212,9 @@ export default function ManualPriceEntryModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 md:p-6 transition-colors"
     >
-      <div className="bg-gunmetal-card border border-gunmetal-border w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl max-w-4xl overflow-y-auto flex flex-col">
+      <div className="bg-gunmetal-card border border-gunmetal-border w-full h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-2xl max-w-4xl lg:max-w-5xl xl:max-w-6xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gunmetal-border flex items-center justify-between sticky top-0 bg-gunmetal-card z-10">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-gunmetal-border flex items-center justify-between bg-gunmetal-card flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg border bg-sky-950/60 border-sky-800/60 text-sky-400">
               {isPoints ? <Coins className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
@@ -263,10 +263,10 @@ export default function ManualPriceEntryModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 flex-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto [overflow-anchor:none] p-4 sm:p-6 space-y-5 min-h-0">
           {error && (
-            <div className="bg-red-950/40 border border-red-800/70 p-3.5 rounded-md text-xs text-red-300 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-rose-950/45 border border-rose-700/70 p-3.5 rounded-md text-xs text-rose-200 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -281,7 +281,7 @@ export default function ManualPriceEntryModal({
                 <button
                   type="button"
                   onClick={() => handleEntryScopeChange('tracked')}
-                  className={`min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
                     entryScope === 'tracked'
                       ? 'bg-sky-950/80 text-sky-300 border border-sky-600/70 shadow-sm'
                       : 'text-gunmetal-muted hover:text-slate-200 border border-transparent'
@@ -292,7 +292,7 @@ export default function ManualPriceEntryModal({
                 <button
                   type="button"
                   onClick={() => handleEntryScopeChange('alternative')}
-                  className={`min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
                     entryScope === 'alternative'
                       ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-600/70 shadow-sm'
                       : 'text-gunmetal-muted hover:text-slate-200 border border-transparent'
@@ -308,11 +308,11 @@ export default function ManualPriceEntryModal({
           {associationInfo && (
             <div className={`p-3.5 rounded-lg border text-xs flex items-center gap-2.5 ${
               associationInfo.isDirectMatch
-                ? 'bg-green-950/30 border-green-800/50 text-green-300'
+                ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300'
                 : 'bg-sky-950/30 border-sky-800/50 text-sky-300'
             }`}>
               {associationInfo.isDirectMatch ? (
-                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               ) : (
                 <Layers className="w-4 h-4 text-sky-400 flex-shrink-0" />
               )}
@@ -458,14 +458,14 @@ export default function ManualPriceEntryModal({
               type="button"
               disabled={loading}
               onClick={onClose}
-              className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-lg sm:rounded-md transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border rounded-lg transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 sm:flex-none min-h-[44px] px-5 py-2 text-xs font-semibold rounded-lg sm:rounded-md transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 bg-sky-950/80 hover:bg-sky-900 text-sky-200 border border-sky-700/80 cursor-pointer"
+              className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors inline-flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-45 disabled:pointer-events-none bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white cursor-pointer"
             >
               <DollarSign className="w-3.5 h-3.5" />
               <span>{loading ? 'Saving...' : 'Log Price Point'}</span>

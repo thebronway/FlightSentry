@@ -56,11 +56,11 @@ export default function HistoryIntradayLog({
                 {group.hasMultipleChecks && (
                   <div className="flex items-center gap-2 text-xs">
                     {group.intradayDelta < 0 ? (
-                      <span className="text-green-400 font-semibold flex items-center gap-1 bg-green-950/40 px-2 py-0.5 rounded border border-green-800/40">
+                      <span className="text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
                         ▼ Intraday Drop: {formatCurrency(Math.abs(group.intradayDelta), flight.currency)}
                       </span>
                     ) : group.intradayDelta > 0 ? (
-                      <span className="text-red-400 font-semibold flex items-center gap-1 bg-red-950/40 px-2 py-0.5 rounded border border-red-800/40">
+                      <span className="text-rose-400 font-semibold flex items-center gap-1 bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
                         ▲ Intraday Rise: {formatCurrency(group.intradayDelta, flight.currency)}
                       </span>
                     ) : (

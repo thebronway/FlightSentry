@@ -78,10 +78,10 @@ export default function HistoryCheckBadges({ record, currency }: Props) {
       <span
         className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
           record.status === 'Success'
-            ? 'bg-green-900/30 text-green-400 border-green-800/40'
+            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
             : record.status === 'Paused'
-            ? 'bg-amber-950/50 text-amber-300 border-amber-800/50'
-            : 'bg-red-900/30 text-red-400 border-red-800/40'
+            ? 'bg-amber-950/60 text-amber-300 border-amber-800/60'
+            : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
         }`}
       >
         {record.status}

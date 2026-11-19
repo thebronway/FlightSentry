@@ -106,7 +106,7 @@ export default function Navbar() {
               type="button"
               onClick={handleOpenEmailQueue}
               title={`Review ${pendingQueueCount} pending email event(s)`}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-semibold bg-sky-950/60 hover:bg-sky-900/70 text-sky-200 border border-sky-700/70 shadow-sm transition-colors cursor-pointer"
+              className="min-h-[44px] sm:min-h-[38px] flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-semibold bg-sky-950/60 hover:bg-sky-900/70 text-sky-200 border border-sky-700/70 shadow-sm transition-colors cursor-pointer"
             >
               <Mail className="w-4 h-4 text-sky-400" />
               <span className="hidden md:inline">Email Queue</span>
@@ -118,7 +118,7 @@ export default function Navbar() {
           <Link 
               href="/dashboard" 
               title="Dashboard"
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/dashboard') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
+              className={`min-h-[44px] min-w-[44px] sm:min-h-[38px] sm:min-w-0 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/dashboard') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
           >
             <LayoutDashboard className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -126,7 +126,7 @@ export default function Navbar() {
           <Link 
               href="/settings/general" 
               title="Settings"
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/settings') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
+              className={`min-h-[44px] min-w-[44px] sm:min-h-[38px] sm:min-w-0 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname.startsWith('/settings') ? 'bg-gunmetal-border border border-slate-500 text-slate-100 shadow-sm' : 'text-gunmetal-muted hover:bg-gunmetal-card'}`}
           >
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Settings</span>
@@ -137,7 +137,7 @@ export default function Navbar() {
               onClick={handleSignOut}
               disabled={signingOut}
               title="Sign Out"
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-gunmetal-muted hover:text-rose-200 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/60 transition-colors disabled:opacity-50 cursor-pointer"
+              className="min-h-[44px] min-w-[44px] sm:min-h-[38px] sm:min-w-0 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-gunmetal-muted hover:text-rose-200 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/60 transition-colors disabled:opacity-50 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">{signingOut ? 'Signing Out...' : 'Sign Out'}</span>

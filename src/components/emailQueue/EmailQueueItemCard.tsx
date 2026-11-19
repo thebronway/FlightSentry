@@ -232,8 +232,8 @@ export default function EmailQueueItemCard({
           )}
 
         {errorMessage && (
-          <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-800/70 flex items-start gap-2 text-[11px] text-red-200">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="p-2.5 rounded-lg bg-rose-950/45 border border-rose-700/70 flex items-start gap-2 text-xs text-rose-200">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -245,7 +245,7 @@ export default function EmailQueueItemCard({
           type="button"
           disabled={busy}
           onClick={() => onDeny(item)}
-          className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 border border-gunmetal-border hover:border-rose-800/60 flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+          className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-rose-200 hover:text-white inline-flex items-center justify-center gap-1.5 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
         >
           <XCircle className="w-3.5 h-3.5" />
           <span>Deny</span>
@@ -256,7 +256,7 @@ export default function EmailQueueItemCard({
             type="button"
             disabled={busy}
             onClick={() => onEdit(item)}
-            className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+            className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             <Pencil className="w-3.5 h-3.5 text-sky-400" />
             <span>
@@ -268,7 +268,7 @@ export default function EmailQueueItemCard({
             type="button"
             disabled={busy}
             onClick={() => onEdit(item)}
-            className="min-h-[38px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-gunmetal-border text-slate-200 border border-gunmetal-border flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+            className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             <Link2 className="w-3.5 h-3.5 text-sky-400" />
             <span>Select Flight</span>
@@ -279,10 +279,10 @@ export default function EmailQueueItemCard({
           type="button"
           disabled={busy}
           onClick={() => onApply(item)}
-          className={`min-h-[38px] px-4 py-1.5 rounded-md text-xs font-bold text-white flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-40 cursor-pointer ${
+          className={`min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-md text-xs font-semibold inline-flex items-center justify-center gap-1.5 border shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer ${
             isCancellation
-              ? 'bg-rose-600 hover:bg-rose-500'
-              : 'bg-emerald-600 hover:bg-emerald-500'
+              ? 'bg-rose-950/60 hover:bg-rose-900/80 border-rose-700/80 text-rose-200 hover:text-white'
+              : 'bg-emerald-950/60 hover:bg-emerald-900/75 border-emerald-700/80 text-emerald-200 hover:text-white'
           }`}
         >
           {isCancellation ? (

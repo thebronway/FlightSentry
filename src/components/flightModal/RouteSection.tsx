@@ -208,7 +208,7 @@ export default function RouteSection({
                 const existing = includedAirlines.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
                 onIncludedAirlinesChange([...existing, routeLoyaltyWarning.recommendedTag!].join(', '));
               }}
-              className="self-end sm:self-center flex-shrink-0 px-2.5 py-1.5 text-xs font-semibold bg-amber-900/50 hover:bg-amber-800/60 text-amber-100 border border-amber-700/60 rounded-md transition-colors cursor-pointer whitespace-nowrap"
+              className="self-end sm:self-center flex-shrink-0 min-h-[44px] sm:min-h-[36px] px-3 py-1.5 text-xs font-semibold bg-amber-950/60 hover:bg-amber-900/75 text-amber-200 hover:text-white border border-amber-700/80 rounded-md transition-colors cursor-pointer whitespace-nowrap"
             >
               + Add {routeLoyaltyWarning.recommendedTag}
             </button>

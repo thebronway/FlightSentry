@@ -179,7 +179,7 @@ export default function SystemBanners() {
               type="button"
               disabled={busyAction !== null}
               onClick={() => handleDismissUpdate('24h')}
-              className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-md bg-emerald-900/50 hover:bg-emerald-800/70 border border-emerald-700/70 text-emerald-100 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+              className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md bg-emerald-950/60 hover:bg-emerald-900/75 border border-emerald-700/80 text-emerald-200 hover:text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               <Clock className="w-3.5 h-3.5 text-emerald-300" />
               <span>Dismiss for 24 hrs</span>
@@ -188,7 +188,7 @@ export default function SystemBanners() {
               type="button"
               disabled={busyAction !== null}
               onClick={() => handleDismissUpdate('forever')}
-              className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-md bg-gunmetal-card/80 hover:bg-gunmetal-border border border-emerald-800/70 text-emerald-200 hover:text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+              className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md bg-gunmetal-card/80 hover:bg-gunmetal-border border border-emerald-800/70 text-emerald-200 hover:text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Dismiss forever</span>
@@ -250,7 +250,7 @@ export default function SystemBanners() {
               onClick={() => handleDismissAnnouncement(item.id)}
               title="Dismiss announcement"
               aria-label={`Dismiss announcement: ${item.title}`}
-              className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] rounded-md border flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-50 cursor-pointer ${
+              className={`min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-md border flex items-center justify-center flex-shrink-0 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer ${
                 isWarning
                   ? 'bg-amber-900/40 hover:bg-amber-800/60 border-amber-700/60 text-amber-200 hover:text-white'
                   : 'bg-sky-900/40 hover:bg-sky-800/60 border-sky-700/60 text-sky-200 hover:text-white'

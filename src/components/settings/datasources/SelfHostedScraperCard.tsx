@@ -32,7 +32,7 @@ const STATE_DISPLAY: Record<
 > = {
   ready: {
     label: 'Ready',
-    badgeClass: 'bg-green-950/60 text-green-400 border-green-800/60',
+    badgeClass: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60',
   },
   paused: {
     label: 'Paused',
@@ -44,7 +44,7 @@ const STATE_DISPLAY: Record<
   },
   rate_limited: {
     label: 'Rate Limited',
-    badgeClass: 'bg-red-950/60 text-red-400 border-red-800/60',
+    badgeClass: 'bg-rose-950/60 text-rose-400 border-rose-800/60',
   },
 };
 
@@ -165,10 +165,10 @@ export default function SelfHostedScraperCard({
           )}
           {status && (
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+              className={`text-xs font-semibold px-2.5 py-0.5 rounded border ${
                 status.type === 'success'
-                  ? 'bg-green-950/60 text-green-400 border-green-800/60'
-                  : 'bg-red-950/60 text-red-400 border-red-800/60'
+                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
+                  : 'bg-rose-950/60 text-rose-400 border-rose-800/60'
               }`}
             >
               {status.message}
@@ -313,8 +313,8 @@ export default function SelfHostedScraperCard({
         </div>
 
         {testError && (
-          <div className="p-3 rounded-md bg-red-950/30 border border-red-800/60 flex items-start gap-2.5 text-xs text-red-300">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="p-3 rounded-md bg-rose-950/45 border border-rose-700/70 flex items-start gap-2.5 text-xs text-rose-200">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
             <div className="break-words">{testError}</div>
           </div>
         )}
@@ -323,10 +323,10 @@ export default function SelfHostedScraperCard({
           const versionCheck = evaluateOpenFareScraperVersion(healthResult.version);
           const versionBadgeClass =
             versionCheck.status === 'supported'
-              ? 'bg-green-950/60 text-green-400 border-green-800/60'
+              ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
               : versionCheck.status === 'outdated'
               ? 'bg-amber-950/60 text-amber-300 border-amber-700/70'
-              : 'bg-red-950/60 text-red-400 border-red-800/60';
+              : 'bg-rose-950/60 text-rose-400 border-rose-800/60';
           const versionSuffix =
             versionCheck.status === 'outdated'
               ? ' • Update Recommended'
@@ -340,9 +340,9 @@ export default function SelfHostedScraperCard({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-slate-200 flex items-center gap-1.5">
                   {healthResult.state === 'ready' && versionCheck.status === 'supported' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   ) : versionCheck.status === 'unsupported' ? (
-                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <AlertCircle className="w-4 h-4 text-rose-400" />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-amber-400" />
                   )}
@@ -353,12 +353,12 @@ export default function SelfHostedScraperCard({
                     versionCheck.message ||
                     `Supported (minimum v${versionCheck.minVersion}, recommended v${versionCheck.recommendedVersion}+)`
                   }
-                  className={`px-2 py-0.5 rounded border font-mono text-[11px] font-semibold ${versionBadgeClass}`}
+                  className={`px-2 py-0.5 rounded border font-mono text-xs font-semibold ${versionBadgeClass}`}
                 >
                   v{healthResult.version}{versionSuffix}
                 </span>
                 <span
-                  className={`px-2 py-0.5 rounded border text-[11px] font-bold ${
+                  className={`px-2 py-0.5 rounded border text-xs font-bold ${
                     STATE_DISPLAY[healthResult.state]?.badgeClass ||
                     'bg-slate-800 text-slate-300 border-slate-700'
                   }`}
@@ -366,41 +366,41 @@ export default function SelfHostedScraperCard({
                   {STATE_DISPLAY[healthResult.state]?.label || healthResult.state}
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-gunmetal-muted">
+              <span className="text-xs font-mono text-gunmetal-muted">
                 Queue Depth: <strong className="text-slate-200">{healthResult.queueDepth}</strong>
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 font-mono text-[11px]">
-              <div className="p-2 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
-                <span className="block text-[10px] font-sans uppercase tracking-wider text-gunmetal-muted">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 font-mono text-xs">
+              <div className="p-2.5 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
+                <span className="block text-[11px] font-sans uppercase tracking-wider text-gunmetal-muted mb-0.5">
                   Pause Status
                 </span>
-                <span className={healthResult.paused ? 'text-amber-300 font-bold' : 'text-slate-200'}>
+                <span className={healthResult.paused ? 'text-amber-300 font-bold' : 'text-slate-200 font-semibold'}>
                   {healthResult.paused ? 'Paused' : 'Active'}
                 </span>
                 {healthResult.paused && healthResult.statusReason && (
-                  <span className="block text-[10px] font-sans text-amber-300/90 mt-0.5 break-words">
+                  <span className="block text-[11px] font-sans text-amber-300/90 mt-0.5 break-words">
                     {healthResult.statusReason}
                   </span>
                 )}
               </div>
 
-              <div className="p-2 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
-                <span className="block text-[10px] font-sans uppercase tracking-wider text-gunmetal-muted">
+              <div className="p-2.5 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
+                <span className="block text-[11px] font-sans uppercase tracking-wider text-gunmetal-muted mb-0.5">
                   Circuit Breaker
                 </span>
                 <span
                   className={
-                    healthResult.circuitBreakerActive ? 'text-amber-300 font-bold' : 'text-slate-200'
+                    healthResult.circuitBreakerActive ? 'text-amber-300 font-bold' : 'text-slate-200 font-semibold'
                   }
                 >
                   {healthResult.circuitBreakerActive ? 'Active (Cooldown)' : 'Inactive'}
                 </span>
               </div>
 
-              <div className="p-2 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
-                <span className="block text-[10px] font-sans uppercase tracking-wider text-gunmetal-muted">
+              <div className="p-2.5 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
+                <span className="block text-[11px] font-sans uppercase tracking-wider text-gunmetal-muted mb-0.5">
                   Rolling Hourly Quota
                 </span>
                 <span className="text-slate-200 font-semibold">
@@ -408,8 +408,8 @@ export default function SelfHostedScraperCard({
                 </span>
               </div>
 
-              <div className="p-2 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
-                <span className="block text-[10px] font-sans uppercase tracking-wider text-gunmetal-muted">
+              <div className="p-2.5 rounded bg-gunmetal-canvas/70 border border-gunmetal-border">
+                <span className="block text-[11px] font-sans uppercase tracking-wider text-gunmetal-muted mb-0.5">
                   Rolling Daily Quota
                 </span>
                 <span className="text-slate-200 font-semibold">
@@ -419,10 +419,10 @@ export default function SelfHostedScraperCard({
             </div>
 
             {versionCheck.status === 'unsupported' && versionCheck.message && (
-              <div className="p-2.5 rounded-md bg-red-950/40 border border-red-800/70 flex items-start gap-2 text-xs text-red-300">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="p-2.5 rounded-md bg-rose-950/45 border border-rose-700/70 flex items-start gap-2 text-xs text-rose-200">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-red-200 block">
+                  <span className="font-bold text-rose-100 block">
                     Minimum Version Required (v{versionCheck.minVersion}+)
                   </span>
                   <span>{versionCheck.message}</span>

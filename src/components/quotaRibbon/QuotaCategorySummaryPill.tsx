@@ -26,14 +26,14 @@ const THRESHOLD_STYLES: Record<
     count: 'text-slate-100 font-semibold',
   },
   warning: {
-    container: 'bg-yellow-950/50 border-yellow-500/70 text-yellow-200',
-    label: 'text-yellow-300/80',
-    count: 'text-yellow-300 font-bold',
+    container: 'bg-amber-950/50 border-amber-500/70 text-amber-200',
+    label: 'text-amber-300/80',
+    count: 'text-amber-300 font-bold',
   },
   critical: {
-    container: 'bg-red-950/50 border-red-500/70 text-red-200',
-    label: 'text-red-300/80',
-    count: 'text-red-300 font-bold',
+    container: 'bg-rose-950/50 border-rose-500/70 text-rose-200',
+    label: 'text-rose-300/80',
+    count: 'text-rose-300 font-bold',
   },
 };
 
@@ -154,7 +154,7 @@ export default function QuotaCategorySummaryPill({
             <span className={style.label}>/</span>
             <span>{summary.activeQuota}</span>
             {isMeteredExhausted && (
-              <span className="ml-1 font-semibold text-red-400">
+              <span className="ml-1 font-semibold text-rose-400">
                 • 0 left (Exhausted)
               </span>
             )}

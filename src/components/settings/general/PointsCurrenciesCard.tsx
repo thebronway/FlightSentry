@@ -110,7 +110,7 @@ export default function PointsCurrenciesCard({ pointsList, usageCounts = {}, onA
             <button
               type="button"
               onClick={() => setPendingRemove(null)}
-              className="px-3 py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md transition-colors cursor-pointer"
+              className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border rounded-md transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -121,7 +121,7 @@ export default function PointsCurrenciesCard({ pointsList, usageCounts = {}, onA
                 setPendingRemove(null);
                 await onRemove(target);
               }}
-              className="px-3 py-1.5 text-xs font-semibold bg-amber-900/70 hover:bg-amber-800 text-amber-100 border border-amber-600/70 rounded-md transition-colors cursor-pointer"
+              className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 text-xs font-semibold bg-amber-950/60 hover:bg-amber-900/75 text-amber-200 hover:text-white border border-amber-700/80 rounded-md transition-colors cursor-pointer"
             >
               Remove from Settings
             </button>
@@ -148,7 +148,7 @@ export default function PointsCurrenciesCard({ pointsList, usageCounts = {}, onA
           type="button"
           onClick={handleSubmit}
           disabled={!newPointsName.trim()}
-          className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm"
+          className="min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-lg transition-colors disabled:opacity-45 disabled:pointer-events-none inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add</span>

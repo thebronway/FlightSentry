@@ -528,7 +528,7 @@ export default function ApiReferenceViewer({ specVersion }: Props) {
 
         <Link
           href="/settings/security"
-          className="self-start sm:self-center min-h-[38px] px-3 py-1.5 rounded-md bg-gunmetal-card hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-200 inline-flex items-center gap-1.5 transition-colors"
+          className="self-start sm:self-center min-h-[44px] sm:min-h-[38px] px-3.5 py-2 rounded-lg bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Settings</span>
@@ -584,9 +584,9 @@ export default function ApiReferenceViewer({ specVersion }: Props) {
                 key={tag}
                 type="button"
                 onClick={() => setSelectedTag(tag)}
-                className={`min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                className={`min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
                   active
-                    ? 'bg-sky-950/70 border-sky-600/80 text-sky-200'
+                    ? 'bg-gunmetal-border border-slate-500 text-slate-100 shadow-sm'
                     : 'bg-gunmetal-card border-gunmetal-border text-gunmetal-muted hover:text-slate-200'
                 }`}
               >
@@ -603,7 +603,7 @@ export default function ApiReferenceViewer({ specVersion }: Props) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter endpoints..."
-            className="w-full min-h-[36px] pl-8 pr-3 py-1.5 rounded-md bg-gunmetal-card border border-gunmetal-border text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
+            className="w-full min-h-[44px] sm:min-h-[36px] pl-8 pr-3 py-1.5 rounded-md bg-gunmetal-card border border-gunmetal-border text-sm sm:text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
           />
         </div>
       </div>

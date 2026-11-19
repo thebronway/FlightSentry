@@ -144,7 +144,7 @@ export default function DisableAuthModal({ isOpen, onClose, onDisabled }: Props)
               <button
                 type="submit"
                 disabled={submitting || !currentPassword}
-                className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-rose-950/85 hover:bg-rose-900 text-rose-100 border border-rose-700/80 rounded-md transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 hover:text-white border border-rose-700/80 rounded-lg transition-colors shadow-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
               >
                 {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{submitting ? 'Disabling...' : 'Disable Authentication'}</span>

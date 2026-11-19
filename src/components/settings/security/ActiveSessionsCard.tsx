@@ -220,7 +220,7 @@ export default function ActiveSessionsCard({
                 type="button"
                 disabled={revokingId === s.id}
                 onClick={() => handleRevokeSession(s)}
-                className="self-end sm:self-center min-h-[36px] px-2.5 py-1.5 rounded-md bg-rose-950/40 hover:bg-rose-900/65 border border-rose-800/60 text-xs text-rose-200 inline-flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                className="self-end sm:self-center min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-xs font-semibold text-rose-200 hover:text-white inline-flex items-center gap-1 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
               >
                 <LogOut className="w-3 h-3" />
                 <span>{revokingId === s.id ? 'Revoking...' : s.isCurrent ? 'Sign Out' : 'Revoke'}</span>

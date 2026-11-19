@@ -72,9 +72,9 @@ export default function DeleteConfirmationModal({
       <div className="bg-gunmetal-card border border-gunmetal-border rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gunmetal-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-red-400">
-            <div className="p-2 rounded-lg bg-red-950/60 border border-red-800/60">
-              <Trash2 className="w-5 h-5 text-red-400" />
+          <div className="flex items-center gap-2.5 text-rose-400">
+            <div className="p-2 rounded-lg bg-rose-950/60 border border-rose-800/60">
+              <Trash2 className="w-5 h-5 text-rose-400" />
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-100">Delete Tracked Flight</h3>
@@ -85,7 +85,8 @@ export default function DeleteConfirmationModal({
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="p-1.5 text-gunmetal-muted hover:text-slate-200 hover:bg-gunmetal-canvas rounded transition-colors disabled:opacity-50"
+            aria-label="Close modal"
+            className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] inline-flex items-center justify-center rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,8 +95,8 @@ export default function DeleteConfirmationModal({
         {/* Body */}
         <div className="p-5 space-y-4">
           {error && (
-            <div className="bg-red-950/40 border border-red-800/70 p-3 rounded-md text-xs text-red-300 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-rose-950/45 border border-rose-700/70 p-3 rounded-md text-xs text-rose-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -129,7 +130,7 @@ export default function DeleteConfirmationModal({
               type="button"
               disabled={loading}
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md transition-colors disabled:opacity-50"
+              className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-slate-300 hover:text-white font-semibold transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               Cancel
             </button>
@@ -137,7 +138,7 @@ export default function DeleteConfirmationModal({
               type="button"
               disabled={loading}
               onClick={handleDelete}
-              className="px-4 py-2 text-xs font-semibold bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-700/80 rounded-md transition-colors flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+              className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-rose-200 hover:text-white font-semibold shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               {loading ? (
                 <>

@@ -138,7 +138,7 @@ export default function ParityComparisonPanel({
           </span>
 
           {parity.statusMismatch && (
-            <span className="px-2 py-0.5 rounded bg-red-950/60 text-red-300 border border-red-700/70 font-mono text-[11px]">
+            <span className="px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-700/70 font-mono text-[11px]">
               Availability Status Mismatch (Success vs SoldOut)
             </span>
           )}
@@ -172,10 +172,10 @@ export default function ParityComparisonPanel({
             <button
               type="button"
               onClick={() => setOnlyMismatches((prev) => !prev)}
-              className={`min-h-[34px] inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+              className={`min-h-[44px] sm:min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
                 onlyMismatches
-                  ? 'bg-amber-950/60 text-amber-200 border-amber-700/70'
-                  : 'bg-gunmetal-canvas text-slate-300 border-gunmetal-border hover:text-white'
+                  ? 'bg-amber-950/60 text-amber-200 border-amber-700/80'
+                  : 'bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border-gunmetal-border hover:text-white'
               }`}
             >
               <Filter className="w-3.5 h-3.5" />
@@ -225,7 +225,7 @@ export default function ParityComparisonPanel({
                               </span>
                             ))}
                             {row.missingInProviders.length > 0 && (
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-950/60 text-red-300 border border-red-800/60">
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/60">
                                 Missing in{' '}
                                 {row.missingInProviders
                                   .map((p) => providerLabels[p] || p)

@@ -129,7 +129,7 @@ export default function FlightCard({
                 {formatCurrency(benchmarkPrice, flight.currency)}
               </p>
               {delta !== 0 && (
-                <div className={`text-sm font-bold flex items-center justify-end whitespace-nowrap ${isDrop ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-sm font-bold flex items-center justify-end whitespace-nowrap ${isDrop ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
                 </div>
               )}

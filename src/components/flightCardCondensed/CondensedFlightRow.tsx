@@ -117,7 +117,7 @@ export default function CondensedFlightRow({
         )}
         {delta !== 0 && (
           <div className="mt-0.5">
-            <span className={`text-xs font-semibold ${isDrop ? 'text-green-400' : 'text-red-400'} block`}>
+            <span className={`text-xs font-semibold ${isDrop ? 'text-emerald-400' : 'text-rose-400'} block`}>
               {isDrop ? '▼' : '▲'} {formatCurrency(Math.abs(delta), flight.currency)}
             </span>
           </div>

@@ -64,7 +64,7 @@ export default function UnsavedChangesModal({
             <button
               type="button"
               onClick={onConfirm}
-              className="min-h-[44px] px-4 py-2 text-xs font-semibold bg-rose-950/60 hover:bg-rose-900/70 text-rose-300 border border-rose-800/70 rounded-md transition-colors"
+              className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 hover:text-white border border-rose-700/80 rounded-lg transition-colors shadow-sm cursor-pointer"
             >
               {confirmLabel}
             </button>

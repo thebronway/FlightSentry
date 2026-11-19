@@ -12,15 +12,15 @@ interface QuotaSourceCardProps {
 
 const getBarColor = (isPaused: boolean, threshold: 'normal' | 'warning' | 'critical') => {
   if (isPaused) return 'bg-amber-600';
-  if (threshold === 'critical') return 'bg-red-500';
-  if (threshold === 'warning') return 'bg-yellow-400';
+  if (threshold === 'critical') return 'bg-rose-500';
+  if (threshold === 'warning') return 'bg-amber-400';
   return 'bg-sky-500';
 };
 
 const getCountColor = (isPaused: boolean, threshold: 'normal' | 'warning' | 'critical') => {
   if (isPaused) return 'text-slate-200';
-  if (threshold === 'critical') return 'text-red-400';
-  if (threshold === 'warning') return 'text-yellow-300';
+  if (threshold === 'critical') return 'text-rose-400';
+  if (threshold === 'warning') return 'text-amber-300';
   return 'text-slate-200';
 };
 
@@ -28,9 +28,9 @@ const getRemainingBadgeClass = (
   isExhausted: boolean,
   threshold: 'normal' | 'warning' | 'critical'
 ) => {
-  if (isExhausted) return 'bg-red-950/60 text-red-400 border-red-800/60';
-  if (threshold === 'critical') return 'bg-red-950/50 text-red-300 border-red-500/70';
-  if (threshold === 'warning') return 'bg-yellow-950/50 text-yellow-300 border-yellow-500/70';
+  if (isExhausted) return 'bg-rose-950/60 text-rose-400 border-rose-800/60';
+  if (threshold === 'critical') return 'bg-rose-950/50 text-rose-300 border-rose-500/70';
+  if (threshold === 'warning') return 'bg-amber-950/50 text-amber-300 border-amber-500/70';
   return 'bg-gunmetal-card text-slate-300 border-gunmetal-border';
 };
 
@@ -106,7 +106,7 @@ export default function QuotaSourceCard({
             {versionCheck?.status === 'unsupported' && (
               <span
                 title={versionCheck.message || undefined}
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/60 flex-shrink-0"
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-400 border border-rose-800/60 flex-shrink-0"
               >
                 UNSUPPORTED (v{versionCheck.normalizedVersion || versionCheck.reportedVersion} &lt; v{versionCheck.minVersion})
               </span>

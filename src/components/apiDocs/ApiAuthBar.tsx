@@ -56,7 +56,7 @@ export default function ApiAuthBar({
           <button
             type="button"
             onClick={handleCopySpecUrl}
-            className="min-h-[36px] px-3 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-300 hover:text-white inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             {copiedSpecUrl ? (
               <>
@@ -80,13 +80,13 @@ export default function ApiAuthBar({
             value={apiKey}
             onChange={(e) => onApiKeyChange(e.target.value)}
             placeholder="fss_live_..."
-            className="w-full min-h-[40px] pl-3 pr-10 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border font-mono text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
+            className="w-full min-h-[44px] sm:min-h-[38px] pl-3 pr-10 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border font-mono text-sm sm:text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
           />
           <button
             type="button"
             onClick={() => setShowKey((prev) => !prev)}
             aria-label={showKey ? 'Hide API key' : 'Show API key'}
-            className="absolute inset-y-0 right-0 px-3 flex items-center text-gunmetal-muted hover:text-slate-200 cursor-pointer"
+            className="absolute inset-y-0 right-0 min-w-[44px] sm:min-w-[36px] px-3 flex items-center justify-center text-gunmetal-muted hover:text-slate-200 cursor-pointer"
           >
             {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -98,7 +98,7 @@ export default function ApiAuthBar({
             onAuthHeaderModeChange(e.target.value as 'bearer' | 'x-api-key')
           }
           aria-label="Authentication header format"
-          className="min-h-[40px] px-3 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border text-xs font-semibold text-slate-200 focus:outline-none focus:border-slate-500"
+          className="min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border text-sm sm:text-xs font-semibold text-slate-200 focus:outline-none focus:border-slate-500"
         >
           <option value="bearer">Authorization: Bearer &lt;key&gt;</option>
           <option value="x-api-key">X-API-Key: &lt;key&gt;</option>

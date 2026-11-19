@@ -117,7 +117,7 @@ export default function RouteCorridorSummary({
         )}
 
         <div className="p-2 sm:p-2.5 rounded-md bg-gunmetal-card/80 border border-gunmetal-border min-w-0">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-green-400 flex items-center justify-center gap-0.5 sm:gap-1">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-center gap-0.5 sm:gap-1">
             <ArrowDown className="w-3 h-3 flex-shrink-0" /> <span className="truncate">All-Time Low</span>
           </span>
           <span className="text-base sm:text-lg font-black text-slate-100 block mt-0.5 truncate">
@@ -151,7 +151,7 @@ export default function RouteCorridorSummary({
                 !hasSpread
                   ? 'bg-gunmetal-card text-gunmetal-muted border-gunmetal-border'
                   : spreadPercent === 0
-                  ? 'bg-green-950/60 text-green-400 border-green-800/60'
+                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
                   : spreadPercent < 35
                   ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/50'
                   : spreadPercent <= 65
@@ -194,7 +194,7 @@ export default function RouteCorridorSummary({
         </div>
 
         <div className="flex justify-between text-[10px] text-gunmetal-muted font-mono px-0.5">
-          <span className="text-green-400 font-semibold">{formatCurrency(allTimeLow, currency)} (Low)</span>
+          <span className="text-emerald-400 font-semibold">{formatCurrency(allTimeLow, currency)} (Low)</span>
           {hasSpread && (
             <span className="text-slate-300 font-semibold">Current: {formatCurrency(currentFloor, currency)}</span>
           )}

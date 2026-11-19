@@ -31,7 +31,8 @@ export default function UnsavedChangesPrompt({ isOpen, onConfirm, onCancel }: Pr
           <button
             type="button"
             onClick={onCancel}
-            className="text-gunmetal-muted hover:text-slate-200 transition-colors p-1"
+            aria-label="Close modal"
+            className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] inline-flex items-center justify-center rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -45,14 +46,14 @@ export default function UnsavedChangesPrompt({ isOpen, onConfirm, onCancel }: Pr
           <button
             type="button"
             onClick={onCancel}
-            className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 border border-gunmetal-border rounded-md transition-colors cursor-pointer"
+            className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-gunmetal-canvas hover:bg-gunmetal-border text-slate-300 hover:text-white border border-gunmetal-border rounded-lg transition-colors cursor-pointer"
           >
             Keep Editing
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-800/70 rounded-md transition-colors cursor-pointer shadow-sm"
+            className="min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 hover:text-white border border-rose-700/80 rounded-lg transition-colors cursor-pointer shadow-sm"
           >
             Discard Changes
           </button>

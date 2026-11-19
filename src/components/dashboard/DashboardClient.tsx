@@ -370,11 +370,11 @@ export default function DashboardClient({
             const bookedTotal = activeOnly.filter(f => isBooked(f)).length;
 
             return (
-              <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
+              <div className="flex items-center min-h-[44px] sm:h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
                 <button
                   type="button"
                   onClick={() => handleFilterChange('all')}
-                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  className={`min-h-[40px] sm:min-h-0 sm:h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     filterBy === 'all'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
                       : 'text-gunmetal-muted hover:text-slate-200'
@@ -388,7 +388,7 @@ export default function DashboardClient({
                 <button
                   type="button"
                   onClick={() => handleFilterChange('watching')}
-                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  className={`min-h-[40px] sm:min-h-0 sm:h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     filterBy === 'watching'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
                       : 'text-gunmetal-muted hover:text-slate-200'
@@ -402,7 +402,7 @@ export default function DashboardClient({
                 <button
                   type="button"
                   onClick={() => handleFilterChange('booked')}
-                  className={`h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  className={`min-h-[40px] sm:min-h-0 sm:h-full px-3 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
                     filterBy === 'booked'
                       ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm'
                       : 'text-gunmetal-muted hover:text-slate-200'
@@ -418,12 +418,12 @@ export default function DashboardClient({
           })()}
 
           {/* Sorting Dropdown */}
-          <div className="flex items-center h-[38px] gap-2 bg-gunmetal-card border border-gunmetal-border rounded-md px-3 shadow-sm">
+          <div className="flex items-center min-h-[44px] sm:h-[38px] gap-2 bg-gunmetal-card border border-gunmetal-border rounded-md px-3 shadow-sm">
             <ArrowDownUp className="w-3.5 h-3.5 text-gunmetal-muted flex-shrink-0" />
             <select
               value={sortBy}
               onChange={e => handleSortChange(e.target.value as SortOption)}
-              className="bg-transparent h-full text-xs text-slate-200 focus:outline-none cursor-pointer pr-1"
+              className="bg-transparent min-h-[44px] sm:min-h-0 sm:h-full text-xs text-slate-200 focus:outline-none cursor-pointer pr-1"
             >
               <option value="departure-soonest" className="bg-gunmetal-card text-slate-200">Soonest Flight (Default)</option>
               <option value="departure-latest" className="bg-gunmetal-card text-slate-200">Furthest Flight</option>
@@ -434,14 +434,14 @@ export default function DashboardClient({
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
+          <div className="flex items-center min-h-[44px] sm:h-[38px] border border-gunmetal-border rounded-md bg-gunmetal-card p-0.5 shadow-sm">
             <button
               type="button"
               onClick={() => handleViewModeChange('cards')}
               title="Card View"
-              className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
+              className={`min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 sm:h-full p-1.5 rounded transition-colors flex items-center justify-center cursor-pointer ${
                 viewMode === 'cards' 
-                  ? 'bg-gunmetal-border text-slate-100 border border-slate-500' 
+                  ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm' 
                   : 'text-gunmetal-muted hover:text-slate-200'
               }`}
             >
@@ -451,9 +451,9 @@ export default function DashboardClient({
               type="button"
               onClick={() => handleViewModeChange('condensed')}
               title="Condensed Stacked View"
-              className={`h-full p-1.5 rounded transition-colors flex items-center justify-center ${
+              className={`min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 sm:h-full p-1.5 rounded transition-colors flex items-center justify-center cursor-pointer ${
                 viewMode === 'condensed' 
-                  ? 'bg-gunmetal-border text-slate-100 border border-slate-500' 
+                  ? 'bg-gunmetal-border text-slate-100 border border-slate-500 shadow-sm' 
                   : 'text-gunmetal-muted hover:text-slate-200'
               }`}
             >
@@ -462,9 +462,10 @@ export default function DashboardClient({
           </div>
 
           <button 
+            type="button"
             onClick={handleAddNew}
             title="Track New Flight"
-            className="h-[38px] border shadow-sm px-4 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors bg-gunmetal-border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 cursor-pointer"
+            className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white font-semibold shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Flight
           </button>
@@ -492,7 +493,7 @@ export default function DashboardClient({
               <button
                 type="button"
                 onClick={handleUnpauseAll}
-                className="self-start sm:self-center flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-amber-900/60 hover:bg-amber-800/70 border border-amber-600/70 text-amber-100 rounded text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                className="self-start sm:self-center flex-shrink-0 min-h-[44px] sm:min-h-[36px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs bg-amber-950/60 hover:bg-amber-900/75 border border-amber-700/80 text-amber-200 hover:text-white font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5" />
                 <span>Unpause All</span>
@@ -578,7 +579,7 @@ export default function DashboardClient({
                 <button
                   type="button"
                   onClick={() => setShowPastFlights(!showPastFlights)}
-                  className="flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white transition-colors py-2 px-3 rounded-md bg-gunmetal-card border border-gunmetal-border shadow-sm mb-4"
+                  className="min-h-[44px] sm:min-h-[38px] flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-white transition-colors py-2 px-3 rounded-md bg-gunmetal-card border border-gunmetal-border shadow-sm mb-4 cursor-pointer"
                 >
                   <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${showPastFlights ? 'rotate-90' : ''}`} />
                   <span>Past Flights ({pastFlights.length})</span>

@@ -184,7 +184,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={submitting || cooldownSeconds > 0 || !username.trim() || !password}
-            className="w-full min-h-[44px] px-4 py-2.5 rounded-md bg-gunmetal-border hover:bg-slate-700 border border-slate-500 text-slate-100 font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full min-h-[44px] px-4 py-2.5 rounded-lg bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white font-semibold text-sm inline-flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             {submitting ? (
               <>

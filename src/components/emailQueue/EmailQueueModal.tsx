@@ -176,7 +176,7 @@ export default function EmailQueueModal({
         aria-modal="true"
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 md:p-6"
       >
-        <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden sm:max-w-4xl">
+        <div className="bg-gunmetal-card w-full h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-2xl border border-gunmetal-border flex flex-col overflow-hidden max-w-4xl lg:max-w-5xl xl:max-w-6xl">
           {/* Header */}
           <div className="px-4 sm:px-6 py-4 border-b border-gunmetal-border flex items-center justify-between bg-gunmetal-nav/80">
             <div className="flex items-center gap-2.5">
@@ -194,13 +194,13 @@ export default function EmailQueueModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => void fetchQueue()}
                 disabled={loading}
                 title="Refresh queue"
-                className="p-2 rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-border/60 transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] inline-flex items-center justify-center rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas transition-colors cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -208,7 +208,7 @@ export default function EmailQueueModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close email queue modal"
-                className="p-2 rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-border/60 transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] inline-flex items-center justify-center rounded-lg text-gunmetal-muted hover:text-slate-100 hover:bg-gunmetal-canvas transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -218,12 +218,12 @@ export default function EmailQueueModal({
           {/* Bulk Action Bar */}
           {items.length > 0 && (
             <div className="px-4 sm:px-6 py-2.5 border-b border-gunmetal-border bg-gunmetal-canvas/70 flex flex-wrap items-center justify-between gap-2.5">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer select-none">
+              <label className="min-h-[44px] sm:min-h-0 flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 accent-slate-500 rounded"
+                  className="w-4 h-4 accent-slate-500 rounded cursor-pointer"
                 />
                 <span>
                   {selectedIds.length > 0
@@ -237,7 +237,7 @@ export default function EmailQueueModal({
                   type="button"
                   disabled={selectedIds.length === 0 || bulkBusy}
                   onClick={() => void handleBulkAction('deny')}
-                  className="min-h-[34px] px-3 py-1 rounded-md text-xs font-semibold bg-gunmetal-card hover:bg-rose-950/40 text-rose-300 border border-gunmetal-border hover:border-rose-800/60 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs font-semibold bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-rose-200 hover:text-white inline-flex items-center justify-center gap-1.5 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Deny Selected</span>
@@ -247,7 +247,7 @@ export default function EmailQueueModal({
                   type="button"
                   disabled={selectedIds.length === 0 || bulkBusy}
                   onClick={() => void handleBulkAction('apply')}
-                  className="min-h-[34px] px-3.5 py-1 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-md text-xs font-semibold bg-emerald-950/60 hover:bg-emerald-900/75 border border-emerald-700/80 text-emerald-200 hover:text-white inline-flex items-center justify-center gap-1.5 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   <span>{bulkBusy ? 'Applying...' : 'Add / Apply Selected'}</span>
@@ -257,7 +257,7 @@ export default function EmailQueueModal({
           )}
 
           {/* Queue Items List */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 min-h-0">
+          <div className="flex-1 overflow-y-auto [overflow-anchor:none] p-4 sm:p-6 space-y-3.5 min-h-0">
             {loading ? (
               <div className="py-12 text-center text-xs text-gunmetal-muted">
                 Loading pending email events...

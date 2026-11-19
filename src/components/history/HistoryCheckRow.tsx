@@ -116,12 +116,12 @@ export default function HistoryCheckRow({
           {formatCurrency(record.price, flight.currency)}
         </span>
         {dropFromBenchmark > 0 && (
-          <span className="text-green-400 font-semibold text-[11px] font-mono">
+          <span className="text-emerald-400 font-semibold text-[11px] font-mono">
             ▼ {formatCurrency(dropFromBenchmark, flight.currency)}
           </span>
         )}
         {dropFromBenchmark < 0 && (
-          <span className="text-red-400 font-semibold text-[11px] font-mono">
+          <span className="text-rose-400 font-semibold text-[11px] font-mono">
             ▲ {formatCurrency(Math.abs(dropFromBenchmark), flight.currency)}
           </span>
         )}
@@ -148,7 +148,7 @@ export default function HistoryCheckRow({
             target="_blank"
             rel="noopener noreferrer"
             title="Search this check on Google Flights"
-            className="min-h-[44px] sm:min-h-[30px] flex items-center justify-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1 text-xs font-semibold bg-gunmetal-canvas hover:bg-blue-950/30 border border-gunmetal-border text-slate-200 hover:text-[#4285F4] rounded-lg sm:rounded-md shadow-sm transition-colors ml-auto sm:ml-0"
+            className="min-h-[44px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs font-semibold bg-gunmetal-canvas hover:bg-[#4285F4]/15 border border-gunmetal-border text-slate-200 hover:text-[#4285F4] rounded-lg sm:rounded-md shadow-sm transition-colors ml-auto sm:ml-0"
           >
             <GoogleIcon className="w-3.5 h-3.5" />
             <span>Google Flights</span>

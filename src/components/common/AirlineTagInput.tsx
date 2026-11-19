@@ -236,7 +236,7 @@ export default function AirlineTagInput({
                       e.stopPropagation();
                       removeTag(idx);
                     }}
-                    className="p-0.5 text-sky-300 hover:text-white hover:bg-sky-900 rounded transition-colors"
+                    className="p-0.5 text-sky-300 hover:text-white hover:bg-sky-900/70 rounded transition-colors"
                     title={`Remove ${alliance.name}`}
                   >
                     <X className="w-3 h-3" />

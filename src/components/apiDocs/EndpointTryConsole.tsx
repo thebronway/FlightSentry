@@ -156,7 +156,7 @@ export default function EndpointTryConsole({
         <button
           type="button"
           onClick={handleCopyCurl}
-          className="min-h-[34px] px-2.5 py-1 rounded bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs text-slate-300 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-300 hover:text-white inline-flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           {copiedCurl ? (
             <>
@@ -190,7 +190,7 @@ export default function EndpointTryConsole({
                       [param.name]: e.target.value,
                     }))
                   }
-                  className="w-full min-h-[38px] px-2.5 py-1.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-xs text-slate-100 focus:outline-none focus:border-slate-500"
+                  className="w-full min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border text-sm sm:text-xs text-slate-100 focus:outline-none focus:border-slate-500"
                 >
                   <option value="">(any)</option>
                   {param.enumValues.map((val) => (
@@ -210,7 +210,7 @@ export default function EndpointTryConsole({
                     }))
                   }
                   placeholder={param.defaultValue || param.type}
-                  className="w-full min-h-[38px] px-2.5 py-1.5 rounded bg-gunmetal-canvas border border-gunmetal-border text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
+                  className="w-full min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-md bg-gunmetal-canvas border border-gunmetal-border text-sm sm:text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-slate-500"
                 />
               )}
             </div>
@@ -248,7 +248,7 @@ export default function EndpointTryConsole({
           type="button"
           disabled={executing}
           onClick={handleExecute}
-          className="min-h-[38px] px-4 py-1.5 rounded-md bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+          className="min-h-[44px] sm:min-h-[38px] px-4 py-2 rounded-lg bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-xs sm:text-sm font-semibold text-slate-100 hover:text-white shadow-sm inline-flex items-center justify-center gap-1.5 transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
         >
           {executing ? (
             <>

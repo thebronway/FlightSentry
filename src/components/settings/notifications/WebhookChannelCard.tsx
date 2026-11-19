@@ -69,7 +69,7 @@ export default function WebhookChannelCard({
       <div className="mt-3 pt-3 border-t border-gunmetal-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="text-xs">
           {status && (
-            <span className={status.type === 'success' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+            <span className={status.type === 'success' ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
               {status.message}
             </span>
           )}
@@ -79,7 +79,7 @@ export default function WebhookChannelCard({
             type="button"
             disabled={testing}
             onClick={onTest}
-            className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] text-xs font-semibold px-4 sm:px-3 py-2 sm:py-1.5 bg-gunmetal-border hover:bg-slate-700 text-slate-100 border border-slate-500 rounded-md transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] text-xs font-semibold px-4 sm:px-3 py-2 sm:py-1.5 bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white rounded-md shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
           >
             {testing ? 'Testing...' : 'Test'}
           </button>

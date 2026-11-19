@@ -169,7 +169,7 @@ export default function ChartScrubberTooltip({
                   key={s.airline}
                   className={`flex items-center justify-between gap-2.5 text-xs px-2 py-1.5 rounded transition-colors ${
                     isFloor
-                      ? 'bg-green-950/50 border border-green-800/50 font-bold'
+                      ? 'bg-emerald-950/50 border border-emerald-800/50 font-bold'
                       : 'hover:bg-gunmetal-canvas'
                   }`}
                 >
@@ -203,11 +203,11 @@ export default function ChartScrubberTooltip({
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 font-mono flex-shrink-0">
-                    <span className={isFloor ? 'text-green-300' : 'text-slate-200'}>
+                    <span className={isFloor ? 'text-emerald-300' : 'text-slate-200'}>
                       {formatCurrency(s.price, currency)}
                     </span>
                     {isFloor && (
-                      <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-green-900/70 text-green-300 font-bold">
+                      <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-emerald-900/70 text-emerald-300 font-bold">
                         Low
                       </span>
                     )}
@@ -222,7 +222,7 @@ export default function ChartScrubberTooltip({
             <span>{formatCurrency(activeRecord.price, currency)}</span>
             <span
               className={`text-[10px] font-semibold ${
-                activeDelta > 0 ? 'text-green-400' : activeDelta < 0 ? 'text-red-400' : 'text-slate-400'
+                activeDelta > 0 ? 'text-emerald-400' : activeDelta < 0 ? 'text-rose-400' : 'text-slate-400'
               }`}
             >
               {activeDelta > 0

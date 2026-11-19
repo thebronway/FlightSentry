@@ -196,7 +196,7 @@ export default function ApiKeysCard({ apiKeys, onRefresh, onNotify }: Props) {
                       type="button"
                       disabled={revokingId === key.id}
                       onClick={() => handleRevoke(key)}
-                      className="min-h-[36px] px-2.5 py-1.5 rounded-md bg-rose-950/40 hover:bg-rose-900/65 border border-rose-800/60 text-xs text-rose-200 inline-flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                      className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-xs font-semibold text-rose-200 hover:text-white inline-flex items-center gap-1 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                     >
                       <Ban className="w-3 h-3" />
                       <span>{revokingId === key.id ? 'Revoking...' : 'Revoke'}</span>
@@ -210,7 +210,7 @@ export default function ApiKeysCard({ apiKeys, onRefresh, onNotify }: Props) {
                           type="button"
                           disabled={deletingId === key.id}
                           onClick={() => handleDeleteRevoked(key)}
-                          className="min-h-[36px] px-2.5 py-1.5 rounded-md bg-rose-900/80 hover:bg-rose-800 border border-rose-600/80 text-xs font-semibold text-rose-100 inline-flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                          className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/80 text-xs font-semibold text-rose-200 hover:text-white inline-flex items-center gap-1 shadow-sm transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                           <span>{deletingId === key.id ? 'Deleting...' : 'Confirm Delete'}</span>
@@ -219,7 +219,7 @@ export default function ApiKeysCard({ apiKeys, onRefresh, onNotify }: Props) {
                           type="button"
                           disabled={deletingId === key.id}
                           onClick={() => setConfirmDeleteId(null)}
-                          className="min-h-[36px] px-2.5 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs text-slate-300 transition-colors disabled:opacity-50 cursor-pointer"
+                          className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-gunmetal-border border border-gunmetal-border text-xs font-semibold text-slate-300 hover:text-white transition-colors disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -228,7 +228,7 @@ export default function ApiKeysCard({ apiKeys, onRefresh, onNotify }: Props) {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(key.id)}
-                        className="min-h-[36px] px-2.5 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-rose-950/50 border border-gunmetal-border hover:border-rose-800/60 text-xs text-slate-300 hover:text-rose-200 inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        className="min-h-[44px] sm:min-h-[36px] px-3 sm:px-2.5 py-1.5 rounded-md bg-gunmetal-canvas hover:bg-rose-950/60 border border-gunmetal-border hover:border-rose-700/80 text-xs font-semibold text-slate-300 hover:text-rose-200 inline-flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                         <span>Delete</span>

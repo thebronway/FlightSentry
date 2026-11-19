@@ -215,8 +215,8 @@ export default function ApiTestWorkspace({
 
       {/* Global Request Validation / Network Error */}
       {requestError && (
-        <div className="p-4 rounded-lg bg-red-950/40 border border-red-800/70 flex items-start gap-3 text-xs sm:text-sm text-red-200">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+        <div className="p-4 rounded-lg bg-rose-950/45 border border-rose-700/70 flex items-start gap-3 text-xs sm:text-sm text-rose-200">
+          <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
           <div className="break-words">{requestError}</div>
         </div>
       )}

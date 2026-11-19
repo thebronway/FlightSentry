@@ -102,14 +102,14 @@ export default function FlightModal({
         />
 
         {/* Scrollable Form Body */}
-        <form id="flight-modal-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 min-h-0">
+        <form id="flight-modal-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto [overflow-anchor:none] p-4 sm:p-6 space-y-5 min-h-0">
           {error && (
-            <div className="bg-red-950/40 border border-red-800 text-red-300 p-3.5 rounded-xl text-xs font-medium space-y-1">
-              <div className="flex items-center gap-2 font-bold text-red-200">
-                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <div className="bg-rose-950/45 border border-rose-700/70 text-rose-200 p-3.5 rounded-xl text-xs font-medium space-y-1">
+              <div className="flex items-center gap-2 font-bold text-rose-100">
+                <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                 <span>Price Lookup / Validation Notice</span>
               </div>
-              <p className="text-red-300/90 leading-relaxed pl-6">{error}</p>
+              <p className="text-rose-200/90 leading-relaxed pl-6">{error}</p>
             </div>
           )}
 
@@ -135,7 +135,7 @@ export default function FlightModal({
                     showRouteDetails: true,
                   })
                 }
-                className="self-start sm:self-center flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-900/60 hover:bg-amber-800/70 border border-amber-600/70 text-amber-100 font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                className="self-start sm:self-center flex-shrink-0 min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-md text-xs bg-amber-950/60 hover:bg-amber-900/75 border border-amber-700/80 text-amber-200 hover:text-white font-semibold transition-colors cursor-pointer whitespace-nowrap"
               >
                 Use Manual Mode
               </button>
@@ -402,7 +402,7 @@ export default function FlightModal({
             <button
               type="button"
               onClick={handleCloseRequest}
-              className="flex-1 sm:flex-none min-h-[44px] px-4 py-2 text-sm font-semibold text-slate-300 bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border rounded-lg transition-colors cursor-pointer"
+              className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-4 py-2 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white bg-gunmetal-canvas border border-gunmetal-border hover:bg-gunmetal-border rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -411,11 +411,7 @@ export default function FlightModal({
               type="submit"
               disabled={loading || lookupFailed || isAutomatedSubmissionBlocked}
               title={isAutomatedSubmissionBlocked ? 'Enable Manual Tracking Mode, select Points / Miles, or activate a data source in Settings to add a flight.' : undefined}
-              className={`flex-1 sm:flex-none min-h-[44px] px-6 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 ${
-                loading || lookupFailed || isAutomatedSubmissionBlocked
-                  ? 'bg-gunmetal-card border border-gunmetal-border text-gunmetal-muted opacity-50 cursor-not-allowed'
-                  : 'bg-gunmetal-border border border-slate-500 text-slate-100 hover:bg-slate-700 hover:border-slate-400 cursor-pointer'
-              }`}
+              className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[38px] px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition-colors inline-flex items-center justify-center gap-2 bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80 hover:border-slate-400 text-slate-100 hover:text-white disabled:opacity-45 disabled:pointer-events-none cursor-pointer"
             >
               {loading
                 ? 'Saving Flight...'
