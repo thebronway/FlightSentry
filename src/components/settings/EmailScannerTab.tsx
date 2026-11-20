@@ -8,6 +8,8 @@ import EmailScannerPollingCard from './emailScanner/EmailScannerPollingCard';
 import ImapAccountCard from './emailScanner/ImapAccountCard';
 import ImapAccountModal from './emailScanner/ImapAccountModal';
 import { ImapTestFeedback } from './emailScanner/ImapConnectionTestBanner';
+import EmlImportCard from './emailScanner/EmlImportCard';
+import EmailScanLogsCard from './emailScanner/EmailScanLogsCard';
 
 interface Props {
   settings: Settings;
@@ -37,6 +39,7 @@ export default function EmailScannerTab({
   >({});
   const [scanningNow, setScanningNow] = useState(false);
   const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
+  const [logsRefreshKey, setLogsRefreshKey] = useState(0);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -157,6 +160,7 @@ export default function EmailScannerTab({
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('flightsentry:email-queue-updated'));
         }
+        setLogsRefreshKey((k) => k + 1);
         void fetchAccounts();
       } else {
         if (onNotify) onNotify(data.error || 'Scan failed', 'error');
@@ -284,6 +288,13 @@ export default function EmailScannerTab({
           </div>
         )}
       </div>
+
+      <EmlImportCard
+        onNotify={onNotify}
+        onImported={() => setLogsRefreshKey((k) => k + 1)}
+      />
+
+      <EmailScanLogsCard refreshTrigger={logsRefreshKey} />
 
       <ImapAccountModal
         isOpen={isModalOpen}

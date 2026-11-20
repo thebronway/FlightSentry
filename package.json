@@ -1,6 +1,6 @@
 {
   "name": "flightsentry",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,12 +13,14 @@
     "@simplewebauthn/browser": "^11.0.0",
     "@simplewebauthn/server": "^11.0.0",
     "better-sqlite3": "^11.1.2",
+    "cheerio": "^1.0.0",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.412.0",
     "imapflow": "^1.0.162",
     "mailparser": "^3.7.1",
     "next": "14.2.5",
     "node-cron": "^3.0.3",
+    "node-ical": "^0.18.0",
     "nodemailer": "^6.9.14",
     "react": "^18",
     "react-dom": "^18",

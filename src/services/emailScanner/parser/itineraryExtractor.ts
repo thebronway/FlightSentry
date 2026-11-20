@@ -8,9 +8,9 @@ export function extractRoute(
   const scopes = [itineraryWindow, text].filter(Boolean);
 
   for (const scope of scopes) {
-    // 1. Explicit arrow / separator route (e.g., "DCA -> JFK", "DCA → JFK", "DCA ▶ JFK", "DCA to JFK")
+    // 1. Explicit arrow / separator route (e.g., "DCA -> JFK", "DCA → JFK", "LAX / DCA", "DCA to JFK")
     const arrowRegex =
-      /\b([A-Z]{3})\s*(?:->|→|▶|▸|►|➔|➜|➝|➞|➡|⇒|to|-|–|—)\s*([A-Z]{3})\b/g;
+      /\b([A-Z]{3})\s*(?:->|→|▶|▸|►|➔|➜|➝|➞|➡|⇒|to|-|–|—|\/)\s*([A-Z]{3})\b/g;
     let match: RegExpExecArray | null;
     while ((match = arrowRegex.exec(scope)) !== null) {
       const orig = match[1].toUpperCase();
@@ -58,7 +58,7 @@ export function extractRoute(
     }
   }
 
-  // 4. Itinerary-window proximity fallback (handles flattened plain-text table cells like "DCA JFK Flight 1888")
+  // 4. Itinerary-window proximity fallback (handles DOM-segmented table cells like "DCA | JFK" or "DEN | 3h 20m | BWI")
   if (itineraryWindow) {
     const codeRegex = /\b([A-Z]{3})\b/g;
     const itinCodes: string[] = [];
@@ -72,7 +72,8 @@ export function extractRoute(
         }
       }
     }
-  }
+
+    }
 
   return { origin: null, destination: null };
 }
@@ -116,29 +117,25 @@ function extractFullYearDate(text: string): string | null {
     if (mm) return `${yyyy}-${mm}-${dd}`;
   }
 
-  // 4. US numeric MM/DD/YYYY
-  const usNumericRegex = /\b(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])\/(20\d{2})\b/g;
-  while ((m = usNumericRegex.exec(text)) !== null) {
+  // 4. Numeric slash date (supports MM/DD/YYYY and unambiguous international DD/MM/YYYY when first part > 12)
+  const numericSlashRegex = /\b(0?[1-9]|[12]\d|3[01])\/(0?[1-9]|[12]\d|3[01])\/(20\d{2})\b/g;
+  while ((m = numericSlashRegex.exec(text)) !== null) {
     if (isReceiptMetadataDatePrefix(text, m.index)) continue;
-    const mm = m[1].padStart(2, '0');
-    const dd = m[2].padStart(2, '0');
+    const p1 = parseInt(m[1], 10);
+    const p2 = parseInt(m[2], 10);
     const yyyy = m[3];
-    return `${yyyy}-${mm}-${dd}`;
+    if (p1 > 12 && p2 <= 12) {
+      return `${yyyy}-${String(p2).padStart(2, '0')}-${String(p1).padStart(2, '0')}`;
+    }
+    if (p1 <= 12 && p2 <= 31) {
+      return `${yyyy}-${String(p1).padStart(2, '0')}-${String(p2).padStart(2, '0')}`;
+    }
   }
 
   return null;
 }
 
-function extractYearlessDate(text: string, referenceDateIso?: string | null): string | null {
-  const yearlessMatch = text.match(
-    /\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+)?(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+(\d{1,2})\b/i
-  );
-  if (!yearlessMatch) return null;
-
-  const mm = MONTH_MAP[yearlessMatch[1].toLowerCase()];
-  const dayNum = parseInt(yearlessMatch[2], 10);
-  if (!mm || dayNum < 1 || dayNum > 31) return null;
-
+function resolveRolledYear(monthStr: string, dayNum: number, referenceDateIso?: string | null): string {
   const refDate =
     referenceDateIso && !Number.isNaN(new Date(referenceDateIso).getTime())
       ? new Date(referenceDateIso)
@@ -146,7 +143,7 @@ function extractYearlessDate(text: string, referenceDateIso?: string | null): st
   const refYear = refDate.getUTCFullYear();
   const refMonth = refDate.getUTCMonth() + 1;
   const refDay = refDate.getUTCDate();
-  const targetMonth = parseInt(mm, 10);
+  const targetMonth = parseInt(monthStr, 10);
 
   // Roll forward to next calendar year when flight month/day precedes the email timestamp (with 2-day grace)
   const targetYear =
@@ -154,7 +151,35 @@ function extractYearlessDate(text: string, referenceDateIso?: string | null): st
       ? refYear + 1
       : refYear;
 
-  return `${targetYear}-${mm}-${String(dayNum).padStart(2, '0')}`;
+  return `${targetYear}-${monthStr}-${String(dayNum).padStart(2, '0')}`;
+}
+
+function extractYearlessDate(text: string, referenceDateIso?: string | null): string | null {
+  // 1. Month-first yearless (e.g., "Wed, Feb 17" or "February 17")
+  const monthFirstMatch = text.match(
+    /\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+)?(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+(\d{1,2})\b/i
+  );
+  if (monthFirstMatch) {
+    const mm = MONTH_MAP[monthFirstMatch[1].toLowerCase()];
+    const dayNum = parseInt(monthFirstMatch[2], 10);
+    if (mm && dayNum >= 1 && dayNum <= 31) {
+      return resolveRolledYear(mm, dayNum, referenceDateIso);
+    }
+  }
+
+  // 2. International / Airline DD Mon yearless (e.g., "Fri, 11SEP" or "11 Sep")
+  const dayFirstMatch = text.match(
+    /\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+)?(\d{1,2})\s*(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b/i
+  );
+  if (dayFirstMatch) {
+    const dayNum = parseInt(dayFirstMatch[1], 10);
+    const mm = MONTH_MAP[dayFirstMatch[2].toLowerCase()];
+    if (mm && dayNum >= 1 && dayNum <= 31) {
+      return resolveRolledYear(mm, dayNum, referenceDateIso);
+    }
+  }
+
+  return null;
 }
 
 export function extractDepartureDate(

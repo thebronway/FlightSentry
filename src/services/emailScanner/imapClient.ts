@@ -137,10 +137,6 @@ export async function fetchNewMessages(
         };
       }
 
-      const baselineMs = new Date(account.baselineTimestamp).getTime();
-      // Allow 2 minutes of mail server clock skew tolerance
-      const minAllowedMs = Number.isNaN(baselineMs) ? 0 : baselineMs - 120_000;
-
       const messages: FetchedRawEmail[] = [];
       let highestUid = account.lastUid;
       const range = `${account.lastUid + 1}:*`;
@@ -163,11 +159,6 @@ export async function fetchNewMessages(
             : msg.internalDate
             ? new Date(msg.internalDate)
             : null;
-
-        // Defense-in-depth: skip messages whose arrival timestamp predates account baseline
-        if (internalDate && !Number.isNaN(internalDate.getTime()) && internalDate.getTime() < minAllowedMs) {
-          continue;
-        }
 
         if (msg.source && Buffer.isBuffer(msg.source)) {
           messages.push({

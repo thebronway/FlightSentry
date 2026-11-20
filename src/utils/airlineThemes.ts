@@ -143,6 +143,11 @@ export const AIRLINE_ALIASES: Record<string, string> = {
   // Qantas
   QANTAS: 'QF',
   QFA: 'QF',
+
+  // Fiji Airways
+  FIJI: 'FJ',
+  'FIJI AIRWAYS': 'FJ',
+  FJI: 'FJ',
 };
 
 export const IATA_TO_ICAO: Record<string, string> = {
@@ -284,6 +289,7 @@ export const AIRLINE_THEMES: Record<string, AirlineTheme> = {
   QF: { code: 'QF', name: 'Qantas', shortName: 'Qantas', color: '#E40000' },
   VA: { code: 'VA', name: 'Virgin Australia', shortName: 'Virgin Australia', color: '#E20025' },
   NZ: { code: 'NZ', name: 'Air New Zealand', shortName: 'Air NZ', color: '#1B1B1B' },
+  FJ: { code: 'FJ', name: 'Fiji Airways', shortName: 'Fiji', color: '#5A3A29' },
 
   // Latin America & Caribbean Carriers
   AM: { code: 'AM', name: 'Aeromexico', shortName: 'Aeromexico', color: '#0B2341' },

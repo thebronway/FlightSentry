@@ -41,6 +41,7 @@ export function applyEmailQueueItem(
       | 'isPoints'
       | 'taxesAmount'
       | 'taxesCurrency'
+      | 'transactionDate'
       | 'matchedFlightId'
     >
   >
@@ -115,7 +116,9 @@ export function applyEmailQueueItem(
       : (item.currency || settings.currency || 'USD').trim().toUpperCase();
 
     const bookingDate =
-      item.emailDate && /^\d{4}-\d{2}-\d{2}/.test(item.emailDate)
+      item.transactionDate && /^\d{4}-\d{2}-\d{2}/.test(item.transactionDate)
+        ? item.transactionDate.slice(0, 10)
+        : item.emailDate && /^\d{4}-\d{2}-\d{2}/.test(item.emailDate)
         ? item.emailDate.slice(0, 10)
         : getTodayDateString(settings.timezone);
 

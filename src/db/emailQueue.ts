@@ -59,13 +59,15 @@ export const emailQueueDb = {
         accountId, accountLabel, messageId, emailSubject, emailFrom, emailDate,
         eventType, dedupeKey, pnr, airline, flightNumber, origin, destination,
         departureDate, departureTime, arrivalTime, cabinClass, fareTier,
-        price, currency, isPoints, taxesAmount, taxesCurrency, matchedFlightId, confidence, parserSource,
+        price, currency, isPoints, taxesAmount, taxesCurrency, transactionDate,
+        matchedFlightId, confidence, parserSource,
         status, createdAt, resolvedAt
       ) VALUES (
         @accountId, @accountLabel, @messageId, @emailSubject, @emailFrom, @emailDate,
         @eventType, @dedupeKey, @pnr, @airline, @flightNumber, @origin, @destination,
         @departureDate, @departureTime, @arrivalTime, @cabinClass, @fareTier,
-        @price, @currency, @isPoints, @taxesAmount, @taxesCurrency, @matchedFlightId, @confidence, @parserSource,
+        @price, @currency, @isPoints, @taxesAmount, @taxesCurrency, @transactionDate,
+        @matchedFlightId, @confidence, @parserSource,
         'pending', @now, NULL
       )
     `);
@@ -93,6 +95,7 @@ export const emailQueueDb = {
       isPoints: item.isPoints ? 1 : 0,
       taxesAmount: item.taxesAmount ?? null,
       taxesCurrency: item.taxesCurrency ?? null,
+      transactionDate: item.transactionDate ?? null,
       matchedFlightId: item.matchedFlightId ?? null,
       confidence: item.confidence || 'medium',
       parserSource: item.parserSource || 'heuristic',
@@ -122,6 +125,7 @@ export const emailQueueDb = {
         | 'isPoints'
         | 'taxesAmount'
         | 'taxesCurrency'
+        | 'transactionDate'
         | 'matchedFlightId'
       >
     >
@@ -147,6 +151,8 @@ export const emailQueueDb = {
       isPoints: fields.isPoints !== undefined ? (fields.isPoints ? 1 : 0) : existing.isPoints,
       taxesAmount: fields.taxesAmount !== undefined ? fields.taxesAmount : existing.taxesAmount,
       taxesCurrency: fields.taxesCurrency !== undefined ? fields.taxesCurrency : existing.taxesCurrency,
+      transactionDate:
+        fields.transactionDate !== undefined ? fields.transactionDate : existing.transactionDate,
       matchedFlightId:
         fields.matchedFlightId !== undefined ? fields.matchedFlightId : existing.matchedFlightId,
     };
@@ -169,6 +175,7 @@ export const emailQueueDb = {
         isPoints = @isPoints,
         taxesAmount = @taxesAmount,
         taxesCurrency = @taxesCurrency,
+        transactionDate = @transactionDate,
         matchedFlightId = @matchedFlightId
       WHERE id = @id
     `).run(merged);

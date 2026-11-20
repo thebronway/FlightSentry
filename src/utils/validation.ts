@@ -448,6 +448,13 @@ export const emailQueueItemEditSchema = z.object({
   isPoints: z.number().int().min(0).max(1).optional(),
   taxesAmount: z.number().nonnegative().optional().nullable(),
   taxesCurrency: z.string().trim().toUpperCase().max(10).optional().nullable().or(z.literal('')),
+  transactionDate: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Transaction date must be YYYY-MM-DD')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   matchedFlightId: z.number().int().positive().optional().nullable(),
 });
 
@@ -889,4 +896,12 @@ export const publicRouteLookupSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal('')),
+});
+
+export const emlPayloadSchema = z.object({
+  rawSource: z
+    .string()
+    .min(1, 'Email content is required')
+    .max(2_097_152, 'Email file exceeds maximum allowed size of 2 MB'),
+  fileName: z.string().trim().max(255).optional().nullable(),
 });

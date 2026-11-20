@@ -81,6 +81,117 @@ export function normalizeAirlineCode(rawNameOrCode: string, rawFlightNum?: strin
   return 'UN';
 }
 
+function extractRegistrableDomainLabel(domain: string): string {
+  const parts = domain.toLowerCase().split('.').filter(Boolean);
+  if (parts.length < 2) return '';
+  const last = parts[parts.length - 1];
+  const secondLast = parts[parts.length - 2];
+  if (last.length === 2 && /^(co|com|net|org|gov|ac)$/.test(secondLast) && parts.length >= 3) {
+    return parts[parts.length - 3];
+  }
+  return secondLast;
+}
+
+export function resolveAirlineFromDomain(domain?: string | null): string | null {
+  if (!domain) return null;
+  const label = extractRegistrableDomainLabel(domain.trim());
+  if (!label) return null;
+
+  const upperLabel = label.toUpperCase();
+  if (AIRLINE_THEMES[upperLabel] && isValidAirlineCode(upperLabel)) {
+    return upperLabel;
+  }
+  if (AIRLINE_ALIASES[upperLabel] && isValidAirlineCode(AIRLINE_ALIASES[upperLabel])) {
+    return AIRLINE_ALIASES[upperLabel];
+  }
+
+  const strippedLabel = label.replace(/^(?:fly|my|go)|(?:airlines|airways|air)$/g, '');
+  if (strippedLabel.length >= 3) {
+    const upperStripped = strippedLabel.toUpperCase();
+    if (AIRLINE_ALIASES[upperStripped] && isValidAirlineCode(AIRLINE_ALIASES[upperStripped])) {
+      return AIRLINE_ALIASES[upperStripped];
+    }
+  }
+
+  const candidates: Array<{ compact: string; code: string }> = [];
+  for (const theme of Object.values(AIRLINE_THEMES)) {
+    if (!isValidAirlineCode(theme.code)) continue;
+    candidates.push({
+      compact: theme.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      code: theme.code,
+    });
+    candidates.push({
+      compact: theme.shortName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      code: theme.code,
+    });
+  }
+  for (const [alias, code] of Object.entries(AIRLINE_ALIASES)) {
+    const compact = alias.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (compact.length >= 4 && isValidAirlineCode(code)) {
+      candidates.push({ compact, code });
+    }
+  }
+
+  candidates.sort((a, b) => b.compact.length - a.compact.length);
+
+  for (const c of candidates) {
+    if (label === c.compact || (strippedLabel && strippedLabel === c.compact)) {
+      return c.code;
+    }
+  }
+
+  for (const c of candidates) {
+    if (c.compact.length >= 5 && label.includes(c.compact)) {
+      return c.code;
+    }
+  }
+
+  return null;
+}
+
+let cachedCarrierTextPatterns: Array<{ pattern: RegExp; code: string; weight: number }> | null = null;
+
+export function detectAirlineInText(text: string): string | null {
+  if (!text) return null;
+  if (!cachedCarrierTextPatterns) {
+    const seenTerms = new Set<string>();
+    const patterns: Array<{ pattern: RegExp; code: string; weight: number }> = [];
+
+    const registerTerm = (term: string, code: string) => {
+      const clean = term.trim();
+      const lower = clean.toLowerCase();
+      if (lower.length < 4 || seenTerms.has(lower) || !isValidAirlineCode(code)) {
+        return;
+      }
+      seenTerms.add(lower);
+      const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\s+/g, '\\s+');
+      patterns.push({
+        pattern: new RegExp(`\\b${escaped}\\b`, 'i'),
+        code,
+        weight: lower.length,
+      });
+    };
+
+    for (const theme of Object.values(AIRLINE_THEMES)) {
+      registerTerm(theme.name, theme.code);
+      registerTerm(theme.shortName, theme.code);
+    }
+    for (const [alias, code] of Object.entries(AIRLINE_ALIASES)) {
+      registerTerm(alias, code);
+    }
+
+    patterns.sort((a, b) => b.weight - a.weight);
+    cachedCarrierTextPatterns = patterns;
+  }
+
+  for (const entry of cachedCarrierTextPatterns) {
+    if (entry.pattern.test(text)) {
+      return entry.code;
+    }
+  }
+  return null;
+}
+
 export function cleanFlightNumber(rawFlightNumber: string, airlineCode?: string): string {
   let num = (rawFlightNumber || '').trim();
   if (!num) return '';

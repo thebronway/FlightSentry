@@ -3,6 +3,7 @@ import {
   extractItineraryWindow,
   extractPaymentWindow,
   preprocessEmailContent,
+  segmentItineraryBlocks,
 } from './parser/textPreprocessor';
 import {
   classifyEventType,
@@ -32,6 +33,7 @@ export function extractHeuristicFlightEvents(params: {
   const preprocessed = preprocessEmailContent({
     fromAddress: params.fromAddress,
     subject: params.subject,
+    emailDate: params.emailDate,
     textBody: params.textBody,
     htmlBody: params.htmlBody,
   });
@@ -55,58 +57,73 @@ export function extractHeuristicFlightEvents(params: {
 
   const itineraryWindow = extractItineraryWindow(preprocessed.combinedText);
   const paymentWindow = extractPaymentWindow(preprocessed.combinedText);
-
   const pnr = extractPnr(preprocessed.combinedText, preprocessed.cleanSubject);
-
-  const itinIdentity = itineraryWindow
-    ? extractFlightIdentity(itineraryWindow, resolvedCarrier)
-    : { airline: resolvedCarrier, flightNumber: null };
-  const fallbackIdentity =
-    itinIdentity.airline && itinIdentity.flightNumber
-      ? itinIdentity
-      : extractFlightIdentity(preprocessed.combinedText, resolvedCarrier);
-  const airline = itinIdentity.airline || fallbackIdentity.airline;
-  const flightNumber = itinIdentity.flightNumber || fallbackIdentity.flightNumber;
-
-  const { origin, destination } = extractRoute(
-    preprocessed.combinedText,
-    itineraryWindow
+  const { cabinClass: globalCabinClass, fareTier: globalFareTier } = extractCabinAndFare(
+    preprocessed.combinedText
   );
-  const departureDate = extractDepartureDate(
-    preprocessed.combinedText,
-    itineraryWindow,
-    params.emailDate
-  );
-  const { departureTime, arrivalTime } = extractTimes(
-    preprocessed.combinedText,
-    itineraryWindow
-  );
-  const { cabinClass, fareTier } = extractCabinAndFare(preprocessed.combinedText);
   const payment = extractPaymentDetails(
     paymentWindow,
-    airline,
+    resolvedCarrier,
     params.configuredPointsCurrencies || []
   );
 
-  const hasActionableData = Boolean(
-    (origin && destination && departureDate) ||
-    (airline && flightNumber && departureDate) ||
-    (pnr && (airline || origin || departureDate))
-  );
+  const rawSegments = itineraryWindow ? segmentItineraryBlocks(itineraryWindow) : [];
+  const candidateScopes = rawSegments.length > 0 ? rawSegments : [''];
+  const events: ParsedFlightEmailEvent[] = [];
+  const seenLegKeys = new Set<string>();
 
-  if (!hasActionableData) {
-    return [];
-  }
+  for (let i = 0; i < candidateScopes.length; i++) {
+    const segScope = candidateScopes[i];
 
-  const confidence =
-    origin && destination && departureDate && (airline || pnr)
-      ? 'high'
-      : (origin && destination) || (airline && flightNumber)
-      ? 'medium'
-      : 'low';
+    const segIdentity = segScope
+      ? extractFlightIdentity(segScope, resolvedCarrier)
+      : { airline: resolvedCarrier, flightNumber: null };
+    const fallbackIdentity =
+      segIdentity.airline && segIdentity.flightNumber
+        ? segIdentity
+        : extractFlightIdentity(preprocessed.combinedText, resolvedCarrier);
+    const airline = segIdentity.airline || fallbackIdentity.airline;
+    const flightNumber = segIdentity.flightNumber || fallbackIdentity.flightNumber;
 
-  return [
-    {
+    const { origin, destination } = extractRoute(preprocessed.combinedText, segScope);
+    const departureDate = extractDepartureDate(
+      preprocessed.combinedText,
+      segScope,
+      params.emailDate
+    );
+    const { departureTime, arrivalTime } = extractTimes(
+      preprocessed.combinedText,
+      segScope
+    );
+    const segCabin = segScope ? extractCabinAndFare(segScope) : { cabinClass: null, fareTier: null };
+    const cabinClass = segCabin.cabinClass || globalCabinClass;
+    const fareTier = segCabin.fareTier || globalFareTier;
+
+    const hasActionableData = Boolean(
+      (origin && destination && departureDate) ||
+      (airline && flightNumber && departureDate) ||
+      (pnr && (airline || origin || departureDate))
+    );
+
+    if (!hasActionableData) {
+      continue;
+    }
+
+    const legDedupKey = `${airline || ''}|${flightNumber || ''}|${origin || ''}|${destination || ''}|${departureDate || ''}`;
+    if (seenLegKeys.has(legDedupKey)) {
+      continue;
+    }
+    seenLegKeys.add(legDedupKey);
+
+    const isPrimaryLeg = events.length === 0;
+    const confidence =
+      origin && destination && departureDate && (airline || pnr)
+        ? 'high'
+        : (origin && destination) || (airline && flightNumber)
+        ? 'medium'
+        : 'low';
+
+    events.push({
       eventType,
       pnr,
       airline,
@@ -118,13 +135,16 @@ export function extractHeuristicFlightEvents(params: {
       arrivalTime,
       cabinClass,
       fareTier,
-      price: payment.price,
-      currency: payment.currency,
-      isPoints: payment.isPoints,
-      taxesAmount: payment.taxesAmount,
-      taxesCurrency: payment.taxesCurrency,
+      price: isPrimaryLeg ? payment.price : null,
+      currency: isPrimaryLeg ? payment.currency : null,
+      isPoints: isPrimaryLeg ? payment.isPoints : 0,
+      taxesAmount: isPrimaryLeg ? payment.taxesAmount : null,
+      taxesCurrency: isPrimaryLeg ? payment.taxesCurrency : null,
+      transactionDate: preprocessed.transactionDate,
       confidence,
       parserSource: 'heuristic',
-    },
-  ];
+    });
+  }
+
+  return events;
 }

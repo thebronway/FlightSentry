@@ -1,53 +1,22 @@
 # FlightSentry Roadmap
 
-*Last updated: 2026-11-18*  
-*Current Version: v0.9.8*
+*Last updated: 2026-11-20*  
+*Current Version: v0.9.9*
 
 ## Overview
 This document tracks planned improvements, enhancements, and technical debt for FlightSentry
 
 ## Release Roadmap
 
-### Release v0.9.9: Email Scanner Overhaul & Dev Email Import Tester
-- **IMAP Cursor Integrity & Scan Audit Trail**
-  - Remove the `internalDate < baselineTimestamp` filter in `imapClient.ts` (`UIDNEXT - 1` baseline on account creation already prevents historical inbox backfill without silently dropping existing emails moved or re-filed into a monitored folder).
-  - Only mark a `Message-ID` as seen in `email_seen_messages` when an event is queued, and persist per-message scan outcomes (`queued`, `duplicate`, `skipped` with subject, sender, and exact reason) in a capped `email_scan_logs` table surfaced in **Settings → Email Scanner**.
-- **Structured MIME, Schema.org Microdata & iCalendar (`.ics`) Extractors**
-  - Add recursive `message/rfc822` attachment unwrapping in `scannerService.ts` via `mailparser` so `.eml` forwards (Outlook, Apple Mail, Thunderbird) extract original headers (`From`, `Subject`, `Date`) and bodies natively.
-  - Extend `schemaOrgParser.ts` with `cheerio` DOM parsing to extract Schema.org HTML Microdata (`[itemscope][itemtype*="FlightReservation"]` and `[itemprop]` elements) alongside JSON-LD.
-  - Add an RFC 5545 iCalendar parser (`src/services/emailScanner/icsParser.ts` via `node-ical`) to extract flight segments, airport codes, timestamps, PNRs, and cancellations (`STATUS:CANCELLED` / `METHOD:CANCEL`) from `text/calendar` MIME parts and `.ics` attachments.
-- **DOM-Segmented Multi-Leg Extraction Engine**
-  - Replace regex HTML tag stripping in `textPreprocessor.ts` with `cheerio` DOM traversal that preserves `<tr>` / `<td>` table cells and block boundaries (`<div>`, `<p>`, `<section>`) instead of flattening adjacent columns together.
-  - Refactor `heuristicParser.ts` and `src/services/emailScanner/parser/*` to segment round-trip, multi-city, and connecting itineraries into ordered `ParsedFlightEmailEvent[]` entries sharing the reservation PNR, attaching total paid fare or points to the primary leg without duplication.
-  - Replace the hardcoded carrier list in `identityExtractor.ts` with dynamic lookups against `AIRLINE_THEMES` and `normalizeAirlineCode()`, broaden PNR matching (`Confirmation: ABC123`, `Booking Ref`, `Record Locator`, `PNR`), and support international `DD Mon` and `DD/MM/YYYY` date formats.
-- **Dev Email Import Tester (`/email-test`)**
-  - Add a dev-only `/email-test` workspace and `POST /api/dev/email-test` endpoint gated by `ENABLE_API_TESTER=true` (returning `404` when unset or `false`, matching `/api-test`).
-  - Support `.eml` file upload and raw RFC 822 source paste executed strictly in memory through `parseEmailBuffer()` without advancing IMAP cursors or mutating `email_seen_messages`.
-  - Display a step-by-step parser breakdown (resolved sender/carrier, parser tier hit, extracted legs, payment/points detection, matched tracked flight ID, and skip/rejection reasons) with an optional **Stage to Email Queue** button for end-to-end queue testing.
-- **Sanitized Fixture Regression Suite**
-  - Add an automated test suite with sanitized email fixtures covering direct and forwarded confirmations, round-trip and multi-leg itineraries, `.ics` attachments, `message/rfc822` forwards, points/miles redemptions, schedule changes, and cancellations.
-- Would you like to see recent .emls of added/canceled flights on multiple airlines? I have some. 
-
 ### Release v1.0.0
-- Site Launch
-    - User Guide
-    - Quickstart Guide
-    - API Documentation
-  - Sections and layout for both the main app FlightSentry and OpenFareScraper (incl api documentation)
-  - Follow Design Guide, but its okay to use addtional elements
-  - What screenshots do you need?
-  - No public demo yet
-  - No hosted version yet (but coming in the future maybe)
+- Audit every page and modal against `DESIGN_GUIDE.md` mobile standards (full-screen mobile modals, `44px` touch targets, and zero horizontal overflow).
+- Polish mobile-specific interactions beyond CSS layout tokens (numeric/decimal mobile keyboards via `inputMode`, touch chart scrubbing ergonomics, and condensed table scrolling on narrow viewports).
 
 ### Release v1.0.1: UI Polish: Authentication Transition Stability
 - Issue: Users experience brief visual flickering and layout shifts during the login process. This includes the "Sign Out" button abruptly popping into the navigation bar, the "Sign In" button momentarily resetting its loading state before the redirect completes, and the Passkey section rendering slightly after the main login card.
 - Proposed Solution: Stabilize the authentication handoff by preloading the user's session state on the server before the initial render (eliminating Navbar layout shifts), persisting the "Signing In..." state until the browser has fully navigated to the dashboard, and optimizing client-side security checks so all login components mount simultaneously in the first frame.
 
-### Release v1.0.2: Mobile Optimization
-- Audit every page and modal against `DESIGN_GUIDE.md` mobile standards (full-screen mobile modals, `44px` touch targets, and zero horizontal overflow).
-- Polish mobile-specific interactions beyond CSS layout tokens (numeric/decimal mobile keyboards via `inputMode`, touch chart scrubbing ergonomics, and condensed table scrolling on narrow viewports).
-
-### Release v1.0.3a: Research Only, Security and Best Practices Audit
+### Release v1.0.2a: Research Only, Security and Best Practices Audit
 - Look for hacks
 - Look for non stable components
 - Look for monolthic files / lack of folder organization
@@ -58,10 +27,10 @@ This document tracks planned improvements, enhancements, and technical debt for 
 - Look for inconsistent theming or elements
 - Look to clean up database alters, no one has old database, clean up to make it better
 - Every above item should be its own phase, and then when developing a plan, reference previous findings
-- Make a plan for another ai for v1.0.3-v1.0.6 for fixes, no fixes today. Be clear and concise.
+- Make a plan for another ai for v1.0.2-v1.0.6 for fixes, no fixes today. Be clear and concise.
 - Double check results. It will be compared against another ai. 
 
-### Release v1.0.3-v1.0.6: Security and Best Practices Application
+### Release v1.0.2-v1.0.6: Security and Best Practices Application
 - Security and Best Practices Application
 
 ### Release v1.0.7: Production Prep
@@ -95,3 +64,13 @@ This document tracks planned improvements, enhancements, and technical debt for 
 
 ### Release v1.5.0
 - Points Path Search?
+
+- Site Launch
+    - User Guide
+    - Quickstart Guide
+    - API Documentation
+  - Sections and layout for both the main app FlightSentry and OpenFareScraper (incl api documentation)
+  - Follow Design Guide, but its okay to use addtional elements
+  - What screenshots do you need?
+  - No public demo yet
+  - No hosted version yet (but coming in the future maybe)

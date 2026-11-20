@@ -202,6 +202,7 @@ CREATE TABLE IF NOT EXISTS email_queue (
     isPoints INTEGER NOT NULL DEFAULT 0,
     taxesAmount REAL,
     taxesCurrency TEXT,
+    transactionDate TEXT,
     matchedFlightId INTEGER,
     confidence TEXT NOT NULL DEFAULT 'medium',
     parserSource TEXT NOT NULL DEFAULT 'heuristic',
@@ -223,6 +224,23 @@ CREATE TABLE IF NOT EXISTS email_seen_messages (
     accountId INTEGER,
     processedAt TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS email_scan_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    accountId INTEGER,
+    accountLabel TEXT NOT NULL,
+    messageId TEXT,
+    emailSubject TEXT,
+    emailFrom TEXT,
+    outcome TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    eventsCount INTEGER NOT NULL DEFAULT 0,
+    scannedAt TEXT NOT NULL,
+    FOREIGN KEY (accountId) REFERENCES imap_accounts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_scan_logs_scanned
+    ON email_scan_logs(scannedAt DESC, id DESC);
 
 CREATE TABLE IF NOT EXISTS release_sync_state (
     id INTEGER PRIMARY KEY CHECK (id = 1),

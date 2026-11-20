@@ -241,7 +241,8 @@ export type ImapAccountPublic = Omit<ImapAccount, 'encryptedPassword'> & {
 export type EmailQueueEventType = 'new_booking' | 'schedule_change' | 'cancellation';
 export type EmailQueueStatus = 'pending' | 'applied' | 'denied';
 export type EmailParseConfidence = 'high' | 'medium' | 'low';
-export type EmailParserSource = 'schema_org' | 'heuristic';
+export type EmailParserSource = 'schema_org' | 'schema_org_microdata' | 'ics' | 'heuristic';
+export type EmailScanLogOutcome = 'queued' | 'duplicate' | 'skipped';
 
 export interface ParsedFlightEmailEvent {
   eventType: EmailQueueEventType;
@@ -260,6 +261,7 @@ export interface ParsedFlightEmailEvent {
   isPoints?: number; // 0 (false) or 1 (true)
   taxesAmount?: number | null;
   taxesCurrency?: string | null;
+  transactionDate?: string | null; // YYYY-MM-DD (purchase/issue/cancel date or email Date fallback)
   confidence: EmailParseConfidence;
   parserSource: EmailParserSource;
 }
@@ -289,12 +291,48 @@ export interface EmailQueueItem {
   isPoints: number; // 0 (false) or 1 (true)
   taxesAmount?: number | null;
   taxesCurrency?: string | null;
+  transactionDate?: string | null;
   matchedFlightId?: number | null;
   confidence: EmailParseConfidence;
   parserSource: EmailParserSource;
   status: EmailQueueStatus;
   createdAt: string;
   resolvedAt?: string | null;
+}
+
+export interface EmailScanLog {
+  id: number;
+  accountId: number | null;
+  accountLabel: string;
+  messageId?: string | null;
+  emailSubject?: string | null;
+  emailFrom?: string | null;
+  outcome: EmailScanLogOutcome;
+  reason: string;
+  eventsCount: number;
+  scannedAt: string;
+}
+
+export interface EmailParseDiagnosticResult {
+  messageId: string | null;
+  subject: string | null;
+  fromAddress: string | null;
+  effectiveFromAddress: string | null;
+  senderDomain: string;
+  resolvedCarrier: string | null;
+  emailDate: string | null;
+  effectiveTransactionDate: string | null;
+  unwrappedRfc822: boolean;
+  icsAttachmentsCount: number;
+  parserTierHit: EmailParserSource | 'none';
+  events: Array<
+    ParsedFlightEmailEvent & {
+      matchedFlightId: number | null;
+      dedupeKey: string;
+      alreadyInQueue: boolean;
+    }
+  >;
+  skipReason: string | null;
 }
 
 export type AnnouncementSeverity = 'info' | 'warning';

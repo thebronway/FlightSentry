@@ -83,6 +83,7 @@ export function initDb() {
         "ALTER TABLE email_queue ADD COLUMN isPoints INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE email_queue ADD COLUMN taxesAmount REAL",
         "ALTER TABLE email_queue ADD COLUMN taxesCurrency TEXT",
+        "ALTER TABLE email_queue ADD COLUMN transactionDate TEXT",
         "ALTER TABLE settings ADD COLUMN onboardingCompleted INTEGER NOT NULL DEFAULT 0",
     ];
     for (const migration of migrations) {
@@ -201,6 +202,23 @@ export function initDb() {
                 accountId INTEGER,
                 processedAt TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS email_scan_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                accountId INTEGER,
+                accountLabel TEXT NOT NULL,
+                messageId TEXT,
+                emailSubject TEXT,
+                emailFrom TEXT,
+                outcome TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                eventsCount INTEGER NOT NULL DEFAULT 0,
+                scannedAt TEXT NOT NULL,
+                FOREIGN KEY (accountId) REFERENCES imap_accounts(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_email_scan_logs_scanned
+                ON email_scan_logs(scannedAt DESC, id DESC);
         `);
     } catch {
         // Ignored

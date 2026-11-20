@@ -1,9 +1,16 @@
 # FlightSentry Changelog
 
-*Last updated: 2026-11-18*  
-*Current Version: v0.9.8*
+*Last updated: 2026-11-20*  
+*Current Version: v0.9.9*
 
 ## Changelog
+
+### Release v0.9.9
+- Removed the `internalDate < baselineTimestamp` filter in `imapClient.ts`, restricted `email_seen_messages` inserts to queued events, and added the capped `email_scan_logs` audit trail (`GET/DELETE /api/email-scanner/logs`) in **Settings → Email Scanner**.
+- Added recursive `message/rfc822` attachment unwrapping, Schema.org HTML Microdata parsing via `cheerio`, and RFC 5545 `.ics` calendar parsing via `node-ical`.
+- Replaced regex HTML stripping with `cheerio` DOM cell/block traversal, added multi-leg itinerary segmentation with single-leg fare/points attachment, and centralized carrier/domain resolution in `src/utils/airline.ts`.
+- Added email `Date` fallback for purchase/cancellation dates when absent from the email body.
+- Added reusable `.eml` upload and preview components (`EmlSourceInput`, `ParsedEmailPreview`), **Settings → Email Scanner** `.eml` preview-and-stage (`POST /api/email-scanner/import-eml`), and the dev-only `/email-test` preview workspace (`POST /api/dev/email-test` gated by `ENABLE_API_TESTER=true`).
 
 ### Release v0.9.8
 - Standardized primary buttons to Translucent Slate Glass (`bg-slate-800/75 hover:bg-slate-700/85 border border-slate-500/80`) and aligned secondary, toolbar, destructive, and semantic action buttons across the app.
@@ -11,8 +18,6 @@
 - Standardized modals to the 3 desktop width tiers (`max-w-md`, `max-w-2xl`, `max-w-4xl lg:max-w-5xl xl:max-w-6xl`), full-screen mobile layouts for Tier 2 and Tier 3 modals, and `44px` minimum mobile touch targets.
 - Standardized floating settings and search progress toasts (`text-sm`) and matched inline status badge sizing (`text-xs`) to adjacent labels.
 - Expanded `DESIGN_GUIDE.md` with toast, inline status badge, segmented toggle, tooltip, quota bar, external link, and `z-index` standards.
-
-### Release v0.9.7
 
 ### Release v0.9.7
 - Added search router progress telemetry (`search_telemetry` SQLite table and `GET /api/flights/search-telemetry`) tracking active data source, flight/route context, and failover reason.

@@ -1,33 +1,15 @@
 import { EmailQueueEventType } from '../../../types';
-import { isValidAirlineCode, normalizeAirlineCode } from '../../../utils/airline';
 import {
-  DOMAIN_TO_CARRIER,
+  detectAirlineInText,
+  isValidAirlineCode,
+  normalizeAirlineCode,
+  resolveAirlineFromDomain,
+} from '../../../utils/airline';
+import {
   MONTH_MAP,
   OTA_DOMAINS,
   PNR_STOPWORDS,
 } from './constants';
-
-const CARRIER_NAME_PATTERNS: Array<{ pattern: RegExp; name: string }> = [
-  { pattern: /\bjetblue(?:\s+airways)?\b/i, name: 'JetBlue' },
-  { pattern: /\bdelta\s+air\s+lines\b/i, name: 'Delta Air Lines' },
-  { pattern: /\bunited\s+airlines\b/i, name: 'United Airlines' },
-  { pattern: /\bamerican\s+airlines\b/i, name: 'American Airlines' },
-  { pattern: /\bsouthwest\s+airlines\b/i, name: 'Southwest Airlines' },
-  { pattern: /\balaska\s+airlines\b/i, name: 'Alaska Airlines' },
-  { pattern: /\bspirit\s+airlines\b/i, name: 'Spirit Airlines' },
-  { pattern: /\bfrontier\s+airlines\b/i, name: 'Frontier Airlines' },
-  { pattern: /\bhawaiian\s+airlines\b/i, name: 'Hawaiian Airlines' },
-  { pattern: /\bair\s+canada\b/i, name: 'Air Canada' },
-  { pattern: /\bwestjet\b/i, name: 'WestJet' },
-  { pattern: /\bbritish\s+airways\b/i, name: 'British Airways' },
-  { pattern: /\bvirgin\s+atlantic\b/i, name: 'Virgin Atlantic' },
-  { pattern: /\blufthansa\b/i, name: 'Lufthansa' },
-  { pattern: /\bair\s+france\b/i, name: 'Air France' },
-  { pattern: /\bklm\b/i, name: 'KLM' },
-  { pattern: /\bemirates\b/i, name: 'Emirates' },
-  { pattern: /\bqatar\s+airways\b/i, name: 'Qatar Airways' },
-  { pattern: /\bsingapore\s+airlines\b/i, name: 'Singapore Airlines' },
-];
 
 export function resolveSenderDomain(fromAddress?: string | null): string {
   if (!fromAddress) return '';
@@ -39,25 +21,11 @@ export function resolveSenderDomain(fromAddress?: string | null): string {
 }
 
 export function detectCarrierFromDomain(domain: string): string | null {
-  if (!domain) return null;
-  for (const [key, code] of Object.entries(DOMAIN_TO_CARRIER)) {
-    if (domain === key || domain.endsWith(`.${key}`)) {
-      return code;
-    }
-  }
-  return null;
+  return resolveAirlineFromDomain(domain);
 }
 
 export function detectCarrierFromText(text: string): string | null {
-  for (const entry of CARRIER_NAME_PATTERNS) {
-    if (entry.pattern.test(text)) {
-      const code = normalizeAirlineCode(entry.name);
-      if (isValidAirlineCode(code)) {
-        return code;
-      }
-    }
-  }
-  return null;
+  return detectAirlineInText(text);
 }
 
 export function isKnownTravelSender(domain: string, text: string): boolean {
@@ -66,7 +34,7 @@ export function isKnownTravelSender(domain: string, text: string): boolean {
     return true;
   }
 
-  return /\b(?:pnr|confirmation\s*(?:code|number|#)|record\s*locator|booking\s*reference|e-?ticket|flight\s*itinerary|schedule\s*change|(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|boarding\s*pass)\b/i.test(
+  return /\b(?:pnr|confirmation\s*(?:code|number|#)?|record\s*locator|booking\s*ref(?:erence)?|e-?ticket|flight\s*itinerary|schedule\s*change|(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|boarding\s*pass)\b/i.test(
     text
   );
 }
@@ -78,7 +46,7 @@ export function classifyEventType(
   const combined = `${subject}\n${text}`;
 
   const hasStrongItinerarySignal =
-    /\b(?:confirmation\s*(?:code|number|#)\s*(?:is|:)?\s*[A-Z0-9]{5,7}|your\s+flight\s+itinerary|ticket\s+number\s*:?\s*\d{10,14})\b/i.test(
+    /\b(?:confirmation\s*(?:code|number|#)?\s*(?:is|:)?\s*[A-Z0-9]{5,7}|record\s*locator\s*:?\s*[A-Z0-9]{5,7}|booking\s*ref(?:erence)?\s*:?\s*[A-Z0-9]{5,7}|your\s+flight\s+itinerary|ticket\s+number\s*:?\s*\d{10,14})\b/i.test(
       combined
     );
 
@@ -93,7 +61,7 @@ export function classifyEventType(
   }
 
   if (
-    /\b(?:(?:flight|reservation|booking|trip|itinerary)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|cancel(?:l)?ation\s+confirmation)\b/i.test(
+    /\b(?:(?:flight|reservation|booking|trip|itinerary|ticket)\s+(?:(?:has|have)\s+been\s+|was\s+|were\s+|is\s+)?cancel(?:ed|led)|cancel(?:l)?ation\b|voided\s+ticket)\b/i.test(
       combined
     )
   ) {
@@ -101,7 +69,7 @@ export function classifyEventType(
   }
 
   if (
-    /\b(?:schedule\s+change|flight\s+time\s+change|itinerary\s+change|updated\s+itinerary|new\s+departure\s+time|new\s+arrival\s+time|flight\s+(?:schedule\s+)?has\s+changed|time\s+has\s+changed)\b/i.test(
+    /\b(?:schedule\s+change|flight\s+time\s+change|itinerary\s+change|updated\s+itinerary|new\s+departure\s+time|new\s+arrival\s+time|flight\s+(?:schedule\s+)?has\s+changed|time\s+has\s+changed|rebooked|reaccommodat(?:ed|ion))\b/i.test(
       combined
     )
   ) {
@@ -109,7 +77,7 @@ export function classifyEventType(
   }
 
   if (
-    /\b(?:booking\s+confirmation|flight\s+confirmation|itinerary\s+confirmation|reservation\s+confirmed|e-?ticket\s+receipt|your\s+flight\s+itinerary|thank\s+you\s+for\s+booking|you['’]re\s+all\s+set\s+to\s+jet|trip\s+confirmation)\b/i.test(
+    /\b(?:confirmation|confirmed|booked|booking|reservation|itinerary|receipt|e-?ticket|ticketed|purchase\s+summary)\b/i.test(
       combined
     )
   ) {
@@ -129,7 +97,7 @@ function isValidPnrCandidate(candidate: string): boolean {
 
 export function extractPnr(text: string, subject?: string): string | null {
   const labeledRegex =
-    /\b(?:confirmation\s*(?:code|number|#)|record\s*locator|booking\s*(?:reference|code|id)|reservation\s*(?:code|number|#)|pnr)\s*(?:is|:|#|-)?\s*([A-Z0-9]{5,7})\b/gi;
+    /\b(?:confirmation\s*(?:code|number|#)?|record\s*locator|booking\s*(?:ref(?:erence)?|code|id)|reservation\s*(?:code|number|#)?|pnr)\s*(?:is|:|#|-|\|)?\s*([A-Z0-9]{5,7})\b/gi;
   let match: RegExpExecArray | null;
   while ((match = labeledRegex.exec(text)) !== null) {
     const candidate = match[1].toUpperCase();
@@ -157,7 +125,7 @@ export function extractFlightIdentity(
   text: string,
   resolvedCarrier: string | null
 ): { airline: string | null; flightNumber: string | null } {
-  // 1. Explicit Carrier + Flight Number (e.g., "B6 1888", "DL 1428", "AA104")
+  // 1. Explicit Carrier + Flight Number (e.g., "B6 1888", "DL 1428", "UA 1328", "AA104")
   const carrierFlightRegex = /\b([A-Z]{2}|[A-Z]\d|\d[A-Z])\s*#?\s*(\d{1,4})\b(?!\s*:\d{2})/g;
   let match: RegExpExecArray | null;
   while ((match = carrierFlightRegex.exec(text)) !== null) {
@@ -170,7 +138,19 @@ export function extractFlightIdentity(
     }
   }
 
-  // 2. "Flight # 1888" or "Flight 1888" paired with carrier resolved from sender domain or body text
+  // 2. Full Carrier Name + Flight Number (e.g., "DELTA 397", "ALASKA 6", "UNITED 142")
+  const namedFlightRegex =
+    /\b([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)\s+(\d{1,4})\b(?!\s*:\d{2})/g;
+  while ((match = namedFlightRegex.exec(text)) !== null) {
+    const candidateName = match[1].trim();
+    const num = match[2];
+    const code = normalizeAirlineCode(candidateName);
+    if (isValidAirlineCode(code)) {
+      return { airline: code, flightNumber: num };
+    }
+  }
+
+  // 3. "Flight # 1888" or "Flight 1888" paired with carrier resolved from sender domain or body text
   const flightOnlyMatch = text.match(/\bflight\s*(?:#|number|no\.?)?\s*:?\s*(\d{1,4})\b/i);
   if (flightOnlyMatch && resolvedCarrier) {
     return { airline: resolvedCarrier, flightNumber: flightOnlyMatch[1] };
